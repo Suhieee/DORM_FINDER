@@ -1,0 +1,32 @@
+{% extends 'accounts/base.html' %}
+{% block title %} My Properties {% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">🏠 My Dorm Listings</h2>
+
+    {% if my_dorms %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for dorm in my_dorms %}
+                <div class="border rounded-lg p-4 shadow">
+                    <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
+                    <p class="text-gray-700">📍 Address: {{ dorm.address }}</p>
+                    <p class="text-gray-700">💰 Price: ₱{{ dorm.price }}</p>
+
+                    {% if dorm.image %}
+                        <img src="{{ dorm.image.url }}" class="w-full h-40 object-cover rounded mt-2">
+                    {% else %}
+                        <p class="text-gray-500">No image available</p>
+                    {% endif %}
+
+                    <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="mt-2 inline-block bg-blue-600 text-white py-1 px-4 rounded hover:bg-blue-700">
+                        View Details
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-500">You haven't added any dorms yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

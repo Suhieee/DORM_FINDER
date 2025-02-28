@@ -1,0 +1,13 @@
+<h2>{{ dorm.name }}</h2>
+<p><strong>Address:</strong> {{ dorm.address }}</p>
+<p><strong>Price:</strong> ₱{{ dorm.price }}</p>
+<p><strong>Description:</strong> {{ dorm.description }}</p>
+<p>{{ dorm.description }}</p>
+{% if dorm.image %}
+<img src="{{ dorm.image.url }}" width="200">
+{% else %}
+<p>No image available</p>
+{% endif %}
+
+<a href="{% url 'accounts:dashboard' %}">Back to Dashboard</a>
+

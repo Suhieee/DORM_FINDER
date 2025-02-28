@@ -1,0 +1,18 @@
+{% extends 'accounts/base.html' %}
+{% block title %} Landlord Dashboard {% endblock %}
+{% block content %}
+
+
+<h2>Landlord Dashboard</h2>
+<p>Welcome, {{ user.username }}! You can post dorm listings here.</p>
+
+
+<form method="post" action="{% url 'accounts:logout' %}">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+</form>
+{% endblock %}
+
+
+
+
