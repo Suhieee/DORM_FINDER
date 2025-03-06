@@ -1,0 +1,70 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Edit Dorm{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <h2 class="text-3xl font-semibold text-gray-800 mb-6">Edit Dorm</h2>
+
+    <!-- Success Message -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="p-4 mb-4 text-sm text-white bg-green-500 rounded-lg">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Dorm Name -->
+        <div class="space-y-2">
+            <label for="id_name" class="text-sm font-medium text-gray-700">Dorm Name</label>
+            <input type="text" name="name" id="id_name" value="{{ form.name.value }}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+        </div>
+
+        <!-- Address -->
+        <div class="space-y-2">
+            <label for="id_address" class="text-sm font-medium text-gray-700">Address</label>
+            <textarea name="address" id="id_address" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>{{ form.address.value }}</textarea>
+        </div>
+
+        <!-- Price -->
+        <div class="space-y-2">
+            <label for="id_price" class="text-sm font-medium text-gray-700">Price (₱)</label>
+            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+            <label for="id_description" class="text-sm font-medium text-gray-700">Description</label>
+            <textarea name="description" id="id_description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>{{ form.description.value }}</textarea>
+        </div>
+
+        <!-- Image -->
+        <div class="space-y-2">
+            <label for="id_image" class="text-sm font-medium text-gray-700">Dorm Image</label>
+            <input type="file" name="image" id="id_image" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Availability -->
+        <div class="space-y-2">
+            <label for="id_available" class="text-sm font-medium text-gray-700">Available</label>
+            <input type="checkbox" name="available" id="id_available" value="True" {% if form.available.value %}checked{% endif %} class="p-3">
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            Update Dorm
+        </button>
+    </form>
+
+    <!-- Back to Dashboard Link -->
+    <div class="mt-6 text-center">
+        <a href="{% url 'accounts:dashboard' %}" class="text-green-600 hover:text-green-800 font-medium">Back to Dashboard</a>
+    </div>
+</div>
+
+{% endblock %}

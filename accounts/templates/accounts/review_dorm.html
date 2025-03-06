@@ -1,0 +1,71 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Review Dorm{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <h2 class="text-2xl font-bold mb-4">Review Dorm: {{ dorm.name }}</h2>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Dorm Name</label>
+        <p>{{ dorm.name }}</p>
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Address</label>
+        <p>{{ dorm.address }}</p>
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Price</label>
+        <p>₱{{ dorm.price }}</p>
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Description</label>
+        <p>{{ dorm.description }}</p>
+    </div>
+
+    {% if dorm.image %}
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Dorm Image & Landlord Permit</label>
+        <img src="{{ dorm.image.url }}" alt="{{ dorm.name }}" class="w-full h-40 object-cover rounded mt-2">
+    </div>
+    {% else %}
+    <p>No image available</p>
+    {% endif %}
+
+    <!-- Approval and rejection form -->
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="approval_status" class="block text-sm font-medium text-gray-700">Approve or Reject</label>
+            <select name="approval_status" id="approval_status" class="w-full border border-gray-300 rounded-md p-2" required>
+                <option value="approved">Approve</option>
+                <option value="rejected">Reject</option>
+            </select>
+        </div>
+
+        <div class="mb-4" id="rejection_reason" style="display:none;">
+            <label for="rejection_reason_input" class="block text-sm font-medium text-gray-700">Rejection Reason</label>
+            <textarea id="rejection_reason_input" name="rejection_reason" class="w-full border border-gray-300 rounded-md p-2" placeholder="Please provide a reason for rejection"></textarea>
+        </div>
+
+        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Submit</button>
+    </form>
+</div>
+
+<script>
+    const approvalSelect = document.getElementById('approval_status');
+    const rejectionReasonDiv = document.getElementById('rejection_reason');
+
+    approvalSelect.addEventListener('change', function() {
+        if (approvalSelect.value === 'rejected') {
+            rejectionReasonDiv.style.display = 'block';
+        } else {
+            rejectionReasonDiv.style.display = 'none';
+        }
+    });
+</script>
+
+{% endblock %}

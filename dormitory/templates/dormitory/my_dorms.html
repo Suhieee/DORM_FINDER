@@ -1,5 +1,6 @@
 {% extends 'accounts/base.html' %}
 {% block title %} My Properties {% endblock %}
+{% load static %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
@@ -19,6 +20,18 @@
                         <p class="text-gray-500">No image available</p>
                     {% endif %}
 
+                    <p class="text-gray-700 mt-2">
+                        <strong>Status:</strong> 
+                        {% if dorm.approval_status == 'rejected' %}
+                            <span class="text-red-600">Rejected</span> <br>
+                            <strong>Reason:</strong> {{ dorm.rejection_reason }}
+                        {% elif dorm.approval_status == 'approved' %}
+                            <span class="text-green-600">Approved</span>
+                        {% else %}
+                            <span class="text-yellow-600">Pending</span>
+                        {% endif %}
+                    </p>
+
                     <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="mt-2 inline-block bg-blue-600 text-white py-1 px-4 rounded hover:bg-blue-700">
                         View Details
                     </a>
@@ -26,7 +39,8 @@
             {% endfor %}
         </div>
     {% else %}
-        <p class="text-gray-500">You haven't added any dorms yet.</p>
+    <img src="{% static 'question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
+        <p class="text-gray-500 text-center">You haven't added any dorms yet.</p>
     {% endif %}
 </div>
 {% endblock %}

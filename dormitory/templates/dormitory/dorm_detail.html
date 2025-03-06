@@ -1,13 +1,62 @@
-<h2>{{ dorm.name }}</h2>
-<p><strong>Address:</strong> {{ dorm.address }}</p>
-<p><strong>Price:</strong> ₱{{ dorm.price }}</p>
-<p><strong>Description:</strong> {{ dorm.description }}</p>
-<p>{{ dorm.description }}</p>
-{% if dorm.image %}
-<img src="{{ dorm.image.url }}" width="200">
-{% else %}
-<p>No image available</p>
-{% endif %}
+{% extends 'accounts/base.html' %}
 
-<a href="{% url 'accounts:dashboard' %}">Back to Dashboard</a>
+{% block title %} Dorm Details {% endblock %}
 
+{% block content %}
+<div class="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <h2 class="text-3xl font-semibold text-gray-800">{{ dorm.name }}</h2>
+    
+    <div class="flex items-center mt-4">
+        <p class="text-lg font-medium text-gray-600 mr-4"><strong>Price:</strong> ₱{{ dorm.price }}</p>
+        <p class="text-lg font-medium text-gray-600"><strong>Address:</strong> {{ dorm.address }}</p>
+    </div>
+
+    <p class="mt-4 text-gray-700"><strong>Description:</strong> {{ dorm.description }}</p>
+
+    {% if dorm.image %}
+        <div class="mt-4">
+            <img src="{{ dorm.image.url }}" class="w-full rounded-lg shadow-md" alt="{{ dorm.name }}">
+        </div>
+    {% else %}
+        <p class="text-gray-500 mt-4">No image available</p>
+    {% endif %}
+
+    <div class="mt-6">
+        {% if request.user == dorm.landlord %}
+            <p class="text-gray-700 font-medium"><strong>Status:</strong> 
+                {% if dorm.approval_status == 'approved' %}
+                    <span class="px-4 py-1 text-sm text-green-700 bg-green-100 rounded-full">Approved</span>
+                {% elif dorm.approval_status == 'rejected' %}
+                    <span class="px-4 py-1 text-sm text-red-700 bg-red-100 rounded-full">Rejected</span>
+                {% else %}
+                    <span class="px-4 py-1 text-sm text-yellow-700 bg-yellow-100 rounded-full">Pending</span>
+                {% endif %}
+            </p>
+
+            {% if dorm.approval_status == 'rejected' %}
+                <p class="mt-2 text-red-600 font-semibold"><strong>Reason for Rejection:</strong> {{ dorm.rejection_reason }}</p>
+            {% endif %}
+
+            <!-- Edit and Delete buttons visible only to the landlord -->
+            <div class="mt-4">
+                <a href="{% url 'dormitory:edit_dorm' dorm.id %}" class="bg-yellow-500 text-white px-4 py-2 rounded">Edit</a>
+                <a href="{% url 'dormitory:delete_dorm' dorm.id %}" class="bg-red-500 text-white px-4 py-2 rounded">Delete</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Landlord's Land and Contact Number -->
+    <div class="mt-6">
+        {% if dorm.landlord %}
+            <p class="text-lg font-medium text-gray-800"><strong>Landlord's Land:</strong> {{ dorm.landlord.username }}</p>
+            <p class="text-lg font-medium text-gray-800"><strong>Contact Number:</strong> {{ dorm.landlord.contact_number }}</p>
+        {% else %}
+            <p class="text-gray-500">Landlord information not available</p>
+        {% endif %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
