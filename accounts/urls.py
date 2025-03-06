@@ -1,19 +1,20 @@
 from django.urls import path
-from .views import register, dashboard, approve_dorm, reject_dorm , review_dorm, user_login
 from django.contrib.auth import views as auth_views
-
+from .views import (
+        RegisterView, LoginView, DashboardView,
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView
+    )
 
 app_name = "accounts"
-
 urlpatterns = [
-    path('register/', register, name='register'),
-    path('login/', user_login, name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('dashboard/', dashboard, name='dashboard'),
+    path("register/", RegisterView.as_view(), name="register"),
+    path("login/", LoginView.as_view(), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("dashboard/", DashboardView.as_view(), name="dashboard"),
 
-    path('approve-dorm/<int:dorm_id>/', approve_dorm, name='approve_dorm'),
-    path('reject-dorm/<int:dorm_id>/', reject_dorm, name='reject_dorm'),
-    path('review-dorm/<int:dorm_id>/', review_dorm, name='review_dorm'),
-    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    path("approve-dorm/<int:pk>/", ApproveDormView.as_view(), name="approve_dorm"),
+    path("reject-dorm/<int:pk>/", RejectDormView.as_view(), name="reject_dorm"),
+    path("review-dorm/<int:pk>/", ReviewDormView.as_view(), name="review_dorm"),
+
+    path("role-based-redirect/", RoleBasedRedirectView.as_view(), name="role_based_redirect"),
 ]
-

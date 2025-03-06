@@ -1,75 +1,87 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
+from django.urls import reverse_lazy
 from .models import Dorm
 from .forms import DormForm
-from django.shortcuts import get_object_or_404
-from django.contrib import messages
+
+# 🚀 Add Dorm (For Landlords)
+class AddDormView(LoginRequiredMixin, CreateView):
+    model = Dorm
+    form_class = DormForm
+    template_name = "dormitory/add_dorm.html"
+    success_url = reverse_lazy("accounts:dashboard")  # Redirect after success
+
+    def form_valid(self, form):
+        """Set the landlord before saving."""
+        if self.request.user.user_type != "landlord":
+            return redirect("accounts:dashboard")  # Restrict to landlords
+        
+        form.instance.landlord = self.request.user
+        messages.success(self.request, "Dorm successfully created!")
+        return super().form_valid(form)
 
 
+# 🚀 List of Dorms (For Students)
+class DormListView(LoginRequiredMixin, ListView):
+    model = Dorm
+    template_name = "dormitory/dorm_list.html"
+    context_object_name = "dorms"
 
-#addind dorm for landlord's page
-@login_required
-def add_dorm(request):
-    if request.user.user_type != 'landlord':
-        return redirect('accounts:dashboard')  
-    if request.method == "POST":
-        form = DormForm(request.POST, request.FILES)
-        if form.is_valid():
-            dorm = form.save(commit=False)
-            dorm.landlord = request.user
-            dorm.save()
-            messages.success(request, "Dorm successfully created!")  
-            return redirect('accounts:dashboard')  
-    else:
-        form = DormForm()
+    def get_queryset(self):
+        """Only show available & approved dorms."""
+        return Dorm.objects.filter(available=True, approval_status="approved")
 
-    return render(request, 'dormitory/add_dorm.html', {'form': form})
 
-#List of dorm shown in students dashboard
-@login_required
-def dorm_list(request):
-    dorms = Dorm.objects.filter(available=True, approval_status='approved')  # Filter for approved and available dorms
-    return render(request, 'dormitory/dorm_list.html', {'dorms': dorms})
+# 🚀 Dorm Details
+class DormDetailView(LoginRequiredMixin, DetailView):
+    model = Dorm
+    template_name = "dormitory/dorm_detail.html"
+    context_object_name = "dorm"
 
-#Dorm details
-@login_required
-def dorm_detail(request, dorm_id):
-    dorm = get_object_or_404(Dorm, id=dorm_id)
-    return render(request, 'dormitory/dorm_detail.html', {'dorm': dorm})
 
-#Landlord's Dorm
-@login_required
-def my_dorms(request):
-    if request.user.user_type != 'landlord':
-        return redirect('accounts:dashboard')  # Ensure only landlords can access
+# 🚀 Landlord’s Dorms (My Dorms)
+class MyDormsView(LoginRequiredMixin, ListView):
+    model = Dorm
+    template_name = "dormitory/my_dorms.html"
+    context_object_name = "my_dorms"
 
-    my_dorms = Dorm.objects.filter(landlord=request.user)  # Fetch only their dorms
-    return render(request, 'dormitory/my_dorms.html', {'my_dorms': my_dorms})
+    def get_queryset(self):
+        """Ensure only landlords can access their own dorms."""
+        if self.request.user.user_type != "landlord":
+            return redirect("accounts:dashboard")
+        return Dorm.objects.filter(landlord=self.request.user)
 
-#Editing Dorm
-@login_required
-def edit_dorm(request, dorm_id):
-    dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
 
-    if request.method == "POST":
-        form = DormForm(request.POST, request.FILES, instance=dorm)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Dorm successfully updated!")  # Add success message
-            return redirect('accounts:dashboard')  # Redirect to the landlord's dashboard
-    else:
-        form = DormForm(instance=dorm)
+# 🚀 Edit Dorm (For Landlords)
+class EditDormView(LoginRequiredMixin, UpdateView):
+    model = Dorm
+    form_class = DormForm
+    template_name = "dormitory/edit_dorm.html"
 
-    return render(request, 'dormitory/edit_dorm.html', {'form': form, 'dorm': dorm})
+    def get_queryset(self):
+        """Ensure only the landlord can edit their dorms."""
+        return Dorm.objects.filter(landlord=self.request.user)
 
- #Deleting Dorm
-@login_required
-def delete_dorm(request, dorm_id):
-    dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
+    def form_valid(self, form):
+        messages.success(self.request, "Dorm successfully updated!")
+        return super().form_valid(form)
 
-    if request.method == "POST":
-        dorm.delete()
-        messages.success(request, "Dorm successfully deleted!")  # Add success message
-        return redirect('accounts:dashboard')  # Redirect back after deletion
+    def get_success_url(self):
+        return reverse_lazy("accounts:dashboard")
 
-    return render(request, 'dormitory/confirm_delete.html', {'dorm': dorm})
+
+# 🚀 Delete Dorm (For Landlords)
+class DeleteDormView(LoginRequiredMixin, DeleteView):
+    model = Dorm
+    template_name = "dormitory/confirm_delete.html"
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def get_queryset(self):
+        """Ensure only the landlord can delete their dorms."""
+        return Dorm.objects.filter(landlord=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Dorm successfully deleted!")
+        return super().delete(request, *args, **kwargs)

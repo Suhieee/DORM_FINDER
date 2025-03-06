@@ -1,155 +1,159 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .forms import CustomUserCreationForm
-from dormitory.models import Dorm  
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
+from django.urls import reverse_lazy
+from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView, CreateView, FormView
+from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import get_user_model
+from .forms import CustomUserCreationForm
+from django.shortcuts import redirect
+from django.contrib import messages
+from dormitory.models import Dorm
 
 
-def register(request):
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+# ✅ Register View (CBV)
+class RegisterView(CreateView):
+    form_class = CustomUserCreationForm
+    template_name = "accounts/register.html"
+    success_url = reverse_lazy("accounts:dashboard")
 
-        # Check if username or email already exists
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        User = get_user_model()
+    def form_valid(self, form):
+        """Log in user after successful registration."""
+        user = form.save()
+        login(self.request, user)
+        messages.success(self.request, f"Registration successful! Welcome, {user.username}")
+        return super().form_valid(form)
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists. Please choose a different one.")
-        elif User.objects.filter(email=email).exists():
-            messages.error(request, "Email is already registered. Try logging in instead.")
-        elif form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful! Welcome, " + user.username)
-            return redirect('accounts:dashboard') 
+    def form_invalid(self, form):
+        """Handle errors if registration fails."""
+        messages.error(self.request, "Registration failed. Please check the form.")
+        return super().form_invalid(form)
+
+# ✅ Login View (CBV)
+class LoginView(FormView):
+    form_class = AuthenticationForm
+    template_name = "accounts/login.html"
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def form_valid(self, form):
+        """Log in the user after successful authentication."""
+        user = form.get_user()
+        login(self.request, user)
+        messages.success(self.request, f"Welcome, {user.username}! You have successfully logged in.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        """Handle errors for invalid login attempts."""
+        messages.error(self.request, "Invalid username or password. Please try again.")
+        return super().form_invalid(form)
+
+    def dispatch(self, request, *args, **kwargs):
+        """Redirect already logged-in users to the dashboard."""
+        if request.user.is_authenticated:
+            messages.info(request, f"Welcome back, {request.user.username}! You are already logged in.")
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+# ✅ Dashboard View (CBV)
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "accounts/dashboard.html"
+
+    def get_template_names(self):
+        """Return different dashboard templates based on user type."""
+        user = self.request.user
+        if user.user_type == "admin":
+            return ["accounts/admin_dashboard.html"]
+        elif user.user_type == "landlord":
+            return ["accounts/landlord_dashboard.html"]
         else:
-            messages.error(request, "Registration failed. Please check the form.")
+            return ["accounts/student_dashboard.html"]
 
-    else:
-        form = CustomUserCreationForm()
+    def get_context_data(self, **kwargs):
+        """Pass additional context to templates based on user type."""
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
 
-    return render(request, 'accounts/register.html', {'form': form})  # ✅ Always return response
+        if user.user_type == "admin":
+            context["pending_dorms"] = Dorm.objects.filter(approval_status="pending")
+        elif user.user_type == "student":
+            context["dorms"] = Dorm.objects.filter(approval_status="approved", available=True)
 
+        return context
 
+# ✅ Approve Dorm View (CBV)
+class ApproveDormView(LoginRequiredMixin, UpdateView):
+    model = Dorm
+    fields = ["approval_status"]
+    success_url = reverse_lazy("accounts:dashboard")
 
-def user_login(request):
-    if request.user.is_authenticated:
-        messages.info(request, f"Welcome back, {request.user.username}! You are already logged in.")
-        return redirect('accounts:dashboard')
+    def dispatch(self, request, *args, **kwargs):
+        """Ensure only admins can approve dorms."""
+        if request.user.user_type != "admin":
+            messages.error(request, "You are not authorized to approve dorms.")
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
 
-    form = AuthenticationForm(request, data=request.POST or None)
+    def form_valid(self, form):
+        """Approve the dorm."""
+        dorm = form.save(commit=False)
+        dorm.approval_status = "approved"
+        dorm.save()
+        messages.success(self.request, f"Dorm '{dorm.name}' has been approved.")
+        return super().form_valid(form)
 
-    if request.method == "POST":
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, f"Welcome, {user.username}! You have successfully logged in.")
-            return redirect('accounts:dashboard')
+# ✅ Reject Dorm View (CBV)
+class RejectDormView(LoginRequiredMixin, UpdateView):
+    model = Dorm
+    fields = ["approval_status", "available"]
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def dispatch(self, request, *args, **kwargs):
+        """Ensure only admins can reject dorms."""
+        if request.user.user_type != "admin":
+            messages.error(request, "You are not authorized to reject dorms.")
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        """Reject the dorm and mark it as unavailable."""
+        dorm = form.save(commit=False)
+        dorm.approval_status = "rejected"
+        dorm.available = False
+        dorm.save()
+        messages.error(self.request, f"Dorm '{dorm.name}' has been rejected.")
+        return super().form_valid(form)
+
+# ✅ Review Dorm View (CBV)
+class ReviewDormView(LoginRequiredMixin, UpdateView):
+    model = Dorm
+    fields = ["approval_status", "rejection_reason"]
+    template_name = "accounts/review_dorm.html"
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def dispatch(self, request, *args, **kwargs):
+        """Ensure only admins can review dorms."""
+        if request.user.user_type != "admin":
+            messages.error(request, "You are not authorized to review dorms.")
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        """Handle dorm review."""
+        dorm = form.save()
+        if dorm.approval_status == "approved":
+            messages.success(self.request, f"The dorm '{dorm.name}' has been approved.")
+        elif dorm.approval_status == "rejected":
+            messages.error(self.request, f"The dorm '{dorm.name}' has been rejected.")
+        return super().form_valid(form)
+
+class RoleBasedRedirectView(LoginRequiredMixin, TemplateView):
+    def get(self, request, *args, **kwargs):
+        """Redirect users based on their role."""
+        if request.user.is_superuser:
+            return redirect("/admin/")
+        elif request.user.user_type == "landlord":
+            return redirect("accounts:dashboard")
+        elif request.user.user_type == "student":
+            return redirect("accounts:dashboard")
         else:
-            messages.error(request, "Invalid username or password. Please try again.")
-
-    return render(request, "accounts/login.html", {'form': form})  # ✅ Pass the form
-
-
-
-@login_required
-def dashboard(request):
-    if not request.session.get('welcome_message_shown', False):
-        if request.user.user_type == 'admin':
-            pending_dorms = Dorm.objects.filter(approval_status='pending')
-            messages.success(request, f"Welcome back admin, {request.user.first_name}!")
-        elif request.user.user_type == 'landlord':
-            messages.success(request, f"Welcome back landlord, {request.user.first_name}!")
-        else:
-            dorms = Dorm.objects.filter(approval_status='approved', available=True)
-            messages.success(request, f"Welcome back, {request.user.first_name}!")
-
-        # Set a session variable to indicate that the welcome message has been shown
-        request.session['welcome_message_shown'] = True
-    
-    # Admin dashboard
-    if request.user.user_type == 'admin':
-        pending_dorms = Dorm.objects.filter(approval_status='pending')
-        return render(request, 'accounts/admin_dashboard.html', {'pending_dorms': pending_dorms})
-
-    # Landlord dashboard
-    elif request.user.user_type == 'landlord':
-        return render(request, 'accounts/landlord_dashboard.html')
-
-    # Student dashboard
-    else:
-        dorms = Dorm.objects.filter(approval_status='approved', available=True)
-        return render(request, 'accounts/student_dashboard.html', {'dorms': dorms})
-
-        
-@login_required
-def approve_dorm(request, dorm_id):
-    if request.user.user_type != 'admin':
-        messages.error(request, "You are not authorized to approve dorms.")
-        return redirect('accounts:dashboard')  # Redirect to the dashboard if not admin
-
-    dorm = get_object_or_404(Dorm, id=dorm_id)
-    dorm.approval_status = 'approved'
-    dorm.save()
-    messages.success(request, f"Dorm '{dorm.name}' has been approved.")
-    return redirect('accounts:dashboard')  # Redirect to admin dashboard after approval
-
-
-@login_required
-def reject_dorm(request, dorm_id):
-    if request.user.user_type != 'admin':
-        messages.error(request, "You are not authorized to reject dorms.")
-        return redirect('accounts:dashboard')  # Redirect to the dashboard if not admin
-
-    dorm = get_object_or_404(Dorm, id=dorm_id)
-    dorm.approval_status = 'rejected'
-    dorm.available = False 
-    dorm.save()
-    messages.error(request, f"Dorm '{dorm.name}' has been rejected.")
-    return redirect('accounts:dashboard')  # Redirect to admin dashboard after rejection
-
-@login_required
-def review_dorm(request, dorm_id):
-    dorm = get_object_or_404(Dorm, id=dorm_id)
-
-    # Ensure only admins can review dorms
-    if request.user.user_type != 'admin':
-        return redirect('accounts:dashboard')
-
-    if request.method == 'POST':
-        approval_status = request.POST.get('approval_status')
-        rejection_reason = request.POST.get('rejection_reason', None)
-
-        if approval_status == 'approved':
-            dorm.approval_status = 'approved'
-            dorm.save()
-            messages.success(request, f"The dorm '{dorm.name}' has been approved.")
-        elif approval_status == 'rejected':
-            dorm.approval_status = 'rejected'
-            dorm.rejection_reason = rejection_reason  
-            dorm.save()
-            messages.success(request, f"The dorm '{dorm.name}' has been rejected.")
-        return redirect('accounts:dashboard')
-
-    return render(request, 'accounts/review_dorm.html', {'dorm': dorm})
-
-
-@login_required(login_url='/accounts/login/')  # Redirect to login if not authenticated
-def role_based_redirect(request):
-    """Redirect users based on their role."""
-    if request.user.is_superuser:
-        return redirect('/admin/')
-    elif request.user.user_type == 'landlord':
-        return redirect('/accounts/dashboard/')  # Redirect landlords to their dashboard
-    elif request.user.user_type == 'student':
-        return redirect('/accounts/dashboard/')  # Redirect students to their dashboard
-    else:
-        return redirect('/accounts/login/')  # Redirect unknown users to login
-
-
-
+            return redirect("accounts:login")
