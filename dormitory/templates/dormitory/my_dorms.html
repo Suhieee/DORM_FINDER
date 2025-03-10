@@ -14,12 +14,16 @@
                     <p class="text-gray-700">📍 Address: {{ dorm.address }}</p>
                     <p class="text-gray-700">💰 Price: ₱{{ dorm.price }}</p>
 
-                    {% if dorm.image %}
-                        <img src="{{ dorm.image.url }}" class="w-full h-40 object-cover rounded mt-2">
-                    {% else %}
-                        <p class="text-gray-500">No image available</p>
-                    {% endif %}
-
+                    {% if dorm.images.all %}
+                    <div class="flex gap-2 mt-2 overflow-x-auto">
+                        {% for image in dorm.images.all %}
+                            <img src="{{ dorm.images.first.image.url }}" class="w-40 h-40 object-cover rounded">
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">No images available</p>
+                {% endif %}
+                              
                     <p class="text-gray-700 mt-2">
                         <strong>Status:</strong> 
                         {% if dorm.approval_status == 'rejected' %}
@@ -39,7 +43,7 @@
             {% endfor %}
         </div>
     {% else %}
-    <img src="{% static 'question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
+    <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
         <p class="text-gray-500 text-center">You haven't added any dorms yet.</p>
     {% endif %}
 </div>

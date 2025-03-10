@@ -8,8 +8,8 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='student')
-    contact_number = models.CharField(max_length=15, blank=True, null=True)  # New Field
-
+    contact_number = models.CharField(max_length=15, blank=True, null=True)
+    
     def __str__(self):
         return self.username
 

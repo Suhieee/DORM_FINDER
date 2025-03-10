@@ -1,70 +1,70 @@
 {% extends 'accounts/base.html' %}
-
-{% block title %}Post a Dorm{% endblock %}
-
+{% block title %} Add Dorm {% endblock %}
+{% load static %}
 {% block content %}
 
-<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-    <h2 class="text-3xl font-semibold text-gray-800 mb-6">Post a Dorm</h2>
-
-    <!-- Success Message -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="p-4 mb-4 text-sm text-white bg-green-500 rounded-lg">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
-        {% csrf_token %}
-        
-        <!-- Dorm Name -->
-        <div class="space-y-2">
-            <label for="id_name" class="text-sm font-medium text-gray-700">Dorm Name</label>
-            <input type="text" name="name" id="id_name" value="{{ form.name.value }}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-        </div>
-
-        <!-- Address -->
-        <div class="space-y-2">
-            <label for="id_address" class="text-sm font-medium text-gray-700">Address</label>
-            <textarea name="address" id="id_address" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>{{ form.address.value }}</textarea>
-        </div>
-
-        <!-- Price -->
-        <div class="space-y-2">
-            <label for="id_price" class="text-sm font-medium text-gray-700">Price (₱)</label>
-            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-        </div>
-
-        <!-- Description -->
-        <div class="space-y-2">
-            <label for="id_description" class="text-sm font-medium text-gray-700">Description</label>
-            <textarea name="description" id="id_description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>{{ form.description.value }}</textarea>
-        </div>
-
-        <!-- Image -->
-        <div class="space-y-2">
-            <label for="id_image" class="text-sm font-medium text-gray-700">Dorm Image</label>
-            <input type="file" name="image" id="id_image" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Availability -->
-        <div class="space-y-2">
-            <label for="id_available" class="text-sm font-medium text-gray-700">Available</label>
-            <input type="checkbox" name="available" id="id_available" value="True" {% if form.available.value %}checked{% endif %} class="p-3">
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit" class="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-            Post Dorm
-        </button>
-    </form>
-
-    <!-- Back to Dashboard Link -->
-    <div class="mt-6 text-center">
-        <a href="{% url 'accounts:dashboard' %}" class="text-green-600 hover:text-green-800 font-medium">Back to Dashboard</a>
+<form method="POST" enctype="multipart/form-data" class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-4 border border-blue-200">
+    {% csrf_token %}
+    
+    <!-- Dorm Name -->
+    <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Dorm Name</label>
+        <input type="text" name="name" id="name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter dorm name" required>
     </div>
-</div>
+
+    <!-- Address -->
+    <div>
+        <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+        <textarea name="address" id="address" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter address" required></textarea>
+    </div>
+
+    <!-- Price -->
+    <div>
+        <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+        <input type="number" name="price" id="price" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+    </div>
+
+    <!-- Description -->
+    <div>
+        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea name="description" id="description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description" required></textarea>
+    </div>
+
+    <!-- Amenities -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Amenities</label>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+            {% for amenity in amenities %}
+            <div class="flex items-center">
+                <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Permit Upload -->
+    <div>
+        <label for="permit" class="block text-sm font-medium text-gray-700">Upload Permit (Images only)</label>
+        <input type="file" name="permit" id="permit" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    </div>
+
+    <!-- Images Upload -->
+    <div>
+        <label for="images" class="block text-sm font-medium text-gray-700">Upload Images</label>
+        <input type="file" name="images" id="images" accept="image/*" multiple class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    </div>
+
+    <!-- Availability -->
+    <div class="flex items-center">
+        <input type="checkbox" name="available" id="available" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <label for="available" class="ml-2 text-sm text-gray-700">Available</label>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-center">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">Add Dorm</button>
+    </div>
+</form>
 
 {% endblock %}

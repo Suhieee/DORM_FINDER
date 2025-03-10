@@ -1,7 +1,7 @@
 from django.urls import reverse_lazy
-from django.contrib.auth import login
+from django.contrib.auth import login , logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView, CreateView, FormView
+from django.views.generic import TemplateView, CreateView, FormView, UpdateView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import get_user_model
@@ -9,20 +9,38 @@ from .forms import CustomUserCreationForm
 from django.shortcuts import redirect
 from django.contrib import messages
 from dormitory.models import Dorm
+from django.views import View
+from user_profile.models import UserProfile
 
 
-# ✅ Register View (CBV)
+
+
+
 class RegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = "accounts/register.html"
-    success_url = reverse_lazy("accounts:dashboard")
 
     def form_valid(self, form):
-        """Log in user after successful registration."""
+        """Log in user after successful registration, create profile, and redirect."""
         user = form.save()
+        # ✅ Create a UserProfile with default image
+        UserProfile.objects.create(user=user, profile_picture="profile_pictures/default.jpg")
+
         login(self.request, user)
         messages.success(self.request, f"Registration successful! Welcome, {user.username}")
-        return super().form_valid(form)
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        """Redirect users based on their type."""
+        user = self.request.user
+        if user.user_type == "Student":
+            return reverse_lazy("accounts:student_dashboard")
+        elif user.user_type == "Teacher":
+            return reverse_lazy("accounts:teacher_dashboard")
+        elif user.user_type == "Admin":
+            return reverse_lazy("accounts:admin_dashboard")
+        else:
+            return reverse_lazy("accounts:dashboard")  # Default fallback
 
     def form_invalid(self, form):
         """Handle errors if registration fails."""
@@ -157,3 +175,12 @@ class RoleBasedRedirectView(LoginRequiredMixin, TemplateView):
             return redirect("accounts:dashboard")
         else:
             return redirect("accounts:login")
+
+class LogoutView(View):
+    """Logs out the user and redirects to the login page."""
+    
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        messages.success(request, "You have been logged out successfully.")
+        return redirect("accounts:login")  # Adjust this to your login route
+

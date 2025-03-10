@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.urls import reverse_lazy
-from .models import Dorm
+from .models import Dorm, DormImage , Amenity
 from .forms import DormForm
 
 # 🚀 Add Dorm (For Landlords)
@@ -11,19 +11,32 @@ class AddDormView(LoginRequiredMixin, CreateView):
     model = Dorm
     form_class = DormForm
     template_name = "dormitory/add_dorm.html"
-    success_url = reverse_lazy("accounts:dashboard")  # Redirect after success
+    success_url = reverse_lazy("accounts:dashboard")  
 
     def form_valid(self, form):
-        """Set the landlord before saving."""
+        """Set the landlord before saving and handle multiple images."""
         if self.request.user.user_type != "landlord":
-            return redirect("accounts:dashboard")  # Restrict to landlords
-        
+            return redirect("accounts:dashboard")  
+
         form.instance.landlord = self.request.user
+        response = super().form_valid(form)
+
+        images = self.request.FILES.getlist('images')  # Get multiple images
+        for image in images:
+            DormImage.objects.create(dorm=self.object, image=image)
+
         messages.success(self.request, "Dorm successfully created!")
-        return super().form_valid(form)
+        return response
+
+    def get_context_data(self, **kwargs):
+        """Pass amenities to the template context."""
+        context = super().get_context_data(**kwargs)
+        context['amenities'] = Amenity.objects.all()  # Pass all amenities to the template
+        return context
 
 
 # 🚀 List of Dorms (For Students)
+# 🚀 Dorm List
 class DormListView(LoginRequiredMixin, ListView):
     model = Dorm
     template_name = "dormitory/dorm_list.html"
@@ -39,6 +52,13 @@ class DormDetailView(LoginRequiredMixin, DetailView):
     model = Dorm
     template_name = "dormitory/dorm_detail.html"
     context_object_name = "dorm"
+
+    # Pass additional context for amenities
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['amenities'] = self.object.amenities.all()  # Get amenities for this dorm
+        return context
+
 
 
 # 🚀 Landlord’s Dorms (My Dorms)
@@ -65,11 +85,34 @@ class EditDormView(LoginRequiredMixin, UpdateView):
         return Dorm.objects.filter(landlord=self.request.user)
 
     def form_valid(self, form):
+        dorm = form.save()
+        images = self.request.FILES.getlist('images')  # Get new images
+
+        # Handle image deletion
+        for image in dorm.images.all():
+            if self.request.POST.get(f'delete_image_{image.id}'):
+                image.delete()
+
+        # Save new images
+        for image in images:
+            DormImage.objects.create(dorm=dorm, image=image)
+
+        # Handle amenities selection
+        amenities = self.request.POST.getlist('amenities')
+        dorm.amenities.set(amenities)
+
         messages.success(self.request, "Dorm successfully updated!")
         return super().form_valid(form)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dorm'] = self.get_object()  # Pass dorm to template for existing images
+        context['all_amenities'] = Amenity.objects.all()  # Pass all amenities to template
+        return context
+
     def get_success_url(self):
         return reverse_lazy("accounts:dashboard")
+
 
 
 # 🚀 Delete Dorm (For Landlords)

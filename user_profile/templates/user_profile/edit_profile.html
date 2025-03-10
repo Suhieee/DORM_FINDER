@@ -1,0 +1,81 @@
+{% extends 'accounts/base.html' %}
+{% block title %} Update Profile {% endblock %}
+{% block content %}
+<section class="flex justify-center  text-black py-6">
+    <div class="w-full max-w-lg p-6 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8">
+        <h1 class="text-2xl font-bold mb-4 text-center text-black">Edit Profile</h1>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Profile Picture Preview -->
+            <div class="flex flex-col items-center">
+                <label for="profile_picture">
+                    <img id="profile_picture_preview" class="w-24 h-24 mb-3 rounded-full shadow-lg cursor-pointer"
+                         src="{% if request.user.userprofile.profile_picture %}{{ request.user.userprofile.profile_picture.url }}{% else %}{{MEDIA_URL}}profile_pictures/default.jpg{% endif %}"
+                         alt="Profile Picture">
+                </label>
+                <input type="file" name="profile_picture" id="profile_picture" class="hidden" onchange="previewImage(event)">
+            </div>
+
+            <script>
+                function previewImage(event) {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const output = document.getElementById('profile_picture_preview');
+                        output.src = reader.result;
+                    }
+                    reader.readAsDataURL(event.target.files[0]);
+                }
+            </script>
+
+            <!-- First Name -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-black">First Name</label>
+                <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+                       class="bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+            </div>
+
+            <!-- Last Name -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-black">Last Name</label>
+                <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+                       class="bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+            </div>
+
+            <!-- Username -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-black">Username</label>
+                <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                       class="bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-black">Email</label>
+                <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+                       class="bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+            </div>
+
+            <!-- Contact Number -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-black">Contact Number</label>
+                <input type="text" name="contact_number" value="{{ form.contact_number.value|default:'' }}"
+                       class="bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+            </div>
+
+            <!-- Save and Cancel Buttons -->
+            <div class="flex justify-end space-x-2">
+                <a href="{% url 'user_profile:profile' %}"
+                   class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-4 focus:outline-none focus:ring-gray-300">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

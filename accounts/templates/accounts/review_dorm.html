@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-    <h2 class="text-2xl font-bold mb-4">Review Dorm: {{ dorm.name }}</h2>
+
 
     <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700">Dorm Name</label>
@@ -25,17 +25,94 @@
         <label class="block text-sm font-medium text-gray-700">Description</label>
         <p>{{ dorm.description }}</p>
     </div>
-
-    {% if dorm.image %}
+        <!-- Available Amenities Section -->
     <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Dorm Image & Landlord Permit</label>
-        <img src="{{ dorm.image.url }}" alt="{{ dorm.name }}" class="w-full h-40 object-cover rounded mt-2">
+        <label class="block text-sm font-medium text-gray-700">Amenities</label>
+        {% if dorm.amenities.all %}
+            <ul class="list-disc list-inside text-gray-600 ml-4">
+                {% for amenity in dorm.amenities.all %}
+                    <li>{{ amenity.name }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500">No amenities listed for this dorm.</p>
+        {% endif %}
+    </div>
+
+
+    <!-- Image Carousel for Dorm Images -->
+
+
+    {% if dorm.images.all %}
+    <h1 class="mb-1 text-xl font-bold text-black">IMAGES:</h1>
+    <div id="gallery" class="relative w-full mt-4 max-w-4xl mx-auto" data-carousel="slide">
+        <!-- Carousel Wrapper -->
+        <div class="relative h-56 md:h-96 overflow-hidden rounded-lg">
+            {% for image in dorm.images.all %}
+            <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                <img src="{{ image.image.url }}" 
+                     class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 object-cover rounded-lg" 
+                     alt="{{ dorm.name }}">
+            </div>
+            {% endfor %}
+        </div>
+    
+        <!-- Previous Button -->
+        <button type="button" class="absolute top-0 left-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                </svg>
+                <span class="sr-only">Previous</span>
+            </span>
+        </button>
+    
+        <!-- Next Button -->
+        <button type="button" class="absolute top-0 right-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                </svg>
+                <span class="sr-only">Next</span>
+            </span>
+        </button>
     </div>
     {% else %}
-    <p>No image available</p>
+    <p class="text-gray-500 mt-4">No dorm images available</p>
     {% endif %}
+    
+    
 
-    <!-- Approval and rejection form -->
+  <!-- Display Business Permit if it exists -->
+
+{% if dorm.permit %}
+<div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700">Business Permit</label>
+    <!-- Thumbnail that opens the modal -->
+    <img src="{{ dorm.permit.url }}" alt="Business Permit"
+        class="w-32 h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-80 transition"
+        onclick="openModal('{{ dorm.permit.url }}')">
+</div>
+
+<!-- Modal for full-size Business Permit (Smaller Size) -->
+<div id="permitModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-70 flex items-center justify-center"
+    onclick="closeModal()">
+    <div class="relative max-w-md mx-auto" onclick="event.stopPropagation()">
+        <img id="modalImage" src="" alt="Business Permit" class="rounded-lg shadow-lg max-h-[70vh] max-w-full">
+
+        <!-- Close Button -->
+        <button onclick="closeModal()"
+            class="absolute top-2 right-6 bg-white text-black rounded-full p-1 shadow-md hover:bg-gray-200 transition">
+            ✕
+        </button>
+    </div>
+</div>
+{% else %}
+<p>No business permit uploaded</p>
+{% endif %}
+
+
+    <!-- Approval and Rejection Form -->
     <form method="POST">
         {% csrf_token %}
         <div class="mb-4">
@@ -55,6 +132,7 @@
     </form>
 </div>
 
+<!-- JavaScript for Show/Hide Rejection Reason -->
 <script>
     const approvalSelect = document.getElementById('approval_status');
     const rejectionReasonDiv = document.getElementById('rejection_reason');
@@ -66,6 +144,20 @@
             rejectionReasonDiv.style.display = 'none';
         }
     });
+
+    // Function to open the modal
+    function openModal(imageUrl) {
+        const modal = document.getElementById('permitModal');
+        const modalImage = document.getElementById('modalImage');
+        modalImage.src = imageUrl;
+        modal.classList.remove('hidden');
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        const modal = document.getElementById('permitModal');
+        modal.classList.add('hidden');
+    }
 </script>
 
 {% endblock %}

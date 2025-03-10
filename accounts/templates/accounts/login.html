@@ -1,51 +1,131 @@
 {% extends 'accounts/base.html' %}
-{% block title %} Login {% endblock %}
+{% block title %}Login{% endblock %}
 {% load static %}
 {% block content %}
 
-<div class="flex items-center justify-center min-h-screen bg-gray-1000 relative">
+<div class="flex justify-center items-center min-h-[90vh] px-4 bg-gray-100">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-4xl flex flex-col md:flex-row">
 
-    <!-- Right Side: Login Form -->
-    <div class="relative w-full max-w-md p-8 bg-red-800 rounded-lg shadow-lg z-10">
-        {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-                <div class="p-3 text-white rounded-md {% if message.tags == 'error' %} bg-red-600 {% elif message.tags == 'success' %} bg-green-600 {% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
+        <!-- Left Section (Logo/Branding) -->
+        <div class="w-full md:w-2/5 flex flex-col justify-center items-center bg-gray-100 p-8">
+            <h1 class="text-4xl font-bold leading-tight text-center">
+                <span class="block text-black">SMART</span>
+                <span class="block text-red-600 flex items-center">
+                    D
+                    <img src="{% static 'images/bg.png' %}" alt="Dorm Logo" class="h-8 w-8 object-cover inline-block mx-1">
+                    RMITORY
+                </span>
+                
+                <span class="block text-black">FINDER</span>
+            </h1>
         </div>
-        {% endif %}
 
-        <h2 class="text-4xl font-bold text-left mb-6 text-white">SIGN IN</h2>
+        <!-- Right Section (Login Form) with Slide-in Animation -->
+        <div class="w-full md:w-3/5 flex items-center justify-center bg-red-800 p-6 md:p-8">
+            <div class="w-full max-w-sm relative opacity-0 translate-y-[-50px] animate-slide-in">
 
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
+                {% if messages %}
+                    <div class="mb-4 space-y-2">
+                        {% for message in messages %}
+                            <div class="p-3 text-white rounded-md 
+                                        {% if message.tags == 'error' %}bg-red-600{% elif message.tags == 'success' %}bg-green-600{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-            <div class="transition-all duration-300">
-                <label for="{{ form.username.id_for_label }}" class="block mb-2 text-l font-medium text-white">Username</label>
-                {{ form.username }}
-                <small class="text-red-400">{{ form.username.errors }}</small> <!-- Show errors -->
+                <h2 class="text-3xl font-bold text-center mb-6 text-white">SIGN IN</h2>
+
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+
+                    <!-- Username Field -->
+                    <div class="relative">
+                        <label for="username" class="block mb-2 text-sm font-medium text-white">Username</label>
+                        <div class="relative w-full">
+                            <!-- SVG Icon -->
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <!-- Input Field -->
+                            <input type="text" id="username" name="username" value="{{ form.username.value }}"
+                                   class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
+                                          focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Username" required />
+                        </div>
+                        <!-- Error Messages -->
+                        {% if form.username.errors %}
+                            <div class="mt-1 text-sm text-red-300">
+                                {% for error in form.username.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+
+                    <!-- Password Field -->
+                    <div class="relative">
+                        <label for="password" class="block mb-2 text-sm font-medium text-white">Password</label>
+                        <div class="relative w-full">
+                            <!-- SVG Icon -->
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v3m-3-6V7a3 3 0 1 1 6 0v4m-8 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/>
+                                </svg>
+                            </div>
+                            <!-- Input Field -->
+                            <input type="password" id="password" name="password" value="{{ form.password.value }}"
+                                   class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
+                                          focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Password" required />
+                        </div>
+                        <!-- Error Messages -->
+                        {% if form.password.errors %}
+                            <div class="mt-1 text-sm text-red-300">
+                                {% for error in form.password.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit"
+                            class="w-full h-12 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-100
+                                   transition-all duration-300">
+                        SIGN IN
+                    </button>
+
+                    <p class="mt-4 text-white text-center">
+                        Don't have an account?
+                        <a href="{% url 'accounts:register' %}" class="text-gray-300 hover:underline">Register</a>
+                    </p>
+                </form>
             </div>
-
-            <div class="transition-all duration-300">
-                <label for="{{ form.password.id_for_label }}" class="block mb-2 text-l font-medium text-white">Password</label>
-                {{ form.password }}
-                <small class="text-red-400">{{ form.password.errors }}</small> <!-- Show errors -->
-            </div>
-
-            <button type="submit" 
-                    class="w-full h-12 text-white bg-red-500 hover:bg-red-400 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all duration-300 ease-in-out">
-                SIGN IN
-            </button>
-
-            <p class="mt-4 text-left text-sm text-white">
-                Don't have an account? 
-                <a href="{% url 'accounts:register' %}" class="text-red-300 hover:underline">Register</a>
-            </p>
-        </form>
+        </div>
     </div>
-
 </div>
+
+<!-- Custom animation styling -->
+<style>
+    @keyframes slideInFromTop {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-slide-in {
+        animation: slideInFromTop 0.8s ease-out forwards;
+    }
+</style>
 
 {% endblock %}

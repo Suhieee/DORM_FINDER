@@ -3,60 +3,186 @@
 {% block title %} Dorm Details {% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg">
-    <h2 class="text-3xl font-semibold text-gray-800">{{ dorm.name }}</h2>
-    
-    <div class="flex items-center mt-4">
-        <p class="text-lg font-medium text-gray-600 mr-4"><strong>Price:</strong> ₱{{ dorm.price }}</p>
-        <p class="text-lg font-medium text-gray-600"><strong>Address:</strong> {{ dorm.address }}</p>
-    </div>
+<div class="max-w-6xl mx-auto p-6 bg-gray-200 shadow-lg rounded-xl">
 
-    <p class="mt-4 text-gray-700"><strong>Description:</strong> {{ dorm.description }}</p>
+    <!-- Dorm Name -->
+    <h2 class="text-4xl font-bold text-black mb-6 text-center">{{ dorm.name }}</h2>
 
-    {% if dorm.image %}
-        <div class="mt-4">
-            <img src="{{ dorm.image.url }}" class="w-full rounded-lg shadow-md" alt="{{ dorm.name }}">
+    <!-- Image Carousel (Full Width) -->
+    {% if dorm.images.all %}
+    <div id="gallery" class="relative w-full mb-8" data-carousel="slide">
+        <div class="relative h-64 md:h-96 overflow-hidden rounded-lg">
+            {% for image in dorm.images.all %}
+            <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                <img src="{{ image.image.url }}" class="absolute block w-full h-full object-cover" alt="{{ dorm.name }}">
+            </div>
+            {% endfor %}
         </div>
+
+        <!-- Carousel Controls -->
+        <button type="button" class="absolute top-0 left-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/30 group-hover:bg-gray-800/60">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </span>
+        </button>
+        <button type="button" class="absolute top-0 right-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/30 group-hover:bg-gray-800/60">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </span>
+        </button>
+    </div>
     {% else %}
-        <p class="text-gray-500 mt-4">No image available</p>
+    <p class="text-gray-500 text-center mb-8">No images available</p>
     {% endif %}
 
-    <div class="mt-6">
-        {% if request.user == dorm.landlord %}
-            <p class="text-gray-700 font-medium"><strong>Status:</strong> 
-                {% if dorm.approval_status == 'approved' %}
-                    <span class="px-4 py-1 text-sm text-green-700 bg-green-100 rounded-full">Approved</span>
-                {% elif dorm.approval_status == 'rejected' %}
-                    <span class="px-4 py-1 text-sm text-red-700 bg-red-100 rounded-full">Rejected</span>
-                {% else %}
-                    <span class="px-4 py-1 text-sm text-yellow-700 bg-yellow-100 rounded-full">Pending</span>
-                {% endif %}
-            </p>
+    <!-- Dorm Details and Tabs -->
+    <div x-data="{ activeTab: 'profile' }" class="md:flex h-full">
+        <!-- Tabs Navigation -->
+        <ul class="flex-column space-y-4 text-sm font-medium text-black md:me-4 mb-4 md:mb-0">
+            <li>
+                <button @click="activeTab = 'profile'" 
+                        :class="activeTab === 'profile' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                    Profile
+                </button>
+            </li>
+            <li>
+                <button @click="activeTab = 'details'" 
+                        :class="activeTab === 'details' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                    Details
+                </button>
+            </li>
+            <li>
+                <button @click="activeTab = 'amenities'" 
+                        :class="activeTab === 'amenities' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                    Amenities
+                </button>
+            </li>
+            <li>
+                <button @click="activeTab = 'map'" 
+                        :class="activeTab === 'map' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                    Map
+                </button>
+            </li>
+            <li>
+                <button @click="activeTab = 'actions'" 
+                        :class="activeTab === 'actions' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                    Actions
+                </button>
+            </li>
+        </ul>
+        
 
-            {% if dorm.approval_status == 'rejected' %}
-                <p class="mt-2 text-red-600 font-semibold"><strong>Reason for Rejection:</strong> {{ dorm.rejection_reason }}</p>
-            {% endif %}
-
-            <!-- Edit and Delete buttons visible only to the landlord -->
-            <div class="mt-4">
-                <a href="{% url 'dormitory:edit_dorm' dorm.id %}" class="bg-yellow-500 text-white px-4 py-2 rounded">Edit</a>
-                <a href="{% url 'dormitory:delete_dorm' dorm.id %}" class="bg-red-500 text-white px-4 py-2 rounded">Delete</a>
+        <!-- Tabs Content -->
+        <div class="p-6 bg-white text-black rounded-lg w-full border border-gray-300">
+            <!-- Profile Tab -->
+            <div x-show="activeTab === 'profile'">
+                <h3 class="text-lg font-bold text-black mb-2">Profile</h3>
+                <div class="flex flex-col items-center mb-4">
+                    <img class="w-24 h-24 mb-3 rounded-full shadow-lg" 
+                         src="{% if dorm.landlord.userprofile.profile_picture %}{{ dorm.landlord.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
+                         alt="Profile Picture"/>
+                    <h5 class="mb-1 text-xl font-medium text-black">{{ dorm.landlord.username }}</h5>
+                    <span class="text-sm text-gray-600">User Type: {{ dorm.landlord.get_user_type_display }}</span>
+                    <span class="text-sm text-gray-600">Contact: {{ dorm.landlord.contact_number }}</span>
+                </div>
             </div>
-        {% endif %}
-    </div>
 
-    <!-- Landlord's Land and Contact Number -->
-    <div class="mt-6">
-        {% if dorm.landlord %}
-            <p class="text-lg font-medium text-gray-800"><strong>Landlord's Land:</strong> {{ dorm.landlord.username }}</p>
-            <p class="text-lg font-medium text-gray-800"><strong>Contact Number:</strong> {{ dorm.landlord.contact_number }}</p>
-        {% else %}
-            <p class="text-gray-500">Landlord information not available</p>
-        {% endif %}
-    </div>
+            <!-- Details Tab -->
+            <div x-show="activeTab === 'details'" class="space-y-6">
+                <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Details</h3>
+                <div class="bg-gray-100 p-4 rounded-lg shadow-sm">
+                    <div class="flex items-center mb-3">
+                        <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2m-1.636 6.364l-1.414-1.414M12 22v-2m-6.364-1.636l1.414-1.414M2 12h2m1.636-6.364l1.414 1.414"></path>
+                        </svg>
+                        <p class="text-gray-700 text-lg"><strong>Price:</strong> <span class="text-green-600 font-semibold">₱{{ dorm.price }}</span></p>
+                    </div>
+                    
+                    <div class="flex items-center mb-3">
+                        <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a2 2 0 00-2-2h-6M9 4H5a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2V8l-4-4z"></path>
+                        </svg>
+                        <p class="text-gray-700 text-lg"><strong>Address:</strong> {{ dorm.address }}</p>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 16v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M3 12h18"></path>
+                        </svg>
+                        <p class="text-gray-700 text-lg"><strong>Description:</strong> {{ dorm.description }}</p>
+                    </div>
+                </div>
+            </div>
+            
 
-    <div class="mt-6">
-        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Back to Dashboard</a>
+            <!-- Amenities Tab -->
+            <div x-show="activeTab === 'amenities'">
+                <h3 class="text-lg font-bold text-black mb-2">Amenities</h3>
+                {% if amenities %}
+                <ul class="list-disc list-inside text-black ml-4">
+                    {% for amenity in amenities %}
+                    <li>{{ amenity.name }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <span class="text-gray-600">No amenities listed for this dorm.</span>
+                {% endif %}
+            </div>
+
+            <!-- Map Tab -->
+            <div x-show="activeTab === 'map'">
+                <h3 class="text-lg font-bold text-black mb-2">Map</h3>
+                <p class="text-black">Map will be displayed here.</p>
+            </div>
+
+            <!-- Actions Tab -->
+            <div x-show="activeTab === 'actions'">
+                <h3 class="text-lg font-bold text-black mb-2">Actions</h3>
+                <div class="flex gap-4">
+                    <a href="{% url 'dormitory:edit_dorm' dorm.id %}"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-all">
+                        Edit
+                    </a>
+                    <button @click="document.getElementById('popup-modal').classList.remove('hidden')"
+                            class="bg-red-600 hover:bg-red-800 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-all">
+                        Delete
+                    </button>
+                </div>
+
+    <!-- Delete Confirmation Modal -->
+                <div id="popup-modal" x-cloak tabindex="-1"
+                    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div class="bg-white p-6 rounded-lg shadow-md max-w-sm">
+                        <h2 class="text-xl font-bold text-black mb-4">Confirm Deletion</h2>
+                        <p class="text-gray-600 mb-6">Are you sure you want to delete this dorm?</p>
+                        <div class="flex justify-end gap-4">
+                            <form action="{% url 'dormitory:delete_dorm' dorm.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg">
+                                    Yes, Delete
+                                </button>
+                            </form>
+                            <button @click="document.getElementById('popup-modal').classList.add('hidden')"
+                                    class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 {% endblock %}

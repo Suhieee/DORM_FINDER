@@ -2,14 +2,14 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
         RegisterView, LoginView, DashboardView,
-        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView ,
     )
 
 app_name = "accounts"
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
 
     path("approve-dorm/<int:pk>/", ApproveDormView.as_view(), name="approve_dorm"),
@@ -17,4 +17,6 @@ urlpatterns = [
     path("review-dorm/<int:pk>/", ReviewDormView.as_view(), name="review_dorm"),
 
     path("role-based-redirect/", RoleBasedRedirectView.as_view(), name="role_based_redirect"),
+
+    
 ]

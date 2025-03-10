@@ -7,73 +7,110 @@
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
     <title>{% block title %}{% endblock %} Dorm Finder</title>
 </head>
+
 <body class="bg-gray-100">
 
-    <!-- Navbar -->
-    <nav class="bg-white border-gray-200 shadow-md dark:bg-gray-900">
+    <nav class="bg-gray-200 border-gray-200">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
             <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-              <img src="{% static 'Dorm.png' %}" class="h-9" alt="Logo" />
-              <span class="self-center text-xl font-bold whitespace-nowrap dark:text-white">
-                <span class="text-black">Smart</span>  <span style="color: #9D2929;">Dormitory</span>  <span class="text-black">Finder</span>
-            </span>
-            <button data-collapse-toggle="navbar-default" type="button"
-                class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden 
-                hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 
-                dark:hover:bg-gray-700 dark:focus:ring-gray-600" 
-                aria-controls="navbar-default" aria-expanded="false">
-                <span class="sr-only">Open main menu</span>
-                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+                <img src="{% static 'images/bg.png' %}" class="h-9" alt="Logo" />
+            </a>
+    
+            <!-- Burger Button for Mobile -->
+            <button data-collapse-toggle="navbar-default" type="button" 
+                    class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200" 
+                    aria-controls="navbar-default" aria-expanded="false">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
             </button>
-            
+    
+            <!-- Navigation Links -->
             <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-                <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 
-                    md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white 
-                    dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-                    
+                <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-200 rounded-lg bg-gray-20 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-gray-200">
                     {% if request.user.is_authenticated %}
                         {% if request.user.user_type == "admin" %}
-                            <li><a href="" class="nav-link">Dashboard</a></li>
-                            <li><a href="" class="nav-link">Manage Users</a></li>
-                            <form method="post" action="{% url 'accounts:logout' %}">
-                              {% csrf_token %}
-                              <button type="submit" class="nav-link">Logout</button>
-                          </form>
+                            <li><a href="#" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Dashboard</a></li>
+                            <li><a href="#" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Manage Users</a></li>
                         {% elif request.user.user_type == "landlord" %}
-                        <li><a href="{% url 'accounts:dashboard' %}" class="nav-link">Home</a></li>
-                        <li><a href="{% url 'dormitory:my_dorms' %}" class="nav-link">My Properties</a></li>
-                        <li><a href="{% url 'dormitory:add_dorm' %}" class="nav-link">Add Dorm</a></li>
-                            <form method="post" action="{% url 'accounts:logout' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="nav-link">Logout</button>
-                            </form>
-
+                            <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
+                            <li><a href="{% url 'dormitory:my_dorms' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">My Properties</a></li>
+                            <li><a href="{% url 'dormitory:add_dorm' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Add Dorm</a></li>
                         {% else %}
-                            <li><a href="{% url 'accounts:dashboard' %}" class="nav-link">Home</a></li>
-                            <li><a href="{% url 'dormitory:dorm_list' %}" class="nav-link">Browse Dorms</a></li>
-                            <form method="post" action="{% url 'accounts:logout' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="nav-link">Logout</button>
-                            </form>
+                            <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
+                            <li><a href="{% url 'dormitory:dorm_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Browse Dorms</a></li>
                         {% endif %}
-                    
+    
+                        <!-- Profile Dropdown -->
+                        <div class="relative flex items-center">
+                            <button id="user-menu-button" class="flex items-center space-x-1 focus:outline-none">
+                                <img src="{% if request.user.userprofile.profile_picture %}{{ request.user.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
+                                alt="Profile" class="w-8 h-8 rounded-full">
+                            </button>
+    
+                            <div id="user-dropdown" class="absolute right-0 top-6 z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-white-700 dark:divide-gray-600">
+                                <div class="px-4 py-3">
+                                    <span class="block text-sm text-gray-900 dark:text-black">{{ request.user.username }}</span>
+                                    <span class="block text-sm text-gray-900 truncate dark:text-black">{{ request.user.email }}</span>
+                                </div>
+                                <ul class="py-2">
+                                    {% if request.user.user_type == "admin" %}
+                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a></li>
+                                    {% elif request.user.user_type == "landlord" %}
+                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a></li>
+                                    {% else %}
+                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a></li>
+                                    {% endif %}
+                                    <li><a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a></li>
+                                </ul>
+                            </div>
+                        </div>
                     {% else %}
-                        <li><a href="{% url 'accounts:login' %}" class="nav-link">Login</a></li>
-                        <li><a href="{% url 'accounts:register' %}" class="nav-link">Register</a></li>
+                        <li><a href="{% url 'accounts:login' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Login</a></li>
+                        <li><a href="{% url 'accounts:register' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Register</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
+    
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const userMenuButton = document.getElementById("user-menu-button");
+    const userDropdown = document.getElementById("user-dropdown");
 
-    <!-- Main Content Block -->
-    <div class="max-w-screen-xl mx-auto p-4">
+    userMenuButton.addEventListener("click", function () {
+        userDropdown.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)) {
+            userDropdown.classList.add("hidden");
+        }
+    });
+});
+</script>
+
+<!-- Page Content Wrapper -->
+<main class="w-full">
+    <div class="max-w-screen-xl mx-auto p-4 md:p-6 lg:p-8">
         {% block content %}
         {% endblock %}
     </div>
+</main>
 
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<!-- Footer Section (Optional) -->
+<footer class="bg-gray-200 text-black mt-8:bg-gray-600">
+    <div class="max-w-screen-xl mx-auto text-center py-4">
+        &copy; 2025 Smart Dormitory Finder
+    </div>
+</footer>
+
+<!-- Flowbite Script -->
+<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+
 </body>
 </html>
