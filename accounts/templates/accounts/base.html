@@ -7,8 +7,19 @@
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
     <title>{% block title %}{% endblock %} Dorm Finder</title>
 </head>
-
-<body class="bg-gray-100">
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex-grow: 1;
+        }
+    </style>
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
     <nav class="bg-gray-200 border-gray-200">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -37,13 +48,62 @@
                             <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
                             <li><a href="{% url 'dormitory:my_dorms' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">My Properties</a></li>
                             <li><a href="{% url 'dormitory:add_dorm' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Add Dorm</a></li>
+
+                            <li class="relative">
+                                <!-- Notification Button (Bell Icon) -->
+                                <button id="notificationButton" class="relative p-2 text-black hover:bg-gray-300 dark:text-white dark:hover:bg-gred-200 rounded-full
+                                ">
+                                    <svg class="w-6 h-6 text-black-800 dark:text-black" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"/>
+                                    </svg>
+                                    <!-- Notification Counter -->
+                                    <span class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full px-1">
+                                        {{ notifications.count }}
+                                    </span>
+                                </button>
+                            
+                                <!-- Notification Dropdown -->
+                                <div id="dropdownNotification" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200 dark:border-gray-200">
+                                    <!-- Header -->
+                                    <div class="flex justify-between items-center bg-red-800 text-white font-medium px-4 py-2 rounded-t-lg">
+                                        <span>Notifications</span>
+                                    </div>
+                            
+                                    <!-- Notification List -->
+                                    <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                                        {% for notification in notifications %}
+                                        <div class="notification-item flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-400 cursor-pointer transition-opacity duration-300"
+                                             data-id="{{ notification.id }}">
+                                            <div class="w-full">
+                                                <p class="text-sm text-black font-extrabold">{{ notification.user.name }}</p>
+                                                <p class="text-sm text-gray-600 dark:text-gray-800">{{ notification.message }}</p>
+                                                <span class="text-xs text-blue-500 dark:text-blue-400">{{ notification.created_at|timesince }} ago</span>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="text-center py-3 text-black dark:text-white">No new notifications</div>
+                                        {% endfor %}
+                                    </div>
+                            
+                                    <!-- Footer: View All -->
+                                    <div class="text-center py-2 bg-red-800 dark:bg-red-800 rounded-b-lg">
+                                        <a href="{% url 'accounts:notification_list' %}" class="text-white hover:underline">View All</a>
+                                    </div>
+                                </div>
+                            </li>
+                            
+
+
                         {% else %}
                             <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
                             <li><a href="{% url 'dormitory:dorm_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Browse Dorms</a></li>
+                            <li><a href="{% url 'dormitory:add_roommate' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Roommate Add</a></li>
+                            <li><a href="{% url 'dormitory:roommate_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Roommate Finder</a></li>
+
                         {% endif %}
     
                         <!-- Profile Dropdown -->
-                        <div class="relative flex items-center">
+                        <div class="relative flex items-center z-50">
                             <button id="user-menu-button" class="flex items-center space-x-1 focus:outline-none">
                                 <img src="{% if request.user.userprofile.profile_picture %}{{ request.user.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
                                 alt="Profile" class="w-8 h-8 rounded-full">
@@ -76,6 +136,7 @@
     </nav>
     
 <script>
+    
 document.addEventListener("DOMContentLoaded", function () {
     const userMenuButton = document.getElementById("user-menu-button");
     const userDropdown = document.getElementById("user-dropdown");
@@ -90,27 +151,94 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const notificationButton = document.getElementById("notificationButton");
+    const dropdownNotification = document.getElementById("dropdownNotification");
+
+    if (notificationButton && dropdownNotification) {
+        // Toggle dropdown on button click
+        notificationButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            dropdownNotification.classList.toggle("hidden");
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (event) {
+            if (!notificationButton.contains(event.target) && !dropdownNotification.contains(event.target)) {
+                dropdownNotification.classList.add("hidden");
+            }
+        });
+
+        // Mark notification as read when clicked & remove
+        document.querySelectorAll(".notification-item").forEach((notif) => {
+            notif.addEventListener("click", function (event) {
+                const notificationId = this.dataset.id;
+
+                fetch(`/accounts/notifications/read/${notificationId}/`, {  // FIXED URL PATH
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(),
+                        "Content-Type": "application/json",
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.classList.add("opacity-50", "transition-opacity", "duration-300"); // Fade out
+                        setTimeout(() => {
+                            this.remove(); // Remove notification from list
+                        }, 300);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            });
+        });
+
+        // Helper function to get CSRF token
+        function getCSRFToken() {
+            let cookieValue = null;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith("csrftoken=")) {
+                    cookieValue = cookie.substring("csrftoken=".length, cookie.length);
+                    break;
+                }
+            }
+            return cookieValue;
+        }
+    }
+});
+
+
 </script>
 
 <!-- Page Content Wrapper -->
-<main class="w-full">
+<main class="flex-1">
     <div class="max-w-screen-xl mx-auto p-4 md:p-6 lg:p-8">
         {% block content %}
         {% endblock %}
     </div>
 </main>
 
-<!-- Footer Section (Optional) -->
-<footer class="bg-gray-200 text-black mt-8:bg-gray-600">
-    <div class="max-w-screen-xl mx-auto text-center py-4">
-        &copy; 2025 Smart Dormitory Finder
+<footer class="bg-gray-200 text-black py-6 border-t border-gray-100 mt-auto">
+    <div class="max-w-screen-xl mx-auto text-center">
+        <h2 class="text-lg font-bold">
+            SMART <span class="text-red-600">DORMITORY</span> FINDER
+        </h2>
+        <div class="text-gray-600 mt-2 space-x-4">
+            <a href="#" class="hover:underline">Terms and Conditions</a> |
+            <a href="#" class="hover:underline">Private Policy</a> |
+            <span>All Rights Reserved</span>
+        </div>
     </div>
 </footer>
+
 
 <!-- Flowbite Script -->
 <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
 
 </body>
 </html>

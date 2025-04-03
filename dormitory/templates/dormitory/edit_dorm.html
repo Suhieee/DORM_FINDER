@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block content %}
+
 <div class="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg border border-blue-200">
     <h2 class="text-3xl font-semibold text-gray-800 mb-6">Edit Dorm</h2>
 
@@ -18,46 +19,56 @@
     <form method="POST" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
 
+
+        
         <!-- Dorm Name -->
         <div>
             <label for="id_name" class="block text-sm font-medium text-gray-700">Dorm Name</label>
-            <input type="text" name="name" id="id_name" value="{{ form.name.value }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter dorm name" required>
+            <input type="text" name="name" id="id_name" value="{{ form.name.value }}" 
+                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="Enter dorm name" required>
         </div>
 
         <!-- Address -->
         <div>
             <label for="id_address" class="block text-sm font-medium text-gray-700">Address</label>
-            <textarea name="address" id="id_address" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter address" required>{{ form.address.value }}</textarea>
+            <textarea name="address" id="id_address" rows="3" 
+                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                      placeholder="Enter address" required>{{ form.address.value }}</textarea>
         </div>
 
         <!-- Price -->
         <div>
             <label for="id_price" class="block text-sm font-medium text-gray-700">Price (₱)</label>
-            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" 
+                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="Enter price" required>
         </div>
 
         <!-- Description -->
         <div>
             <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
-            <textarea name="description" id="id_description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description" required>{{ form.description.value }}</textarea>
+            <textarea name="description" id="id_description" rows="4" 
+                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                      placeholder="Enter description" required>{{ form.description.value }}</textarea>
         </div>
-        
+
         <!-- Amenities -->
         <div>
-            <label for="id_amenities" class="block text-sm font-medium text-gray-700">Amenities</label>
+            <label class="block text-sm font-medium text-gray-700">Amenities</label>
             <div class="mt-1 grid grid-cols-2 gap-2">
                 {% for amenity in all_amenities %}
                     <div class="flex items-center">
                         <input type="checkbox" name="amenities" value="{{ amenity.id }}" 
                                {% if amenity in dorm.amenities.all %}checked{% endif %}
                                class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
+                        <label class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
                     </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Existing Images Preview -->
+        <!-- Existing Images -->
         {% if dorm.images.all %}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Existing Images</label>
@@ -65,7 +76,8 @@
                     {% for image in dorm.images.all %}
                         <div class="relative">
                             <img src="{{ image.image.url }}" class="h-24 w-24 rounded-md shadow-md object-cover">
-                            <input type="checkbox" name="delete_image_{{ image.id }}" class="absolute top-0 right-0 m-1">
+                            <input type="checkbox" name="delete_image_{{ image.id }}" 
+                                   class="absolute top-0 right-0 m-1">
                         </div>
                     {% endfor %}
                 </div>
@@ -73,66 +85,112 @@
             </div>
         {% endif %}
 
-        <!-- Add New Images -->
+        <!-- New Images -->
         <div>
             <label for="id_images" class="block text-sm font-medium text-gray-700">Upload Images</label>
-            <input type="file" name="images" id="id_images" accept="image/*" multiple class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <input type="file" name="images" id="id_images" multiple 
+                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
 
-        <!-- Business Permit Upload -->
+        <!-- Business Permit -->
         <div>
-            <label for="id_permit" class="block text-sm font-medium text-gray-700">Business Permit (Image only)</label>
+            <label class="block text-sm font-medium text-gray-700">Business Permit</label>
             {% if dorm.permit %}
                 <div class="flex items-center gap-4 mb-2">
-                    <img src="{{ dorm.permit.url }}" alt="Business Permit" class="h-24 w-24 rounded-md shadow-md object-cover">
+                    <img src="{{ dorm.permit.url }}" class="h-24 w-24 rounded-md shadow-md object-cover">
                     <input type="checkbox" name="delete_permit" class="h-4 w-4 text-red-600">
-                    <label for="delete_permit" class="text-sm text-gray-700">Delete existing permit</label>
+                    <label class="text-sm text-gray-700">Delete current permit</label>
                 </div>
             {% endif %}
-            <input type="file" name="permit" id="id_permit" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <input type="file" name="permit" id="id_permit" 
+                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+
+        <!-- Map Section -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Location</label>
+            <div id="map" style="height: 300px; width: 100%;" class="mt-1 rounded-md border border-gray-300"></div>
+            <small class="text-gray-500">Drag marker or click map to update location</small>
+            <input type="hidden" name="latitude" id="id_latitude" value="{{ dorm.latitude }}">
+            <input type="hidden" name="longitude" id="id_longitude" value="{{ dorm.longitude }}">
         </div>
 
         <!-- Availability -->
         <div class="flex items-center">
-            <input type="checkbox" name="available" id="id_available" value="True" {% if form.available.value %}checked{% endif %} class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <input type="checkbox" name="available" id="id_available" 
+                   {% if form.available.value %}checked{% endif %}
+                   class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
             <label for="id_available" class="ml-2 text-sm text-gray-700">Available</label>
         </div>
 
         <!-- Submit Button -->
         <div class="text-center">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">Update Dorm</button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">
+                Update Dorm
+            </button>
         </div>
     </form>
 
-    <!-- Back to Dashboard Link -->
+    <!-- Back Link -->
     <div class="mt-6 text-center">
-        <a href="{% url 'accounts:dashboard' %}" class="text-green-600 hover:text-green-800 font-medium">Back to Dashboard</a>
+        <a href="{% url 'accounts:dashboard' %}" class="text-green-600 hover:text-green-800 font-medium">
+            Back to Dashboard
+        </a>
     </div>
 </div>
 
-<!-- JavaScript for Image Preview -->
+<!-- Leaflet JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
 <script>
-    const imageInput = document.getElementById('id_images');
-    const imagePreview = document.getElementById('image-preview');
-
-    imageInput.addEventListener('change', () => {
-        imagePreview.innerHTML = '';
-        const files = imageInput.files;
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.classList.add('h-24', 'w-24', 'rounded-lg', 'shadow-md', 'object-cover');
-                imagePreview.appendChild(img);
-            };
-
-            reader.readAsDataURL(file);
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get initial coordinates from form or use defaults
+        const initialLat = parseFloat(document.getElementById('id_latitude').value) || 14.5995;
+        const initialLng = parseFloat(document.getElementById('id_longitude').value) || 120.9842;
+        
+        // Initialize map
+        const map = L.map('map').setView([initialLat, initialLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+        // Create marker
+        const marker = L.marker([initialLat, initialLng], {
+            draggable: true,
+            autoPan: true
+        }).addTo(map);
+    
+        // Function to update form coordinates with proper decimal formatting
+        function updateFormCoordinates(lat, lng) {
+            document.getElementById('id_latitude').value = lat.toFixed(6);
+            document.getElementById('id_longitude').value = lng.toFixed(6);
+            console.log('Updated coordinates:', lat.toFixed(6), lng.toFixed(6));
         }
+    
+        // Marker drag event
+        marker.on('dragend', function(e) {
+            const newPos = marker.getLatLng();
+            updateFormCoordinates(newPos.lat, newPos.lng);
+        });
+    
+        // Map click event
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            updateFormCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+    
+        // Ensure coordinates are updated before form submission
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function() {
+            const currentPos = marker.getLatLng();
+            updateFormCoordinates(currentPos.lat, currentPos.lng);
+        });
+    
+        // Fix for map rendering issues
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
     });
-</script>
-
+    </script>
 {% endblock %}

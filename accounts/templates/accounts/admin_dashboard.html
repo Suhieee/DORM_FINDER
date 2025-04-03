@@ -3,10 +3,8 @@
 {% load static %}
 {% block content %}
 
-<h2 class="text-2xl font-bold text-center mb-4">Pending Dorm Listings</h2>
+
 {% if messages %} 
-
-
 <div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-100 dark:text-green-400" role="alert">
     <svg class="shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
       <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
@@ -24,42 +22,44 @@
       </svg>
     </button>
   </div>
-
 {% endif %}
+<div class="max-w-6xl mx-auto px-4">
+    <!-- Page Header -->
+    <div class="bg-red-800 text-white text-center py-3 rounded-lg mb-6">
+        <h2 class="text-xl font-bold">Pending Dorm Listing</h2>
+    </div>
 
-{% if pending_dorms %}
-<div class="space-y-4">
-    {% for dorm in pending_dorms %}
-        <div class="bg-white p-4 shadow-md rounded-lg">
-            <h3 class="text-lg font-semibold">{{ dorm.name }}</h3>
-            <p class="text-gray-600">{{ dorm.description }}</p>
-            <p class="text-gray-600">Location: {{ dorm.address }}</p>
-            <p class="text-gray-600">Price: ₱{{ dorm.price }}</p>
-            <p class="text-gray-600">Landlord: {{ dorm.landlord.username }}</p>
+    {% if pending_dorms %}
+    <!-- Dorm Listings Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for dorm in pending_dorms %}
+      <div class="bg-gray-200 p-6 shadow-md rounded-lg h-full flex flex-col justify-between">
+          <!-- Content Wrapper -->
+          <div class="flex-grow">
+              <h3 class="text-lg font-semibold">{{ dorm.name }}</h3>
+              <p class="text-gray-600 mt-2">Location: {{ dorm.address }}</p>
+              <p class="text-gray-600 mt-2">Price: ₱{{ dorm.price }}</p>
+              <p class="text-gray-600 mt-2">Landlord: {{ dorm.landlord.username }}</p>
+          </div>
+  
+          <!-- Review Button - Always at Bottom -->
+          <a href="{% url 'accounts:review_dorm' dorm.id %}" 
+             class="block text-center bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-800 w-full mt-6">
+              Review Dorm
+          </a>
+      </div>
+      {% endfor %}
+  </div>
 
-            <!-- Display Business Permit if it exists -->
-            {% if dorm.permit %}
-            <div class="mt-3">
-                <h4 class="text-sm font-medium text-gray-700 mb-1">Business Permit:</h4>
-                <img src="{{ dorm.permit.url }}" alt="Business Permit" class="h-32 w-32 rounded-lg shadow-md object-cover">
-            </div>
-            {% else %}
-            <p class="text-gray-500 mt-2">No Business Permit uploaded.</p>
-            {% endif %}
+    </div>
 
-            <div class="flex space-x-2 mt-3">
-                <!-- Link to review dorm details -->
-                <a href="{% url 'accounts:review_dorm' dorm.id %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Review Dorm</a>
-            </div>
-        </div>
-    {% endfor %}
+    {% else %}
+    <div class="text-center mt-10">
+        <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
+        <h2 class="text-lg font-bold mt-4">No Dorms Pending Review</h2>
+        <p class="text-gray-500">Check back later for new dorm submissions.</p>
+    </div>
+    {% endif %}
 </div>
-{% else %}
-<div class="text-center mt-10">
-    <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
-    <h2 class="text-lg font-bold mt-4">No Dorms Pending Review</h2>
-    <p class="text-gray-500">Check back later for new dorm submissions.</p>
-</div>
-{% endif %}
 
 {% endblock %}

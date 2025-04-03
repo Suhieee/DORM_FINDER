@@ -1,0 +1,17 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<h2>Reviews for {{ dorm.name }}</h2>
+
+{% for review in reviews %}
+    <div class="review">
+        <strong>{{ review.user.username }}</strong> - Rated: {{ review.rating }}/5
+        <p>{{ review.comment }}</p>
+        <small>Posted on {{ review.created_at }}</small>
+    </div>
+{% empty %}
+    <p>No reviews yet. Be the first to review!</p>
+{% endfor %}
+
+<a href="{% url 'dormitory:add_review' dorm.id %}">Add a Review</a>
+{% endblock %}

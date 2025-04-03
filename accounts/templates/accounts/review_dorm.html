@@ -3,149 +3,123 @@
 {% block title %}Review Dorm{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
+<div class="w-full mx-auto p-6 bg-white shadow-md rounded-lg">
 
+    <!-- Top Section with Dorm Image Carousel and Address -->
+    <div class="relative text-black p-6 rounded-lg mb-6">
+        {% if dorm.images.all %}
+        <div id="gallery" class="relative w-full" data-carousel="slide">
+            <!-- Dorm Image Carousel -->
+            <div id="gallery" class="relative w-full max-w-5xl mx-auto mb-8 h-96" data-carousel="slide">
+                <!-- Carousel Wrapper -->
+                <div class="relative h-96 overflow-hidden rounded-lg">
+                    {% for image in dorm.images.all %}
+                    <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                        <img src="{{ image.image.url }}" class="absolute block w-full h-full object-cover rounded-lg" alt="Dorm Image">
+                    </div>
+                    {% endfor %}
+                </div>
+                    <!-- Slider Controls (Fixed Position & Size) -->
+                    <button type="button" 
+                        class="absolute top-1/2 left-6 z-40 transform -translate-y-1/2 bg-gray-900/60 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-gray-900/80 transition"
+                        data-carousel-prev>
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
 
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Dorm Name</label>
-        <p>{{ dorm.name }}</p>
-    </div>
-
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Address</label>
-        <p>{{ dorm.address }}</p>
-    </div>
-
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Price</label>
-        <p>₱{{ dorm.price }}</p>
-    </div>
-
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Description</label>
-        <p>{{ dorm.description }}</p>
-    </div>
-        <!-- Available Amenities Section -->
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Amenities</label>
-        {% if dorm.amenities.all %}
-            <ul class="list-disc list-inside text-gray-600 ml-4">
-                {% for amenity in dorm.amenities.all %}
-                    <li>{{ amenity.name }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="text-gray-500">No amenities listed for this dorm.</p>
-        {% endif %}
-    </div>
-
-
-    <!-- Image Carousel for Dorm Images -->
-
-
-    {% if dorm.images.all %}
-    <h1 class="mb-1 text-xl font-bold text-black">IMAGES:</h1>
-    <div id="gallery" class="relative w-full mt-4 max-w-4xl mx-auto" data-carousel="slide">
-        <!-- Carousel Wrapper -->
-        <div class="relative h-56 md:h-96 overflow-hidden rounded-lg">
-            {% for image in dorm.images.all %}
-            <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
-                <img src="{{ image.image.url }}" 
-                     class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 object-cover rounded-lg" 
-                     alt="{{ dorm.name }}">
+                    <button type="button" 
+                        class="absolute top-1/2 right-6 z-40 transform -translate-y-1/2 bg-gray-900/60 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-gray-900/80 transition"
+                        data-carousel-next>
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                <!-- Dorm Name & Address (Aligned) -->
+                <div class="absolute bottom-0 left-0 right-0 bg-red-800 bg-opacity-90 text-white p-4 text-center rounded-b-lg">
+                    <h1 class="text-2xl font-bold">{{ dorm.name }}</h1>
+                    <p class="text-lg font-semibold">{{ dorm.address }}</p>
+                </div>
             </div>
-            {% endfor %}
+
+
+        {% else %}
+        <div class="w-full h-64 flex items-center justify-center bg-gray-300 rounded-lg">
+            <span class="font-bold">No Image Available</span>
+        </div>
+        {% endif %}
+
+        <!-- Dorm Name & Address (Restored to Original Position) -->
+        <div class="absolute bottom-0 left-0 w-full bg-red-800 bg-opacity-50 text-white p-1 text-center z-30">
+            <h1 class="text-2xl font-bold">{{ dorm.name }}</h1>
+            <p class="text-lg font-semibold">{{ dorm.address }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6 items-start">
+        <!-- Description & Amenities -->
+        <div class="flex flex-col justify-between">
+            <div>
+                <h2 class="text-xl font-bold mb-2">Description:</h2>
+                <p class="text-gray-700 font-semibold leading-relaxed">{{ dorm.description }}</p>
+    
+                <h2 class="text-xl font-bold mt-6">Amenities:</h2>
+                {% if dorm.amenities.all %}
+                <ul class="mt-2 space-y-2">
+                    {% for amenity in dorm.amenities.all %}
+                    <li class="flex items-center space-x-3 bg-red-100 p-3 rounded-lg text-gray-900 text-lg font-extrabold hover:bg-red-200 transition">
+                        <!-- SVG Icon -->
+                        <svg class="w-7 h-7 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{{ amenity.name }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                {% else %}
+                <p class="text-gray-500 font-semibold">No amenities listed.</p>
+                {% endif %}
+            </div>
         </div>
     
-        <!-- Previous Button -->
-        <button type="button" class="absolute top-0 left-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                </svg>
-                <span class="sr-only">Previous</span>
-            </span>
-        </button>
-    
-        <!-- Next Button -->
-        <button type="button" class="absolute top-0 right-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                </svg>
-                <span class="sr-only">Next</span>
-            </span>
-        </button>
+        <!-- Business Permit -->
+        <div class="flex flex-col items-center">
+            <h2 class="text-xl font-bold mb-2">Business Permit</h2>
+            {% if dorm.permit %}
+            <img src="{{ dorm.permit.url }}" alt="Business Permit" class="w-full max-w-xs h-auto object-cover rounded-lg shadow-md cursor-pointer hover:opacity-80 transition" onclick="openModal('{{ dorm.permit.url }}')">
+            {% else %}
+            <p class="text-gray-500 font-semibold">No business permit uploaded.</p>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-    <p class="text-gray-500 mt-4">No dorm images available</p>
-    {% endif %}
-    
-    
 
-  <!-- Display Business Permit if it exists -->
-
-{% if dorm.permit %}
-<div class="mb-4">
-    <label class="block text-sm font-medium text-gray-700">Business Permit</label>
-    <!-- Thumbnail that opens the modal -->
-    <img src="{{ dorm.permit.url }}" alt="Business Permit"
-        class="w-32 h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-80 transition"
-        onclick="openModal('{{ dorm.permit.url }}')">
-</div>
-
-<!-- Modal for full-size Business Permit (Smaller Size) -->
-<div id="permitModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-70 flex items-center justify-center"
-    onclick="closeModal()">
-    <div class="relative max-w-md mx-auto" onclick="event.stopPropagation()">
-        <img id="modalImage" src="" alt="Business Permit" class="rounded-lg shadow-lg max-h-[70vh] max-w-full">
-
-        <!-- Close Button -->
-        <button onclick="closeModal()"
-            class="absolute top-2 right-6 bg-white text-black rounded-full p-1 shadow-md hover:bg-gray-200 transition">
-            ✕
-        </button>
-    </div>
-</div>
-{% else %}
-<p>No business permit uploaded</p>
-{% endif %}
-
-
-    <!-- Approval and Rejection Form -->
-    <form method="POST">
+    <!-- Approval Form -->
+    <form method="POST" class="mt-6">
         {% csrf_token %}
-        <div class="mb-4">
-            <label for="approval_status" class="block text-sm font-medium text-gray-700">Approve or Reject</label>
-            <select name="approval_status" id="approval_status" class="w-full border border-gray-300 rounded-md p-2" required>
+        <div>
+            <label for="approval_status" class="block text-sm font-bold text-gray-700">Approve or Reject</label>
+            <select name="approval_status" id="approval_status" class="w-full border border-gray-300 rounded-md p-2 font-semibold" required>
                 <option value="approved">Approve</option>
                 <option value="rejected">Reject</option>
             </select>
         </div>
 
-        <div class="mb-4" id="rejection_reason" style="display:none;">
-            <label for="rejection_reason_input" class="block text-sm font-medium text-gray-700">Rejection Reason</label>
-            <textarea id="rejection_reason_input" name="rejection_reason" class="w-full border border-gray-300 rounded-md p-2" placeholder="Please provide a reason for rejection"></textarea>
+        <div class="mt-4 hidden" id="rejection_reason">
+            <label for="rejection_reason_input" class="block text-sm font-bold text-gray-700">Rejection Reason</label>
+            <textarea id="rejection_reason_input" name="rejection_reason" class="w-full border border-gray-300 rounded-md p-2 font-semibold" placeholder="Provide a reason for rejection"></textarea>
         </div>
 
-        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Submit</button>
+        <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 mt-4 font-bold">Submit</button>
     </form>
 </div>
 
-<!-- JavaScript for Show/Hide Rejection Reason -->
+<!-- JavaScript for Show/Hide Rejection Reason & Modal -->
 <script>
-    const approvalSelect = document.getElementById('approval_status');
-    const rejectionReasonDiv = document.getElementById('rejection_reason');
-
-    approvalSelect.addEventListener('change', function() {
-        if (approvalSelect.value === 'rejected') {
-            rejectionReasonDiv.style.display = 'block';
-        } else {
-            rejectionReasonDiv.style.display = 'none';
-        }
+    document.getElementById('approval_status').addEventListener('change', function() {
+        document.getElementById('rejection_reason').style.display = this.value === 'rejected' ? 'block' : 'none';
     });
 
-    // Function to open the modal
     function openModal(imageUrl) {
         const modal = document.getElementById('permitModal');
         const modalImage = document.getElementById('modalImage');
@@ -153,11 +127,17 @@
         modal.classList.remove('hidden');
     }
 
-    // Function to close the modal
     function closeModal() {
-        const modal = document.getElementById('permitModal');
-        modal.classList.add('hidden');
+        document.getElementById('permitModal').classList.add('hidden');
     }
 </script>
+
+<!-- Business Permit Modal -->
+<div id="permitModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-70 flex items-center justify-center" onclick="closeModal()">
+    <div class="relative max-w-md mx-auto" onclick="event.stopPropagation()">
+        <img id="modalImage" src="" alt="Business Permit" class="rounded-lg shadow-lg max-h-[70vh] max-w-full">
+        <button onclick="closeModal()" class="absolute top-2 right-2 bg-white text-black rounded-full p-1 shadow-md hover:bg-gray-200 transition">✕</button>
+    </div>
+</div>
 
 {% endblock %}

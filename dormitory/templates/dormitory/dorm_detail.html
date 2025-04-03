@@ -1,10 +1,31 @@
 {% extends 'accounts/base.html' %}
-
+{% load static %}
 {% block title %} Dorm Details {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-6 bg-gray-200 shadow-lg rounded-xl">
 
+{% if messages %} 
+<div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-100 dark:text-green-400" role="alert">
+    <svg class="shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+    </svg>
+    <span class="sr-only">Info</span>
+    <div class="ms-3 text-sm font-medium">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-white-700" data-dismiss-target="#alert-3" aria-label="Close">
+      <span class="sr-only">Close</span>
+      <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+    </button>
+</div>
+{% endif %}
+
+<!-- Rest of the Dorm Details Content -->
+<div class="max-w-6xl mx-auto p-6 bg-gray-200 shadow-lg rounded-xl">
     <!-- Dorm Name -->
     <h2 class="text-4xl font-bold text-black mb-6 text-center">{{ dorm.name }}</h2>
 
@@ -65,22 +86,23 @@
                 </button>
             </li>
             <li>
-                <button @click="activeTab = 'map'" 
+                <button @click="activeTab = 'map'; $nextTick(() => initializeMap())" 
                         :class="activeTab === 'map' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
                         class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
                     Map
                 </button>
             </li>
-            <li>
-                <button @click="activeTab = 'actions'" 
-                        :class="activeTab === 'actions' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
-                        class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
-                    Actions
-                </button>
-            </li>
+            {% if request.user == dorm.landlord %}
+                <li>
+                    <button @click="activeTab = 'actions'" 
+                            :class="activeTab === 'actions' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                            class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                        Actions
+                    </button>
+                </li>
+            {% endif %}
         </ul>
         
-
         <!-- Tabs Content -->
         <div class="p-6 bg-white text-black rounded-lg w-full border border-gray-300">
             <!-- Profile Tab -->
@@ -124,7 +146,6 @@
                 </div>
             </div>
             
-
             <!-- Amenities Tab -->
             <div x-show="activeTab === 'amenities'">
                 <h3 class="text-lg font-bold text-black mb-2">Amenities</h3>
@@ -141,16 +162,16 @@
 
             <!-- Map Tab -->
             <div x-show="activeTab === 'map'">
-                <h3 class="text-lg font-bold text-black mb-2">Map</h3>
-                <p class="text-black">Map will be displayed here.</p>
+                <h3 class="text-lg font-bold text-black mb-2">Location</h3>
+                <div id="dormitory-map" class="h-96 w-full border border-gray-300 rounded-md mb-6"></div>
             </div>
 
-            <!-- Actions Tab -->
+            {% if request.user == dorm.landlord %}
             <div x-show="activeTab === 'actions'">
                 <h3 class="text-lg font-bold text-black mb-2">Actions</h3>
                 <div class="flex gap-4">
                     <a href="{% url 'dormitory:edit_dorm' dorm.id %}"
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-all">
+                       class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-all">
                         Edit
                     </a>
                     <button @click="document.getElementById('popup-modal').classList.remove('hidden')"
@@ -158,8 +179,8 @@
                         Delete
                     </button>
                 </div>
-
-    <!-- Delete Confirmation Modal -->
+            
+                <!-- Delete Confirmation Modal -->
                 <div id="popup-modal" x-cloak tabindex="-1"
                     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div class="bg-white p-6 rounded-lg shadow-md max-w-sm">
@@ -181,8 +202,303 @@
                     </div>
                 </div>
             </div>
-
+            {% endif %}            
         </div>
     </div>
 </div>
+<br>
+
+<!-- Reviews Section -->
+<h3 class="text-2xl font-bold text-black mb-4">Reviews</h3>
+
+<!-- Main container with Alpine.js data -->
+<div x-data="{
+    openEditModal: false,
+    openDeleteModal: false,
+    selectedRating: 0,
+    currentReviewId: null,
+    currentReviewComment: '',
+    setReviewData(reviewId, rating, comment) {
+        this.currentReviewId = reviewId;
+        this.selectedRating = rating;
+        this.currentReviewComment = comment;
+        this.openEditModal = true;
+    }
+}">
+    {% for review in dorm.reviews.all %}
+    <div class="relative mb-4 p-6 bg-white rounded-lg shadow-md border border-gray-200">
+        <!-- Profile Picture (Top Right) -->
+        <div class="absolute top-4 right-6">
+            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'profile_pictures/default.jpg' %}{% endif %}" 
+                 alt="{{ review.user.username }}"
+                 class="w-12 h-12 rounded-full object-cover border border-gray-300">
+        </div>
+
+        <!-- Review Content -->
+        <div>
+            <strong class="text-lg">{{ review.user.username }}</strong>
+            <div class="flex">
+                {% for i in "12345" %}
+                    {% if i|add:"0" <= review.rating %}
+                        <span class="text-yellow-500">★</span>
+                    {% else %}
+                        <span class="text-gray-400">★</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Review Comment -->
+            <p class="mt-2 text-gray-700">{{ review.comment|default:"No comment provided." }}</p>
+
+            <!-- Timestamp -->
+            <small class="text-gray-500">Posted on {{ review.created_at }}</small>
+
+            <!-- Edit and Delete Dropdown (Only for Review Owner) -->
+            {% if request.user == review.user %}
+            <div class="mt-4 flex items-center space-x-4">
+                <!-- Dropdown Button -->
+                <div class="relative">
+                    <button id="dropdownButton{{ review.id }}" data-dropdown-toggle="dropdownMenu{{ review.id }}"
+                        class="inline-block text-gray-500 hover:bg-gray-100 
+                        focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg text-sm p-1.5" 
+                        type="button">
+                        <span class="sr-only">Open menu</span>
+                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
+                            <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="dropdownMenu{{ review.id }}" class="z-10 hidden text-base list-none bg-white divide-y divide-gray-100 
+                        rounded-lg shadow-sm w-44">
+                        <ul class="py-2" aria-labelledby="dropdownButton{{ review.id }}">
+                            <li>
+                                <button @click="setReviewData('{{ review.id }}', {{ review.rating }}, `{{ review.comment|escapejs }}`)"
+                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    ✏️ Edit
+                                </button>
+                            </li>
+                            <li>
+                                <button @click="openDeleteModal = true; currentReviewId = '{{ review.id }}'"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    🗑️ Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-600">No reviews yet. Be the first to review!</p>
+    {% endfor %}
+
+    <!-- Edit Modal -->
+    <template x-if="openEditModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-md w-full">
+                <h2 class="text-xl font-bold text-black mb-4">Edit Your Review</h2>
+
+                <form method="post" :action="'/dormitory/dorms/{{ dorm.id }}/reviews/' + currentReviewId + '/edit/'">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Rating</label>
+                        <div class="flex space-x-1 mt-2">
+                            {% for i in "12345" %}
+                                <span class="cursor-pointer text-2xl transition"
+                                    :class="selectedRating >= {{ i }} ? 'text-yellow-500' : 'text-gray-300'"
+                                    @click="selectedRating = {{ i }}"
+                                    data-value="{{ i }}">★</span>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" x-model="selectedRating">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="id_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
+                        <textarea name="comment" id="id_comment" rows="4" x-model="currentReviewComment"
+                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                            focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-4">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">
+                            Save Changes
+                        </button>
+                        <button type="button" @click="openEditModal = false"
+                            class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <!-- Delete Modal -->
+    <template x-if="openDeleteModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-sm">
+                <h2 class="text-xl font-bold text-black mb-4">Confirm Deletion</h2>
+                <p class="text-gray-600 mb-6">Are you sure you want to delete this review?</p>
+                <div class="flex justify-end gap-4">
+                    <form :action="'/dormitory/dorms/{{ dorm.id }}/reviews/' + currentReviewId + '/delete/'" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg">
+                            Yes, Delete
+                        </button>
+                    </form>
+                    <button @click="openDeleteModal = false"
+                        class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<!-- Add Review Form -->
+{% if request.user.user_type == "student" %}
+<h2 class="text-xl font-bold text-black mb-2">Write a Review for {{ dorm.name }}</h2>
+<form method="post" class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+    {% csrf_token %}
+
+    <!-- Star Rating Selection -->
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Rating</label>
+        <div id="star-rating" class="flex space-x-1 mt-2">
+            {% for i in "12345" %}
+                <span class="cursor-pointer text-gray-300 text-2xl hover:text-yellow-500 transition"
+                      data-value="{{ i }}">★</span>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="rating" id="selected-rating" value="0">
+    </div>
+
+    <!-- Comment Textarea -->
+    <div class="mb-4">
+        <label for="id_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
+        <textarea name="comment" id="id_comment" rows="4"
+                  class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ form.comment.value }}</textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition">
+        Submit Review
+    </button>
+</form>
+{% endif %}
+
+<!-- Load Leaflet.js CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- JavaScript for Star Rating Selection and Map -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Star Rating Functionality
+        const stars = document.querySelectorAll("#star-rating span");
+        const ratingInput = document.getElementById("selected-rating");
+        
+        if (stars.length && ratingInput) {
+            stars.forEach(star => {
+                star.addEventListener("click", function() {
+                    const selectedValue = parseInt(this.getAttribute("data-value"));
+                    ratingInput.value = selectedValue;
+                    
+                    // Update star colors
+                    stars.forEach((s, index) => {
+                        if (index < selectedValue) {
+                            s.classList.remove("text-gray-300");
+                            s.classList.add("text-yellow-500");
+                        } else {
+                            s.classList.remove("text-yellow-500");
+                            s.classList.add("text-gray-300");
+                        }
+                    });
+                });
+                
+                // Add hover effect
+                star.addEventListener("mouseover", function() {
+                    const hoverValue = parseInt(this.getAttribute("data-value"));
+                    stars.forEach((s, index) => {
+                        if (index < hoverValue && !ratingInput.value) {
+                            s.classList.add("text-yellow-300");
+                        }
+                    });
+                });
+                
+                star.addEventListener("mouseout", function() {
+                    stars.forEach(s => {
+                        s.classList.remove("text-yellow-300");
+                    });
+                });
+            });
+        }
+
+        // Map Initialization Function
+        window.initializeMap = function() {
+            const mapElement = document.getElementById('dormitory-map');
+            if (!mapElement) return;
+            
+            // Clear any existing map
+            while (mapElement.firstChild) {
+                mapElement.removeChild(mapElement.firstChild);
+            }
+            
+            {% if dorm.latitude and dorm.longitude %}
+            const map = L.map(mapElement).setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(map);
+            
+            const dormIcon = L.icon({
+                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34]
+            });
+            
+            L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}], {
+                icon: dormIcon
+            }).addTo(map)
+            .bindPopup(`
+                <div class="font-bold">{{ dorm.name }}</div>
+                <div class="text-sm">{{ dorm.address }}</div>
+            `)
+            .openPopup();
+            
+            L.circle([{{ dorm.latitude }}, {{ dorm.longitude }}], {
+                color: '#3388ff',
+                fillColor: '#3388ff',
+                fillOpacity: 0.2,
+                radius: 50
+            }).addTo(map);
+            
+            // Fix map rendering issues
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+            {% else %}
+            mapElement.innerHTML = `
+                <div class="p-4 text-center text-gray-500">
+                    <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="mt-2">Location data not available</p>
+                </div>
+            `;
+            {% endif %}
+        };
+    });
+</script>
+
 {% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'accounts/base.html' %}
+{% block title %} Add Roommate {% endblock %}
+{% load static %}
+{% block content %}
+
+<form method="POST" enctype="multipart/form-data" class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-4 border border-blue-200">
+    {% csrf_token %}
+    
+    <!-- Name -->
+    <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" name="name" id="name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your name" required>
+    </div>
+
+    <!-- Age -->
+    <div>
+        <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
+        <input type="number" name="age" id="age" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your age" required>
+    </div>
+
+    <!-- Profile Image Upload -->
+    <div>
+        <label for="profile_image" class="block text-sm font-medium text-gray-700">Profile Image</label>
+        <input type="file" name="profile_image" id="profile_image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    </div>
+
+    <!-- Contact Number -->
+    <div>
+        <label for="contact_number" class="block text-sm font-medium text-gray-700">Contact Number</label>
+        <input type="text" name="contact_number" id="contact_number" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your contact number" required>
+    </div>
+
+    <!-- Hobbies -->
+    <div>
+        <label for="hobbies" class="block text-sm font-medium text-gray-700">Hobbies</label>
+        <textarea name="hobbies" id="hobbies" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your hobbies"></textarea>
+    </div>
+
+        <!-- Mood (Dropdown) -->
+        <div>
+            <label for="mood" class="block text-sm font-medium text-gray-700">Mood</label>
+            <select name="mood" id="mood" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                {% for key, value in form.fields.mood.choices %}
+                <option value="{{ key }}" {% if form.mood.value == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+    <!-- Preferred Budget -->
+    <div>
+        <label for="preferred_budget" class="block text-sm font-medium text-gray-700">Preferred Budget</label>
+        <input type="number" name="preferred_budget" id="preferred_budget" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your budget" required>
+    </div>
+
+    <!-- Preferred Location -->
+    <div>
+        <label for="preferred_location" class="block text-sm font-medium text-gray-700">Preferred Location</label>
+        <input type="text" name="preferred_location" id="preferred_location" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter preferred location">
+    </div>
+
+    <!-- Amenities -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Amenities</label>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+            {% for amenity in form.amenities.field.queryset %}
+            <div class="flex items-center">
+                <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea name="description" id="description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter a description about yourself"></textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-center">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">Post Roommate Listing</button>
+    </div>
+</form>
+
+{% endblock %}

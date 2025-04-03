@@ -1,16 +1,18 @@
 from django.urls import reverse_lazy
 from django.contrib.auth import login , logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView, CreateView, FormView, UpdateView
+from django.views.generic import TemplateView, CreateView, FormView, UpdateView ,ListView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import get_user_model
 from .forms import CustomUserCreationForm
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
 from dormitory.models import Dorm
 from django.views import View
+from .models import Notification
 from user_profile.models import UserProfile
+from django.http import JsonResponse
+
 
 
 
@@ -91,12 +93,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
+        # Pass notifications to the template
+        context["notifications"] = Notification.objects.filter(user=user, is_read=False)
+
         if user.user_type == "admin":
             context["pending_dorms"] = Dorm.objects.filter(approval_status="pending")
         elif user.user_type == "student":
             context["dorms"] = Dorm.objects.filter(approval_status="approved", available=True)
 
         return context
+
 
 # ✅ Approve Dorm View (CBV)
 class ApproveDormView(LoginRequiredMixin, UpdateView):
@@ -184,3 +190,17 @@ class LogoutView(View):
         messages.success(request, "You have been logged out successfully.")
         return redirect("accounts:login")  # Adjust this to your login route
 
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = "accounts/notifications.html"
+    context_object_name = "notifications"
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at").all()
+
+class MarkNotificationAsReadView(LoginRequiredMixin, View):
+    def post(self, request, pk, *args, **kwargs):
+        notification = get_object_or_404(Notification, pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({"success": True})

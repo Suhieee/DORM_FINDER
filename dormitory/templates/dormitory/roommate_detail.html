@@ -1,0 +1,63 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<div class="max-w-3xl w-full sm:w-[600px] mx-auto bg-white p-8 shadow-lg rounded-lg">
+    <!-- Profile Header -->
+    <div class="text-center">
+        <h2 class="text-2xl font-bold text-gray-800">{{ roommate.name }} ({{ roommate.age }} years old)</h2>
+        
+        {% if roommate.profile_image %}
+            <img src="{{ roommate.profile_image.url }}" 
+                 alt="{{ roommate.name }}" 
+                 class="w-36 h-36 rounded-full mt-4 mx-auto shadow-md border">
+        {% else %}
+            <p class="mt-2 text-gray-500">No profile image available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Profile Details -->
+    <div class="mt-6 space-y-4 text-gray-700">
+        <p><strong>📍 Preferred Location:</strong> {{ roommate.preferred_location }}</p>
+        <p><strong>📞 Contact:</strong> {{ roommate.contact_number }}</p>
+        <p><strong>💰 Budget:</strong> ₱{{ roommate.preferred_budget }}</p>
+        <p><strong>🧠 Mood:</strong> {{ roommate.get_mood_display }}</p>
+        <p><strong>🎨 Hobbies:</strong> {{ roommate.hobbies }}</p>
+        <p><strong>📝 Description:</strong> {{ roommate.description }}</p>
+    </div>
+
+    <!-- Preferred Amenities -->
+    <h3 class="mt-6 text-lg font-semibold text-gray-800">🏠 Preferred Amenities:</h3>
+    <ul class="list-disc list-inside text-gray-700 mt-2">
+        {% for amenity in roommate.amenities.all %}
+            <li>{{ amenity.name }}</li>
+        {% empty %}
+            <li class="text-gray-500">No specific preferences.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Edit & Delete Buttons (Only for the owner) -->
+    {% if request.user == roommate.user %}
+        <div class="flex gap-4 mt-6">
+            <a href="{% url 'dormitory:roommate_edit' roommate.pk %}" 
+               class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition">
+                ✏️ Edit
+            </a>
+            
+            <!-- Delete Button with Confirmation -->
+            <form action="{% url 'dormitory:roommate_delete' roommate.pk %}" method="post" 
+                  onsubmit="return confirm('Are you sure you want to delete this listing?');">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow-md transition">
+                    ❌ Delete
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    <!-- Back to Listings -->
+    <a href="{% url 'dormitory:roommate_list' %}" 
+       class="block mt-6 text-blue-600 hover:text-blue-800 text-center font-medium transition">
+        🔙 Back to Listings
+    </a>
+</div>
+{% endblock %}

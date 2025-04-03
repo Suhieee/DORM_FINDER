@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
         RegisterView, LoginView, DashboardView,
-        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView ,
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView
     )
 
 app_name = "accounts"
@@ -18,5 +18,6 @@ urlpatterns = [
 
     path("role-based-redirect/", RoleBasedRedirectView.as_view(), name="role_based_redirect"),
 
-    
+    path("notifications/", NotificationListView.as_view(), name="notification_list"),
+    path("notifications/read/<int:pk>/", MarkNotificationAsReadView.as_view(), name="mark_notification_read"),
 ]

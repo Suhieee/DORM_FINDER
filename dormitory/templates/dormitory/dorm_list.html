@@ -4,83 +4,47 @@
 {% block content %}
 
 <h2 class="text-2xl font-bold mb-4 text-center">Available Dorms</h2>
-<div id="gallery" class="relative w-full" data-carousel="slide">
-    <!-- Carousel wrapper -->
-    <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
-        <!-- Item 1 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
-        </div>
-        <!-- Item 2 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item="active">
-            <img src="{% static 'images/2.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
-        </div>
-        <!-- Item 3 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/3.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
-        </div>
-        <!-- Item 4 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
-        </div>
-        <!-- Item 5 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
-        </div>
-    </div>
-  
-    <!-- Slider controls -->
-    <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-            <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-            </svg>
-            <span class="sr-only">Previous</span>
-        </span>
-    </button>
-    <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-            <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-            </svg>
-            <span class="sr-only">Next</span>
-        </span>
-    </button>
-  </div>
-<br>
 
+<!-- Leaflet Map for Dorm Locations -->
+<!-- In your map's HTML file -->
+<div id="map" class="h-96 w-full border z-10 border-gray-300 rounded-md mb-6 relative">
+    <!-- Map content -->
+  </div>
 {% if dorms %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for dorm in dorms %}
-            <div class="relative bg-white border border-gray-200 shadow-sm overflow-hidden">
+            <div class="relative bg-white border border-gray-200 shadow-sm overflow-hidden rounded-lg flex flex-col h-full">
                 <!-- Dorm Image -->
-                <a href="{% url 'dormitory:dorm_detail' dorm.id %}">
+                <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="h-48">
                     {% if dorm.images.first %}
-                    <img class="w-full h-48 object-cover" src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" />
-                {% else %}
-                    <img class="w-full h-48 object-cover" src="{% static 'images/default_dorm.svg' %}" alt="Default Dorm Image" />
-                {% endif %}
-                
+                        <img class="w-full h-full object-cover" src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" />
+                    {% else %}
+                        <img class="w-full h-full object-cover" src="{% static 'images/default_dorm.svg' %}" alt="Default Dorm Image" />
+                    {% endif %}
                 </a>
-                
+
                 <!-- Heart Icon -->
-                <button class="absolute top-5 right-6 text-gray-500 hover:text-red-600 font-bold text-2xl">
+                <button class="absolute top-4 right-4 text-gray-500 hover:text-red-600 font-bold text-2xl">
                     &#9825;
                 </button>
-                
 
-
-                <!-- Dorm Details -->
-                <div class="bg-red-800 text-white p-3 flex justify-between items-center">
+                <!-- Content Section -->
+                <div class="flex flex-col flex-grow bg-red-800 text-white p-4 justify-between h-full">
                     <div>
                         <h5 class="text-lg font-semibold">{{ dorm.name }}</h5>
                         <p class="text-sm">{{ dorm.address }}</p>
+
+                        <div class="flex items-center mt-1">
+                            {% for i in "12345" %}
+                                {% if i|add:"0" <= dorm.avg_rating %}
+                                    <span class="text-yellow-500 text-lg">★</span>
+                                {% else %}
+                                    <span class="text-gray-400 text-lg">★</span>
+                                {% endif %}
+                            {% endfor %}
+                            <p class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-sm dark:bg-blue-200 dark:text-blue-800 ms-3">{{ dorm.avg_rating|floatformat:1 }}/5</p>
+                        </div>
                     </div>
-                
-                <!-- Price Tag -->
-                <div class="absolute bottom-20 right-6  left-4  text-black font-bold px-3 py-1 rounded-lg text-sm">
-                    ₱{{ dorm.price }}
-                </div>
                 </div>
             </div>
         {% endfor %}
@@ -89,5 +53,53 @@
     <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
     <p class="text-gray-600 text-center">No dorms available at the moment.</p>
 {% endif %}
+
+<!-- Leaflet.js Map Integration -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+ document.addEventListener("DOMContentLoaded", function () {
+    // Set the default map view to Manila, Philippines
+    var map = L.map('map').setView([14.5995, 120.9842], 13); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var dorms = [
+        {% for dorm in dorms %}
+            {% if dorm.latitude and dorm.longitude %}
+                {
+                    name: "{{ dorm.name|escapejs }}",
+                    lat: {{ dorm.latitude }},
+                    lng: {{ dorm.longitude }},
+                    url: "{% url 'dormitory:dorm_detail' dorm.id %}"
+                },
+            {% endif %}
+        {% endfor %}
+    ];
+
+    // Create a marker cluster group
+    var markers = L.markerClusterGroup();
+
+    dorms.forEach(function(dorm) {
+        var marker = L.marker([dorm.lat, dorm.lng]);
+        marker.bindPopup(`<a href="${dorm.url}" class="font-semibold text-blue-600">${dorm.name}</a>`);
+        markers.addLayer(marker);
+    });
+
+    // Add the cluster group to the map
+    map.addLayer(markers);
+
+    // Add a marker for Manila (Default Location)
+    var manilaMarker = L.marker([14.5995, 120.9842]).addTo(map);
+    manilaMarker.bindPopup("<b>Manila, Philippines</b>").openPopup();
+});
+</script>
+
 
 {% endblock %}
