@@ -12,10 +12,11 @@ from django.views import View
 from .models import Notification
 from user_profile.models import UserProfile
 from django.http import JsonResponse
-
-
-
-
+from django.db.models import Avg, Count, F
+from datetime import datetime
+from django.db.models import FloatField
+from django.db.models.functions import Cast
+from django.db.models import ExpressionWrapper
 
 
 class RegisterView(CreateView):
@@ -74,7 +75,8 @@ class LoginView(FormView):
             return redirect("accounts:dashboard")
         return super().dispatch(request, *args, **kwargs)
 
-# ✅ Dashboard View (CBV)
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "accounts/dashboard.html"
 
@@ -89,20 +91,46 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             return ["accounts/student_dashboard.html"]
 
     def get_context_data(self, **kwargs):
-        """Pass additional context to templates based on user type."""
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Pass notifications to the template
         context["notifications"] = Notification.objects.filter(user=user, is_read=False)
 
         if user.user_type == "admin":
             context["pending_dorms"] = Dorm.objects.filter(approval_status="pending")
         elif user.user_type == "student":
-            context["dorms"] = Dorm.objects.filter(approval_status="approved", available=True)
-
+            # Get current week number for rotation
+            week_num = datetime.now().isocalendar()[1]
+            
+            # Get student-specific seed if you want personalized rotation
+            student_seed = user.id if hasattr(user, 'id') else 0
+            
+            # First get all approved dorms with their scores
+            queryset = Dorm.objects.filter(
+                approval_status="approved",
+                available=True
+            ).annotate(
+                avg_rating=Avg('reviews__rating'),
+                review_count=Count('reviews'),
+                value_score=ExpressionWrapper(
+                    F('avg_rating') * 0.7 + (1 - (Cast(F('price'), FloatField())/50000)) * 0.3,
+                    output_field=FloatField()
+                )
+            ).order_by('-value_score', '-review_count')
+            
+            # Convert to list to enable slicing
+            dorm_list = list(queryset)
+            
+            # Implement rotation logic
+            rotation_group = (week_num + student_seed) % 3
+            group_size = max(len(dorm_list) // 3, 1)  # Ensure at least 1
+            start_index = rotation_group * group_size
+            end_index = min(start_index + 12, len(dorm_list))  # Prevent overflow
+            
+            # Get the rotated slice
+            context["dorms"] = dorm_list[start_index:end_index]
+            
         return context
-
 
 # ✅ Approve Dorm View (CBV)
 class ApproveDormView(LoginRequiredMixin, UpdateView):

@@ -146,51 +146,70 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Get initial coordinates from form or use defaults
-        const initialLat = parseFloat(document.getElementById('id_latitude').value) || 14.5995;
-        const initialLng = parseFloat(document.getElementById('id_longitude').value) || 120.9842;
-        
-        // Initialize map
-        const map = L.map('map').setView([initialLat, initialLng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+document.addEventListener("DOMContentLoaded", function() {
+    // Get initial coordinates from form or use defaults
+    const initialLat = parseFloat(document.getElementById('id_latitude').value) || 14.5995;
+    const initialLng = parseFloat(document.getElementById('id_longitude').value) || 120.9842;
     
-        // Create marker
-        const marker = L.marker([initialLat, initialLng], {
-            draggable: true,
-            autoPan: true
-        }).addTo(map);
-    
-        // Function to update form coordinates with proper decimal formatting
-        function updateFormCoordinates(lat, lng) {
-            document.getElementById('id_latitude').value = lat.toFixed(6);
-            document.getElementById('id_longitude').value = lng.toFixed(6);
-            console.log('Updated coordinates:', lat.toFixed(6), lng.toFixed(6));
+    // Initialize map
+    const map = L.map('map').setView([initialLat, initialLng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Create marker
+    const marker = L.marker([initialLat, initialLng], {
+        draggable: true,
+        autoPan: true
+    }).addTo(map);
+
+    // Function to reverse geocode coordinates to address
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const data = await response.json();
+            
+            if (data.display_name) {
+                document.getElementById('id_address').value = data.display_name;
+            } else {
+                console.log("No address found for these coordinates");
+            }
+        } catch (error) {
+            console.error("Geocoding error:", error);
         }
-    
-        // Marker drag event
-        marker.on('dragend', function(e) {
-            const newPos = marker.getLatLng();
-            updateFormCoordinates(newPos.lat, newPos.lng);
-        });
-    
-        // Map click event
-        map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
-            updateFormCoordinates(e.latlng.lat, e.latlng.lng);
-        });
-    
-        // Ensure coordinates are updated before form submission
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function() {
-            const currentPos = marker.getLatLng();
-            updateFormCoordinates(currentPos.lat, currentPos.lng);
-        });
-    
-        // Fix for map rendering issues
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 100);
+    }
+
+    // Function to update form coordinates with proper decimal formatting
+    function updateFormCoordinates(lat, lng) {
+        document.getElementById('id_latitude').value = lat.toFixed(6);
+        document.getElementById('id_longitude').value = lng.toFixed(6);
+        console.log('Updated coordinates:', lat.toFixed(6), lng.toFixed(6));
+        
+        // Update address via reverse geocoding
+        reverseGeocode(lat, lng);
+    }
+
+    // Marker drag event
+    marker.on('dragend', function(e) {
+        const newPos = marker.getLatLng();
+        updateFormCoordinates(newPos.lat, newPos.lng);
     });
-    </script>
+
+    // Map click event
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateFormCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Ensure coordinates are updated before form submission
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function() {
+        const currentPos = marker.getLatLng();
+        updateFormCoordinates(currentPos.lat, currentPos.lng);
+    });
+
+    // Fix for map rendering issues
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 100);
+});
+</script>
 {% endblock %}

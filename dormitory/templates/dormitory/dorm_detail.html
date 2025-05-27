@@ -3,6 +3,9 @@
 {% block title %} Dorm Details {% endblock %}
 
 {% block content %}
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
 
 {% if messages %} 
 <div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-100 dark:text-green-400" role="alert">
@@ -61,7 +64,7 @@
     {% endif %}
 
     <!-- Dorm Details and Tabs -->
-    <div x-data="{ activeTab: 'profile' }" class="md:flex h-full">
+    <div x-data="{ activeTab: 'profile', mapInitialized: false }" class="md:flex h-full">
         <!-- Tabs Navigation -->
         <ul class="flex-column space-y-4 text-sm font-medium text-black md:me-4 mb-4 md:mb-0">
             <li>
@@ -86,7 +89,7 @@
                 </button>
             </li>
             <li>
-                <button @click="activeTab = 'map'; $nextTick(() => initializeMap())" 
+                <button @click="activeTab = 'map'; if(!mapInitialized) { $nextTick(() => { initializeMap(); mapInitialized = true; }); } else { $nextTick(() => { setTimeout(() => { map.invalidateSize() }, 100); }); }" 
                         :class="activeTab === 'map' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
                         class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
                     Map
@@ -398,9 +401,15 @@
 <!-- Load Leaflet.js CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Load Leaflet Routing Machine -->
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
 <!-- JavaScript for Star Rating Selection and Map -->
 <script>
+    // Declare map variable globally
+    let map;
+
     document.addEventListener("DOMContentLoaded", function() {
         // Star Rating Functionality
         const stars = document.querySelectorAll("#star-rating span");
@@ -453,21 +462,28 @@
             }
             
             {% if dorm.latitude and dorm.longitude %}
-            const map = L.map(mapElement).setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
+            map = L.map(mapElement).setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19,
             }).addTo(map);
             
+            // Create custom icons
             const dormIcon = L.icon({
-                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34]
+                iconUrl: '{% static "images/dorm-marker.png" %}',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
             });
             
-            L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}], {
+            const schoolIcon = L.icon({
+                iconUrl: '{% static "images/school-marker.png" %}',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+            
+            // Add dorm marker
+            const dormMarker = L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}], {
                 icon: dormIcon
             }).addTo(map)
             .bindPopup(`
@@ -476,12 +492,63 @@
             `)
             .openPopup();
             
-            L.circle([{{ dorm.latitude }}, {{ dorm.longitude }}], {
-                color: '#3388ff',
-                fillColor: '#3388ff',
-                fillOpacity: 0.2,
-                radius: 50
-            }).addTo(map);
+            // Variables to store routing controls and distance labels
+            let routingControls = [];
+            let distanceLabels = [];
+            
+            // Add schools with distance calculation
+            {% for school in schools %}
+            (function() {
+                const schoolLat = {{ school.latitude }};
+                const schoolLng = {{ school.longitude }};
+                const schoolName = "{{ school.name|escapejs }}";
+                
+                // Calculate distance
+                const distance = map.distance(
+                    [{{ dorm.latitude }}, {{ dorm.longitude }}],
+                    [schoolLat, schoolLng]
+                );
+                const distanceKm = (distance / 1000).toFixed(1);
+                
+                // Create school marker
+                const schoolMarker = L.marker([schoolLat, schoolLng], {
+                    icon: schoolIcon
+                }).addTo(map)
+                .bindPopup(`
+                    <div class="font-bold">${schoolName}</div>
+                    <div class="text-sm">Distance: ${distanceKm} km</div>
+                `);
+                
+                // Create distance label
+                const distanceLabel = L.marker([schoolLat, schoolLng], {
+                    icon: L.divIcon({
+                        className: 'distance-label-container',
+                        html: `<div class="distance-label">${distanceKm} km</div>`,
+                        iconSize: [60, 20],
+                        iconAnchor: [30, 0]
+                    }),
+                    zIndexOffset: 1000
+                }).addTo(map);
+                
+                // Create routing path
+                const control = L.Routing.control({
+                    waypoints: [
+                        L.latLng({{ dorm.latitude }}, {{ dorm.longitude }}),
+                        L.latLng(schoolLat, schoolLng)
+                    ],
+                    routeWhileDragging: false,
+                    show: false, // Hide the instructions panel
+                    lineOptions: {
+                        styles: [{color: '#3b82f6', weight: 4, opacity: 0.7}]
+                    },
+                    createMarker: function() { return null; } // Don't create markers
+                }).addTo(map);
+                
+                // Store references for cleanup
+                routingControls.push(control);
+                distanceLabels.push(distanceLabel);
+            })();
+            {% endfor %}
             
             // Fix map rendering issues
             setTimeout(() => {
@@ -499,6 +566,68 @@
             {% endif %}
         };
     });
+
+    // Hide loader when page is fully loaded
+window.addEventListener('load', function() {
+    const loader = document.getElementById('page-loader');
+    loader.style.opacity = '0';
+    setTimeout(() => {
+        loader.style.display = 'none';
+    }, 300); // Match this with your transition duration
+});
 </script>
+
+<style>
+    /* Loader Styles */
+#page-loader {
+    display: flex;
+}
+
+.loader {
+    border-top-color: #3b82f6;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+    /* Custom styling for the routing machine */
+    .leaflet-routing-container {
+        display: none;
+    }
+    
+    /* Style for distance labels */
+    .distance-label-container {
+        text-align: center;
+    }
+    
+    .distance-label {
+        background: white;
+        color: #3b82f6;
+        font-weight: bold;
+        font-size: 12px;
+        padding: 2px 6px;
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Ensure proper z-indexing */
+    .leaflet-marker-icon {
+        z-index: 500;
+    }
+    
+    .leaflet-marker-icon.distance-label-container {
+        z-index: 1000;
+    }
+</style>
 
 {% endblock %}

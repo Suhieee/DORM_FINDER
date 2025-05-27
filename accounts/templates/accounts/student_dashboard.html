@@ -3,12 +3,13 @@
 {% load static %}
 {% block content %}
 
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+  <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
 
-
+<!-- Messages/Alerts -->
 {% if messages %} 
-
-
-<div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-100 dark:text-green-400" role="alert">
+<div id="alert-3" class="flex items-center p-4 mb-4 text-red-800 rounded-lg bg-red-50 dark:bg-gray-100 dark:text-red-400" role="alert">
     <svg class="shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
       <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
     </svg>
@@ -16,22 +17,180 @@
     <div class="ms-3 text-sm font-medium">
         {% for message in messages %}
         <p>{{ message }}</p>
-    {% endfor %}
+        {% endfor %}
     </div>
-    <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-white-700" data-dismiss-target="#alert-3" aria-label="Close">
+    <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-white-700" data-dismiss-target="#alert-3" aria-label="Close">
       <span class="sr-only">Close</span>
       <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
       </svg>
     </button>
-  </div>
-
+</div>
 {% endif %}
 
+<!-- Hero Section -->
+<div class="relative bg-gradient-to-r from-red-600 to-red-800 rounded-xl shadow-xl overflow-hidden mb-8">
+  <div class="absolute inset-0">
+    <img class="w-full h-full object-cover opacity-20" src="{% static 'images/student-living.jpg' %}" alt="Student Living">
+  </div>
+  <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center">
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-500 mb-6">
+      Your Perfect <span class="text-red-600">Dorm</span> Awaits
+    </h1>
+    <p class="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
+      Discover comfortable, affordable housing near your campus with all the amenities you need.
+    </p>
+    <div class="mt-10 flex justify-center gap-4">
+      <a href="{% url 'dormitory:dorm_list' %}" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-700 hover:bg-red-600 md:py-4 md:text-lg md:px-10 transition duration-300">
+        Browse Dorms
+      </a>
+      <a href="#" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-red-800 bg-white hover:bg-gray-100 md:py-4 md:text-lg md:px-10 transition duration-300">
+        How It Works
+      </a>
+    </div>
+  </div>
+</div>
 
 
+<!-- Recommended Dorms Section -->
+<div id="recommended-dorms" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-4 text-center text-red-800">Recommended dorms near your school</h2>
+    
+    {% if dorms %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for dorm in dorms %}
+        <div class="relative bg-white border border-gray-200 shadow-sm overflow-hidden rounded-lg flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
+            <!-- Dorm Image -->
+            <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="h-48">
+                {% if dorm.images.first %}
+                    <img class="w-full h-full object-cover" src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" />
+                {% else %}
+                    <img class="w-full h-full object-cover" src="{% static 'images/default_dorm.svg' %}" alt="Default Dorm Image" />
+                {% endif %}
+            </a>
+
+            <!-- Heart Icon -->
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-red-600 font-bold text-2xl transition-colors duration-200">
+                &#9825;
+            </button>
+
+            <!-- Content Section -->
+            <div class="flex flex-col flex-grow bg-red-800 text-white p-4 justify-between h-full">
+                <div>
+                    <h5 class="text-lg font-semibold">{{ dorm.name }}</h5>
+                    <p class="text-sm">{{ dorm.address }}</p>
+
+                    <div class="flex items-center mt-1">
+                        {% for i in "12345" %}
+                            {% if i|add:"0" <= dorm.avg_rating %}
+                                <span class="text-yellow-500 text-lg">★</span>
+                            {% else %}
+                                <span class="text-gray-300 text-lg">★</span>
+                            {% endif %}
+                        {% endfor %}
+                        <p class="bg-white text-blue-600 text-xs font-bold px-2.5 py-0.5 rounded-sm ms-3">{{ dorm.avg_rating|floatformat:1 }}/5</p>
+                    </div>
+                </div>
+                <p class="text-xs text-white mt-1">{{ dorm.review_count }} reviews</p>
+                <div class="mt-2">
+                    <p class="text-lg font-bold">₱{{ dorm.price|floatformat:0 }}/month</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-8">
+        <img src="{% static 'images/question.svg' %}" alt="No Dorms Available" class="mx-auto w-48 mb-4">
+        <p class="text-gray-600">No recommended dorms available at the moment.</p>
+        <p class="text-gray-500 text-sm mt-2">Check back later or try searching for dorms.</p>
+    </div>
+    {% endif %}
+</div>
+<br><br><br><br>
+<!-- Features Section -->
+<div class="mt-12 bg-white  rounded-lg shadow-md p-8">
+  <h2 class="text-3xl font-bold text-center mb-12 text-red-800">Why Choose Our Platform</h2>
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="text-center">
+      <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold mb-2 text-red-800">Verified Listings</h3>
+      <p class="text-gray-600 dark:text-gray-500">All dormitories are personally verified for quality and safety.</p>
+    </div>
+    <div class="text-center">
+      <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold mb-2 text-red-800">Student-Focused</h3>
+      <p class="text-gray-600 dark:text-gray-500">Properties selected with student needs and budgets in mind.</p>
+    </div>
+    <div class="text-center">
+      <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold mb-2 text-red-800">Focus on Manila</h3>
+      <p class="text-gray-600 dark:text-gray-500">You can find your first dorm that located in manila</p>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications Section (Optional) -->
+{% if notifications %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-6">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Your Notifications</h2>
+    <ul class="space-y-2">
+        {% for notification in notifications %}
+        <li class="border-b border-gray-200 dark:border-gray-700 pb-2">
+            <a href="#" class="block hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded transition-colors">
+                <p class="text-gray-800 dark:text-gray-200">{{ notification.message }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ notification.created_at|timesince }} ago</p>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<script>
+  // Hide loader when page is fully loaded
+window.addEventListener('load', function() {
+    const loader = document.getElementById('page-loader');
+    loader.style.opacity = '0';
+    setTimeout(() => {
+        loader.style.display = 'none';
+    }, 300); // Match this with your transition duration
+});
+</script>
+
+
+<style>
+  /* Loader Styles */
+#page-loader {
+    display: flex;
+}
+
+.loader {
+    border-top-color: #3b82f6;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}
-
-
-
-

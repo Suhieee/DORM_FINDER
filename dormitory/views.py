@@ -3,12 +3,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin , UserPassesTestMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.urls import reverse_lazy
-from .models import Dorm, DormImage , Amenity ,  RoommatePost , Review
+from .models import Dorm, DormImage , Amenity ,  RoommatePost , Review , School
 from .forms import DormForm ,  RoommatePostForm , ReviewForm
-from django.db.models import Avg
+from django.db.models import Avg , Q
 from django.db import transaction
-
-
 
 
 
@@ -57,22 +55,75 @@ class AddDormView(LoginRequiredMixin, CreateView):
         return context
 
 
-
 class DormListView(LoginRequiredMixin, ListView):
     model = Dorm
     template_name = "dormitory/dorm_list.html"
     context_object_name = "dorms"
+    paginate_by = 12
 
     def get_queryset(self):
-        """Only show available & approved dorms."""
-        return Dorm.objects.filter(available=True, approval_status="approved").annotate(avg_rating=Avg("reviews__rating"))
+        """Filter dorms based on search parameters"""
+        queryset = Dorm.objects.filter(available=True, approval_status="approved").annotate(
+            avg_rating=Avg("reviews__rating")
+        )
+        
+        # Get filter parameters from request
+        search_query = self.request.GET.get('search', '')
+        min_price = self.request.GET.get('min_price')
+        max_price = self.request.GET.get('max_price')
+        amenities = self.request.GET.getlist('amenities')
+        school_id = self.request.GET.get('school')
+        sort_by = self.request.GET.get('sort')  # Changed from 'sort_by' to 'sort' to match template
+        
+        # Apply filters
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) | 
+                Q(address__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+            
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+            
+        if amenities:
+            # For multiple amenities, we need to ensure all selected amenities are present
+            queryset = queryset.filter(amenities__id__in=amenities).distinct()
+            
+            # If you want to match ALL selected amenities (not just any), use this instead:
+            # for amenity_id in amenities:
+            #     queryset = queryset.filter(amenities__id=amenity_id)
+            
+        if school_id:
+            queryset = queryset.filter(nearby_schools__id=school_id)
+            
+        # Apply sorting
+        if sort_by == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort_by == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort_by == 'rating':
+            queryset = queryset.order_by('-avg_rating')
+            
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Pass dorm locations to the template
-        context["dorm_locations"] = list(Dorm.objects.filter(available=True, approval_status="approved").values("id", "latitude", "longitude", "name"))
+        # Add filter-related context
+        context['amenities'] = Amenity.objects.all()
+        context['schools'] = School.objects.all()
+        
+        # Pass current filter values back to template
+        context['current_search'] = self.request.GET.get('search', '')
+        context['current_min_price'] = self.request.GET.get('min_price', '')
+        context['current_max_price'] = self.request.GET.get('max_price', '')
+        context['selected_amenities'] = [int(a) for a in self.request.GET.getlist('amenities')]
+        context['selected_school'] = self.request.GET.get('school', '')
+        context['selected_sort'] = self.request.GET.get('sort', '')  # Changed from 'sort_by' to 'sort'
+        
         return context
-
 
 # 🚀 Dorm Details
 
@@ -88,6 +139,11 @@ class DormDetailView(LoginRequiredMixin, DetailView):
         context['form'] = ReviewForm()  # Pass the review form to the template
         context['latitude'] = self.object.latitude  # Pass dorm latitude
         context['longitude'] = self.object.longitude  # Pass dorm longitude
+        
+        # Add schools to the context
+        from dormitory.models import School  # Import your School model
+        context['schools'] = School.objects.all()  # Or filter as needed
+        
         return context
 
     def post(self, request, *args, **kwargs):

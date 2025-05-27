@@ -3,6 +3,9 @@ from accounts.models import CustomUser
 from django.core.validators import RegexValidator
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from math import radians, sin, cos, sqrt, atan2
 
 
 class Amenity(models.Model):
@@ -31,6 +34,7 @@ class Dorm(models.Model):
     approval_status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     rejection_reason = models.TextField(null=True, blank=True)
     amenities = models.ManyToManyField("Amenity", blank=True, related_name='dorms')
+    nearby_schools = models.ManyToManyField('School', blank=True, related_name='nearby_dorms')
 
     def get_average_rating(self):
         average = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -38,8 +42,38 @@ class Dorm(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.landlord.username} ({self.landlord.contact_number})"
-
-
+    
+    def associate_nearby_schools(self, max_distance_km=2.0):
+        """
+        Automatically associate this dorm with schools within specified distance.
+        Default: 2.0 km radius
+        """
+        if not self.latitude or not self.longitude:
+            return  # Skip if no coordinates
+            
+        for school in School.objects.all():
+            # Convert coordinates to radians
+            lat1 = radians(float(self.latitude))
+            lon1 = radians(float(self.longitude))
+            lat2 = radians(float(school.latitude))
+            lon2 = radians(float(school.longitude))
+            
+            # Haversine formula
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            distance_km = 6371 * c  # Earth's radius in km
+            
+            if distance_km <= max_distance_km:
+                self.nearby_schools.add(school)
+                
+@receiver(post_save, sender=Dorm)
+def auto_associate_schools(sender, instance, created, **kwargs):
+    """
+    Automatically associate nearby schools when a dorm is saved or updated
+    """
+    instance.associate_nearby_schools()
 
 class DormImage(models.Model):
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name="images")
@@ -107,3 +141,11 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.dorm.name} ({self.rating}/5)"
 
+class School(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    
+    def __str__(self):
+        return self.name
