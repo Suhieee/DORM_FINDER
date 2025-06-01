@@ -1,0 +1,20 @@
+/* Ensure footer stays at the bottom */
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1; /* Pushes the footer down */
+}
+
+footer {
+    background-color: #010307; /* Light gray */
+    padding: 20px 0;
+    text-align: center;
+    width: 100%;
+}

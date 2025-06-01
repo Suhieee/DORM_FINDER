@@ -13,6 +13,22 @@
 </div>
 {% endif %}
 
+<!-- Header Section -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Find Your Perfect Roommate</h1>
+            <p class="mt-1 text-sm text-gray-500">Connect with potential roommates who share your preferences.</p>
+        </div>
+        <a href="{% url 'dormitory:add_roommate' %}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            Create Listing
+        </a>
+    </div>
+</div>
 
 <div id="gallery" class="relative w-full" data-carousel="slide">
     <!-- Carousel wrapper -->
@@ -59,7 +75,6 @@
   </div>
 <br>
 
-
 <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6">
     {% for roommate in roommates %}
         <div class="bg-white shadow-lg rounded-lg overflow-hidden min-h-[320px] flex">
@@ -83,23 +98,31 @@
                         </a>
                     </h3>
                     <p class="text-gray-600">{{ roommate.preferred_location }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Budget: ₱{{ roommate.preferred_budget|floatformat:0 }}</p>
+                    <p class="text-sm text-gray-500">Mood: {{ roommate.get_mood_display }}</p>
                 </div>
                 
                 <!-- Button aligned to the left -->
-                <div class="mt-auto w-full pl-10">
+                <div class="mt-4">
                     <a href="{% url 'dormitory:roommate_detail' roommate.pk %}" 
-                       class="mt-3 bg-red-800 text-white px-4 py-2 rounded-lg block w-40 text-center">
+                       class="bg-red-800 text-white px-4 py-2 rounded-lg inline-block hover:bg-red-900 transition-colors">
                         View details
                     </a>
                 </div>
-                
-                
             </div>
         </div>
     {% empty %}
-        <p>No roommate listings available.</p>
+        <div class="col-span-3 text-center py-12">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Roommate Listings Yet</h3>
+                <p class="text-gray-500 mb-4">Be the first to create a roommate listing!</p>
+                <a href="{% url 'dormitory:add_roommate' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-800 hover:bg-red-900">
+                    Create Your Listing
+                </a>
+            </div>
+        </div>
     {% endfor %}
 </div>
-
 
 {% endblock %}

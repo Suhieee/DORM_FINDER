@@ -1,0 +1,351 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Reservation Status (if exists) -->
+        {% if reservation %}
+        <div class="mb-6 bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Reservation Status</h3>
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-gray-600">Status:</span>
+                    {% if reservation.status == 'pending_payment' %}
+                        <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-2.5 py-0.5 rounded">Pending Payment</span>
+                    {% elif reservation.status == 'pending' %}
+                        <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">Under Review</span>
+                    {% elif reservation.status == 'confirmed' %}
+                        <span class="bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded">Confirmed</span>
+                    {% elif reservation.status == 'declined' %}
+                        <span class="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded">Declined</span>
+                    {% endif %}
+                </div>
+                <div class="text-sm text-gray-500">
+                    Submitted: {{ reservation.created_at|date:"F j, Y" }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center">Confirm Your Reservation</h2>
+
+                <!-- Dorm Details Section -->
+                <div class="mb-8 border-b pb-6">
+                    <h3 class="text-xl font-semibold mb-4">Dorm Details</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            {% if dorm.images.first %}
+                                <img src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" 
+                                     class="w-full h-64 object-cover rounded-lg shadow">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800">{{ dorm.name }}</h4>
+                            <p class="text-gray-600 mt-2">{{ dorm.address }}</p>
+                            <div class="mt-4">
+                                <p class="text-gray-700"><strong>Price:</strong> ₱{{ dorm.price }}/month</p>
+                                <p class="text-gray-700 mt-2"><strong>Landlord:</strong> {{ dorm.landlord.username }}</p>
+                                {% if dorm.amenities.all %}
+                                    <div class="mt-3">
+                                        <strong class="text-gray-700">Amenities:</strong>
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            {% for amenity in dorm.amenities.all %}
+                                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                                    {{ amenity.name }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reservation Form -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Reservation Details</h3>
+                    <form method="post" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+
+                        <!-- Payment Proof Upload -->
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-gray-700 mb-2">Payment Proof</h4>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                                <div class="text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    <div class="mt-4">
+                                        <label for="payment_proof" class="cursor-pointer">
+                                            <span class="mt-2 text-sm text-gray-600">Upload a screenshot of your payment</span>
+                                            <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="hidden" required>
+                                        </label>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-semibold text-gray-700 mb-2">Terms and Conditions</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-600 space-y-2">
+                                <li>Payment proof is required to process your reservation</li>
+                                <li>Cancellation policies apply as per the landlord's terms</li>
+                                <li>The landlord will review your reservation after payment submission</li>
+                                <li>You can communicate with the landlord through the chat system</li>
+                            </ul>
+                        </div>
+
+                        <!-- Total Amount -->
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold text-gray-700">Total Amount:</span>
+                                <span class="text-2xl font-bold text-blue-600">₱{{ dorm.price }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Payment QR Code Section -->
+                        <div class="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4">Payment Method</h4>
+                            {% if dorm.payment_qr %}
+                                <div class="flex flex-col items-center space-y-4">
+                                    <img src="{{ dorm.payment_qr.url }}" alt="Payment QR Code" class="max-w-xs rounded-lg shadow-md">
+                                    <p class="text-sm text-gray-600 text-center">
+                                        Scan this QR code using GCash or Maya to make your payment.<br>
+                                        Please save a screenshot of your payment as proof.
+                                    </p>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-gray-600">
+                                    <p>No payment QR code available. Please contact the landlord for payment instructions.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <a href="{% url 'dormitory:dorm_detail' dorm.id %}" 
+                               class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </a>
+                            <button type="submit" 
+                                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Submit Reservation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        {% if reservation and reservation.id %}
+        <div class="mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-4">Chat with {% if request.user == reservation.student %}Landlord{% else %}Student{% endif %}</h3>
+                
+                <!-- Messages Container -->
+                <div id="messages-container" class="h-96 overflow-y-auto border rounded-lg mb-4 p-4">
+                    {% for message in messages %}
+                    <div class="mb-4 {% if message.sender == request.user %}ml-auto{% endif %}">
+                        <div class="{% if message.sender == request.user %}bg-blue-100 ml-12{% else %}bg-gray-100 mr-12{% endif %} rounded-lg p-3">
+                            <div class="flex items-center mb-1">
+                                <span class="font-semibold text-sm">{{ message.sender.username }}</span>
+                                <span class="text-xs text-gray-500 ml-2">{{ message.timestamp|date:"g:i A" }}</span>
+                            </div>
+                            <p class="text-gray-700">{{ message.content }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-gray-500">No messages yet. Start the conversation!</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Message Input -->
+                <form id="message-form" class="mt-4" data-reservation-id="{{ reservation.id }}">
+                    {% csrf_token %}
+                    <div class="flex space-x-2">
+                        <input type="text" name="content" id="message-input" 
+                               class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="Type your message...">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Additional Information -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Important Information</h3>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">Next Steps</h4>
+                    <ol class="list-decimal list-inside text-gray-600 space-y-2">
+                        <li>Submit your reservation request with payment proof</li>
+                        <li>Wait for landlord's review and confirmation</li>
+                        <li>Communicate with landlord through chat</li>
+                        <li>Receive your final booking confirmation</li>
+                    </ol>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">Contact Support</h4>
+                    <p class="text-gray-600">
+                        If you have any questions or need assistance, please don't hesitate to contact our support team.
+                    </p>
+                    <div class="mt-2">
+                        <a href="#" class="text-blue-600 hover:underline">Contact Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom form styling */
+    form p {
+        margin-bottom: 1rem;
+    }
+    form label {
+        display: block;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    form input, form textarea, form select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 0.375rem;
+        background-color: white;
+    }
+    form input:focus, form textarea:focus, form select:focus {
+        outline: 2px solid #2563EB;
+        outline-offset: -2px;
+    }
+    #messages-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
+    #messages-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    #messages-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #messages-container::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.5);
+        border-radius: 3px;
+    }
+</style>
+
+<script>
+    // Function to add a new message to the chat
+    function addMessage(message) {
+        const container = document.getElementById('messages-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-4 ${message.is_sender ? 'ml-auto' : ''}`;
+        
+        messageDiv.innerHTML = `
+            <div class="${message.is_sender ? 'bg-blue-100 ml-12' : 'bg-gray-100 mr-12'} rounded-lg p-3">
+                <div class="flex items-center mb-1">
+                    <span class="font-semibold text-sm">${message.sender}</span>
+                    <span class="text-xs text-gray-500 ml-2">${message.timestamp}</span>
+                </div>
+                <p class="text-gray-700">${message.content}</p>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Handle form submission
+    const messageForm = document.getElementById('message-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            const reservationId = this.dataset.reservationId;
+            
+            if (!content) return;
+            
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            fetch(`/dormitory/reservation/${reservationId}/message/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addMessage(data.message);
+                    input.value = '';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+
+    // Auto-scroll to bottom of messages
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    // Call on page load if messages container exists
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+        scrollToBottom();
+    }
+
+    // Optional: Poll for new messages every few seconds if messages container exists
+    if (messagesContainer) {
+        setInterval(function() {
+            const lastMessage = document.querySelector('#messages-container > div:last-child');
+            if (lastMessage) {
+                const lastMessageId = lastMessage.dataset.messageId;
+                // You can implement an endpoint to fetch new messages since lastMessageId
+            }
+        }, 5000);
+    }
+
+    // Preview uploaded image
+    document.getElementById('payment_proof').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.createElement('img');
+                preview.src = e.target.result;
+                preview.className = 'mt-4 mx-auto max-h-48 rounded-lg';
+                
+                const container = document.querySelector('.border-dashed');
+                const existingPreview = container.querySelector('img');
+                if (existingPreview) {
+                    existingPreview.remove();
+                }
+                container.appendChild(preview);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}

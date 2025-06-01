@@ -42,12 +42,18 @@
                 <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-200 rounded-lg bg-gray-20 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-gray-200">
                     {% if request.user.is_authenticated %}
                         {% if request.user.user_type == "admin" %}
-                            <li><a href="#" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Dashboard</a></li>
-                            <li><a href="#" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Manage Users</a></li>
+                            <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Dashboard</a></li>
+                            <li><a href="{% url 'accounts:manage_users' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Manage Users</a></li>
                         {% elif request.user.user_type == "landlord" %}
                             <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
                             <li><a href="{% url 'dormitory:my_dorms' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">My Properties</a></li>
                             <li><a href="{% url 'dormitory:add_dorm' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Add Dorm</a></li>
+                            <li><a href="{% url 'dormitory:landlord_reservations' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center">
+                                <span>Manage Reservations</span>
+                                {% if pending_count > 0 %}
+                                    <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ pending_count }}</span>
+                                {% endif %}
+                            </a></li>
 
                             <li class="relative">
                                 <!-- Notification Button (Bell Icon) -->
@@ -97,8 +103,41 @@
                         {% else %}
                             <li><a href="{% url 'accounts:dashboard' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Home</a></li>
                             <li><a href="{% url 'dormitory:dorm_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Browse Dorms</a></li>
-                            <li><a href="{% url 'dormitory:add_roommate' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Roommate Add</a></li>
                             <li><a href="{% url 'dormitory:roommate_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Roommate Finder</a></li>
+                            <li>
+                                <a href="{% url 'dormitory:student_reservations' %}" id="reservationsButton" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center">
+                                    <span>My Reservations</span>
+                                    {% if user_pending_reservations %}
+                                        <span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>
+                                    {% endif %}
+                                </a>
+                                <!-- Reservations Dropdown -->
+                                <div id="reservationsDropdown" class="hidden absolute mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200">
+                                    <div class="flex justify-between items-center bg-blue-800 text-white font-medium px-4 py-2 rounded-t-lg">
+                                        <span>Recent Reservations</span>
+                                        <a href="{% url 'dormitory:student_reservations' %}" class="text-xs text-white hover:text-gray-200">View All</a>
+                                    </div>
+                                    <div class="divide-y divide-gray-100">
+                                        {% for reservation in user_pending_reservations %}
+                                        <a href="{% url 'dormitory:reservation_detail' pk=reservation.id %}" class="block px-4 py-3 hover:bg-gray-100">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <p class="font-semibold text-sm">{{ reservation.dorm.name }}</p>
+                                                    <p class="text-xs text-gray-600">Status: 
+                                                        <span class="{% if reservation.status == 'pending' %}text-yellow-600{% elif reservation.status == 'confirmed' %}text-green-600{% else %}text-red-600{% endif %}">
+                                                            {{ reservation.status|title }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                                <span class="text-xs text-gray-500">{{ reservation.created_at|date:"M d, Y" }}</span>
+                                            </div>
+                                        </a>
+                                        {% empty %}
+                                        <div class="px-4 py-3 text-center text-gray-600">No pending reservations</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </li>
 
                         {% endif %}
     
@@ -150,32 +189,27 @@ document.addEventListener("DOMContentLoaded", function () {
             userDropdown.classList.add("hidden");
         }
     });
-});
 
-document.addEventListener("DOMContentLoaded", function () {
     const notificationButton = document.getElementById("notificationButton");
     const dropdownNotification = document.getElementById("dropdownNotification");
 
     if (notificationButton && dropdownNotification) {
-        // Toggle dropdown on button click
         notificationButton.addEventListener("click", function (event) {
             event.stopPropagation();
             dropdownNotification.classList.toggle("hidden");
         });
 
-        // Close dropdown when clicking outside
         document.addEventListener("click", function (event) {
             if (!notificationButton.contains(event.target) && !dropdownNotification.contains(event.target)) {
                 dropdownNotification.classList.add("hidden");
             }
         });
 
-        // Mark notification as read when clicked & remove
         document.querySelectorAll(".notification-item").forEach((notif) => {
             notif.addEventListener("click", function (event) {
                 const notificationId = this.dataset.id;
 
-                fetch(`/accounts/notifications/read/${notificationId}/`, {  // FIXED URL PATH
+                fetch(`/accounts/notifications/read/${notificationId}/`, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": getCSRFToken(),
@@ -185,9 +219,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        this.classList.add("opacity-50", "transition-opacity", "duration-300"); // Fade out
+                        this.classList.add("opacity-50", "transition-opacity", "duration-300");
                         setTimeout(() => {
-                            this.remove(); // Remove notification from list
+                            this.remove();
                         }, 300);
                     }
                 })
@@ -195,7 +229,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Helper function to get CSRF token
         function getCSRFToken() {
             let cookieValue = null;
             const cookies = document.cookie.split(';');
@@ -209,8 +242,23 @@ document.addEventListener("DOMContentLoaded", function () {
             return cookieValue;
         }
     }
-});
 
+    const reservationsButton = document.getElementById("reservationsButton");
+    const reservationsDropdown = document.getElementById("reservationsDropdown");
+
+    if (reservationsButton && reservationsDropdown) {
+        reservationsButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            reservationsDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!reservationsButton.contains(event.target) && !reservationsDropdown.contains(event.target)) {
+                reservationsDropdown.classList.add("hidden");
+            }
+        });
+    }
+});
 
 </script>
 

@@ -12,7 +12,7 @@
 
 <!-- Search and Filter Section -->
 <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-    <form method="get" class="filter-form">
+    <form method="get" class="filter-form" id="filterForm">
         <!-- Search Bar -->
         <div class="mb-4">
             <div class="relative">
@@ -26,151 +26,102 @@
                     class="w-full p-3 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
         </div>
-        
-        <!-- Advanced Filter Toggle -->
+
+        <!-- Advanced Filters Toggle -->
         <div class="mb-4">
             <button type="button" onclick="toggleAdvancedFilters()" class="flex items-center text-blue-600 hover:text-blue-800">
                 <span class="mr-2">Advanced Filters</span>
-                <svg id="advancedFiltersArrow" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg id="advancedFiltersArrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
         </div>
-        
-        <!-- Filter Controls (now in a collapsible container) -->
-        <div id="advancedFilters" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Price Range Dropdown -->
-                <div class="relative">
-                    <button type="button" onclick="toggleDropdown('priceDropdown')" class="w-full p-2 border rounded bg-white text-left flex justify-between items-center focus:ring-blue-500 focus:border-blue-500">
-                        <span>Price Range</span>
-                        <svg class="h-5 w-5 text-gray-400 transition-transform" id="priceArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="priceDropdown" class="hidden absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                        <div class="p-4 space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
-                            <input type="number" name="min_price" placeholder="Min" 
-                                   value="{{ request.GET.min_price }}"
-                                   class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
-                            <input type="number" name="max_price" placeholder="Max" 
-                                   value="{{ request.GET.max_price }}"
-                                   class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                    <!-- Selected price range display -->
-                    <div id="selectedPriceRange" class="mt-2 text-sm text-gray-600">
-                        {% if request.GET.min_price or request.GET.max_price %}
-                            {{ request.GET.min_price|default:"Any" }} - {{ request.GET.max_price|default:"Any" }}
-                        {% endif %}
-                    </div>
-                </div>
 
-                <!-- Amenities Dropdown -->
-                <div class="relative">
-                    <button type="button" onclick="toggleDropdown('amenitiesDropdown')" class="w-full p-2 border rounded bg-white text-left flex justify-between items-center focus:ring-blue-500 focus:border-blue-500">
-                        <span>Amenities</span>
-                        <svg class="h-5 w-5 text-gray-400 transition-transform" id="amenitiesArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="amenitiesDropdown" class="hidden absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                        <div class="p-2 space-y-2">
-                            {% for amenity in amenities %}
-                            <div class="flex items-center">
-                                <input id="amenity-{{ amenity.id }}" type="checkbox" name="amenities" value="{{ amenity.id }}"
-                                       {% if amenity.id|stringformat:"s" in request.GET.getlist.amenities %}checked{% endif %}
-                                       class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
-                                <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <!-- Selected amenities pills -->
-                    <div id="selectedAmenities" class="mt-2 flex flex-wrap gap-2">
-                        {% for amenity in amenities %}
-                            {% if amenity.id|stringformat:"s" in request.GET.getlist.amenities %}
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {{ amenity.name }}
-                                <button type="button" onclick="removeAmenity('{{ amenity.id }}')" class="ml-1 text-blue-500 hover:text-blue-700">
-                                    &times;
-                                </button>
-                            </span>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+        <!-- Advanced Filters Section -->
+        <div id="advancedFilters" class="hidden space-y-4">
+            <!-- Price Range Slider -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Target Price</h3>
+                    <span class="text-sm text-gray-600">₱<span id="priceLabel">{{ current_target_price|default:1000 }}</span></span>
                 </div>
-
-                <!-- Nearby Schools Dropdown -->
-                <div class="relative">
-                    <button type="button" onclick="toggleDropdown('schoolDropdown')" class="w-full p-2 border rounded bg-white text-left flex justify-between items-center focus:ring-blue-500 focus:border-blue-500">
-                        <span>Nearby School</span>
-                        <svg class="h-5 w-5 text-gray-400 transition-transform" id="schoolArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="schoolDropdown" class="hidden absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                        <select name="school" class="w-full p-2 border-0 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Schools</option>
-                            {% for school in schools %}
-                                <option value="{{ school.id }}" 
-                                        {% if request.GET.school == school.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ school.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <!-- Selected school display -->
-                    <div id="selectedSchool" class="mt-2 text-sm text-gray-600">
-                        {% if request.GET.school %}
-                            {% for school in schools %}
-                                {% if school.id|stringformat:"s" == request.GET.school %}
-                                    {{ school.name }}
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </div>
+                <input type="range" id="priceRange" name="target_price" min="1000" max="10000" step="500"
+                    value="{{ current_target_price|default:1000 }}"
+                    class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>₱1,000</span>
+                    <span>₱10,000</span>
                 </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">Shows dorms priced within ±₱500 of selected price</p>
+            </div>
 
-                <!-- Sort Options Dropdown -->
-                <div class="relative">
-                    <button type="button" onclick="toggleDropdown('sortDropdown')" class="w-full p-2 border rounded bg-white text-left flex justify-between items-center focus:ring-blue-500 focus:border-blue-500">
-                        <span>Sort By</span>
-                        <svg class="h-5 w-5 text-gray-400 transition-transform" id="sortArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+            <!-- Sort Options -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Sort By</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="setSortOption('price_asc')" 
+                        class="sort-btn px-4 py-2 rounded-lg text-sm {% if request.GET.sort == 'price_asc' %}bg-blue-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100{% endif %}">
+                        Price: Low to High
                     </button>
-                    <div id="sortDropdown" class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                        <select name="sort" class="w-full p-2 border-0 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Default</option>
-                            <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
-                            <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
-                            <option value="rating" {% if request.GET.sort == 'rating' %}selected{% endif %}>Highest Rating</option>
-                        </select>
-                    </div>
-                    <!-- Selected sort display -->
-                    <div id="selectedSort" class="mt-2 text-sm text-gray-600">
-                        {% if request.GET.sort == 'price_asc' %}Price: Low to High
-                        {% elif request.GET.sort == 'price_desc' %}Price: High to Low
-                        {% elif request.GET.sort == 'rating' %}Highest Rating
-                        {% endif %}
-                    </div>
+                    <button type="button" onclick="setSortOption('price_desc')" 
+                        class="sort-btn px-4 py-2 rounded-lg text-sm {% if request.GET.sort == 'price_desc' %}bg-blue-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100{% endif %}">
+                        Price: High to Low
+                    </button>
+                    <button type="button" onclick="setSortOption('rating')" 
+                        class="sort-btn px-4 py-2 rounded-lg text-sm {% if request.GET.sort == 'rating' %}bg-blue-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100{% endif %}">
+                        Highest Rating
+                    </button>
+                    <button type="button" onclick="setSortOption('newest')" 
+                        class="sort-btn px-4 py-2 rounded-lg text-sm {% if request.GET.sort == 'newest' %}bg-blue-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100{% endif %}">
+                        Newest First
+                    </button>
+                </div>
+                <input type="hidden" name="sort" id="sortInput" value="{{ request.GET.sort }}">
+            </div>
+
+            <!-- Amenities -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Amenities</h3>
+                <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    {% for amenity in amenities %}
+                    <label class="inline-flex items-center space-x-2">
+                        <input type="checkbox" name="amenities" value="{{ amenity.id }}"
+                            {% if amenity.id|stringformat:"s" in request.GET.getlist.amenities %}checked{% endif %}
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700">{{ amenity.name }}</span>
+                    </label>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Apply Filters Button -->
-            <div class="mt-4 flex justify-end">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Apply Filters
-                </button>
-                {% if request.GET %}
-                    <a href="{% url 'dormitory:dorm_list' %}" class="ml-2 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                        Clear All
-                    </a>
-                {% endif %}
+            <!-- Schools -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Nearby Schools</h3>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    {% for school in schools %}
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="school" value="{{ school.id }}"
+                            {% if school.id|stringformat:"s" == request.GET.school %}checked{% endif %}
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700">{{ school.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
             </div>
+        </div>
+
+        <!-- Apply and Clear Filters -->
+        <div class="mt-4 flex justify-end space-x-2">
+            {% if request.GET %}
+            <a href="{% url 'dormitory:dorm_list' %}" 
+               class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+                Clear All
+            </a>
+            {% endif %}
+            <button type="submit" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Apply Filters
+            </button>
         </div>
     </form>
 </div>
@@ -279,306 +230,265 @@
     var routingControls = [];
     var distanceLabels = [];
 
-    // Toggle advanced filters section
+    // Price Range Slider
+    const priceRange = document.getElementById('priceRange');
+    const priceLabel = document.getElementById('priceLabel');
+
+    function updatePriceLabel() {
+        priceLabel.textContent = Number(priceRange.value).toLocaleString();
+    }
+
+    priceRange.addEventListener('input', updatePriceLabel);
+    
+    // Show advanced filters if price filter is active
+    if (window.location.search.includes('max_price=')) {
+        document.getElementById('advancedFilters').classList.remove('hidden');
+        document.getElementById('advancedFiltersArrow').classList.add('rotate-180');
+    }
+
+    // Advanced filters toggle
     function toggleAdvancedFilters() {
-        const filters = document.getElementById('advancedFilters');
+        const filtersDiv = document.getElementById('advancedFilters');
         const arrow = document.getElementById('advancedFiltersArrow');
-        filters.classList.toggle('hidden');
+        
+        filtersDiv.classList.toggle('hidden');
         arrow.classList.toggle('rotate-180');
     }
 
-    // Toggle individual dropdowns
-    function toggleDropdown(dropdownId) {
-        const dropdown = document.getElementById(dropdownId);
-        const arrow = document.getElementById(dropdownId.replace('Dropdown', 'Arrow'));
-        
-        // Close all other dropdowns except the one being clicked
-        document.querySelectorAll('.dropdown-content').forEach(d => {
-            if (d.id !== dropdownId && !d.classList.contains('hidden')) {
-                d.classList.add('hidden');
-                const otherArrow = document.getElementById(d.id.replace('Dropdown', 'Arrow'));
-                if (otherArrow) otherArrow.classList.remove('rotate-180');
-            }
+    // Sort Options
+    function setSortOption(value) {
+        document.getElementById('sortInput').value = value;
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-100');
         });
-        
-        dropdown.classList.toggle('hidden');
-        arrow.classList.toggle('rotate-180');
+        event.target.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+        event.target.classList.add('bg-blue-600', 'text-white');
     }
 
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.relative')) {
-            document.querySelectorAll('.dropdown-content').forEach(dropdown => {
-                dropdown.classList.add('hidden');
-                const arrow = document.getElementById(dropdown.id.replace('Dropdown', 'Arrow'));
-                if (arrow) arrow.classList.remove('rotate-180');
+    // Initialize price label
+    updatePriceLabel();
+
+    // Show advanced filters if any of those filters are active
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.search.includes('sort=') || 
+            window.location.search.includes('amenities=') || 
+            window.location.search.includes('school=')) {
+            toggleAdvancedFilters();
+        }
+    });
+
+    // Map initialization
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize map with Manila coordinates
+        map = L.map('map').setView([14.5995, 120.9842], 13);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // School markers layer
+        schoolLayer = L.layerGroup().addTo(map);
+        
+        // Create marker cluster group
+        markers = L.markerClusterGroup({
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false
+        });
+        map.addLayer(markers);
+
+        // Function to create distance label
+        function createDistanceLabel(distanceKm) {
+            return L.divIcon({
+                className: 'distance-label-container',
+                html: `<div class="distance-label">${distanceKm} km</div>`,
+                iconSize: [60, 20],
+                iconAnchor: [30, 0]
             });
         }
-    });
-
-    // Update selected amenities display
-    function updateSelectedAmenities() {
-        const selectedContainer = document.getElementById('selectedAmenities');
-        const checkboxes = document.querySelectorAll('input[name="amenities"]:checked');
         
-        selectedContainer.innerHTML = '';
-        
-        checkboxes.forEach(checkbox => {
-            const amenityId = checkbox.value;
-            const amenityName = checkbox.nextElementSibling.textContent;
-            
-            const pill = document.createElement('span');
-            pill.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
-            pill.innerHTML = `
-                ${amenityName}
-                <button type="button" onclick="removeAmenity('${amenityId}')" class="ml-1 text-blue-500 hover:text-blue-700">
-                    &times;
-                </button>
-            `;
-            
-            selectedContainer.appendChild(pill);
-        });
-    }
-
-    // Remove amenity from selection
-    function removeAmenity(amenityId) {
-        const checkbox = document.getElementById(`amenity-${amenityId}`);
-        checkbox.checked = false;
-        updateSelectedAmenities();
-    }
-
-    // Initialize amenities checkboxes
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('input[name="amenities"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectedAmenities);
-        });
-        
-        // Initialize with any pre-selected amenities
-        updateSelectedAmenities();
-        
-        // Show advanced filters if any filters are already applied
-        if (window.location.search.includes('min_price') || 
-            window.location.search.includes('max_price') || 
-            window.location.search.includes('amenities') || 
-            window.location.search.includes('school') || 
-            window.location.search.includes('sort')) {
-            document.getElementById('advancedFilters').classList.remove('hidden');
-            document.getElementById('advancedFiltersArrow').classList.add('rotate-180');
-        }
-    });
-
-// Map initialization
-document.addEventListener("DOMContentLoaded", function () {
-    // Initialize map with Manila coordinates
-    map = L.map('map').setView([14.5995, 120.9842], 13);
-    
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // School markers layer
-    schoolLayer = L.layerGroup().addTo(map);
-    
-    // Create marker cluster group
-    markers = L.markerClusterGroup({
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false
-    });
-    map.addLayer(markers);
-
-    // Function to create distance label
-    function createDistanceLabel(distanceKm) {
-        return L.divIcon({
-            className: 'distance-label-container',
-            html: `<div class="distance-label">${distanceKm} km</div>`,
-            iconSize: [60, 20],
-            iconAnchor: [30, 0]
-        });
-    }
-    
-    // Add schools (red markers)
-    var schools = [
-        {% for school in schools %}
-        {
-            name: "{{ school.name|escapejs }}",
-            lat: {{ school.latitude }},
-            lng: {{ school.longitude }},
-            marker: null,
-            distanceLabel: null,
-            image: "{% if school.image %}{{ school.image.url }}{% else %}{% static 'images/school.jpg' %}{% endif %}"
-        },
-        {% endfor %}
-    ];
-    
-    // Create initial school markers with images
-    schools.forEach(function(school) {
-        var schoolPopupContent = `
-            <div style="width: 200px;">
-                <div style="height: 100px; overflow: hidden; border-radius: 4px 4px 0 0;">
-                    <img src="${school.image}" 
-                         alt="${school.name}" 
-                         style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-                <div style="padding: 8px;">
-                    <h3 style="margin: 0; font-size: 14px; font-weight: bold;">${school.name}</h3>
-                </div>
-            </div>
-        `;
-        
-        school.marker = L.marker([school.lat, school.lng], {
-            icon: L.icon({
-                iconUrl: '{% static "images/school-marker.png" %}',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32]
-            })
-        }).bindPopup(schoolPopupContent).addTo(schoolLayer);
-    });
-
-    // Update map markers function
-    function updateMapMarkers() {
-        // Clear existing markers
-        markers.clearLayers();
-        
-        // Add filtered dorm markers
-        var filteredDorms = [
-            {% for dorm in dorms %}
-                {% if dorm.latitude and dorm.longitude %}
-                    {
-                        name: "{{ dorm.name|escapejs }}",
-                        lat: {{ dorm.latitude }},
-                        lng: {{ dorm.longitude }},
-                        url: "{% url 'dormitory:dorm_detail' dorm.id %}",
-                        price: {{ dorm.price|default:"0" }},
-                        image: "{% if dorm.images.first %}{{ dorm.images.first.image.url }}{% else %}{% static 'images/default_dorm.svg' %}{% endif %}"
-                    },
-                {% endif %}
+        // Add schools (red markers)
+        var schools = [
+            {% for school in schools %}
+            {
+                name: "{{ school.name|escapejs }}",
+                lat: {{ school.latitude }},
+                lng: {{ school.longitude }},
+                marker: null,
+                distanceLabel: null,
+                image: "{% if school.image %}{{ school.image.url }}{% else %}{% static 'images/school.jpg' %}{% endif %}"
+            },
             {% endfor %}
         ];
         
-        // Add markers to cluster group
-        filteredDorms.forEach(function(dorm) {
-            var marker = L.marker([dorm.lat, dorm.lng], {
-                icon: L.icon({
-                    iconUrl: '{% static "images/dorm-marker.png" %}',
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 32]
-                })
-            });
-            
-            // Create popup content with smaller image
-            var popupContent = `
-                <div style="width: 180px;">
+        // Create initial school markers with images
+        schools.forEach(function(school) {
+            var schoolPopupContent = `
+                <div style="width: 200px;">
                     <div style="height: 100px; overflow: hidden; border-radius: 4px 4px 0 0;">
-                        <img src="${dorm.image}" 
-                             alt="${dorm.name}" 
+                        <img src="${school.image}" 
+                             alt="${school.name}" 
                              style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="padding: 8px;">
-                        <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${dorm.name}</h3>
-                        <p style="margin: 0; font-size: 13px; color: #4b5563;">
-                            ₱${dorm.price.toLocaleString()}/month
-                        </p>
+                        <h3 style="margin: 0; font-size: 14px; font-weight: bold;">${school.name}</h3>
                     </div>
                 </div>
             `;
             
-            marker.bindPopup(popupContent);
+            school.marker = L.marker([school.lat, school.lng], {
+                icon: L.icon({
+                    iconUrl: '{% static "images/school-marker.png" %}',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                })
+            }).bindPopup(schoolPopupContent).addTo(schoolLayer);
+        });
+
+        // Update map markers function
+        function updateMapMarkers() {
+            // Clear existing markers
+            markers.clearLayers();
             
-            marker.on('click', function(e) {
-                // Clear existing routing controls
-                routingControls.forEach(function(control) {
-                    map.removeControl(control);
-                });
-                routingControls = [];
-                
-                // Remove previous distance labels
-                schools.forEach(function(school) {
-                    if (school.distanceLabel) {
-                        map.removeLayer(school.distanceLabel);
-                        school.distanceLabel = null;
-                    }
-                });
-                
-                // Create routes to all schools and add distance labels
-                schools.forEach(function(school) {
-                    // Calculate straight-line distance
-                    var distance = map.distance([dorm.lat, dorm.lng], [school.lat, school.lng]);
-                    var distanceKm = (distance / 1000).toFixed(1);
-                    
-                    // Add distance label above the school marker
-                    school.distanceLabel = L.marker([school.lat, school.lng], {
-                        icon: createDistanceLabel(distanceKm),
-                        zIndexOffset: 1000
-                    }).addTo(map);
-                    
-                    // Update school popup with distance info
-                    var schoolPopupContent = `
-                        <div style="width: 200px;">
-                            <div style="height: 100px; overflow: hidden; border-radius: 4px 4px 0 0;">
-                                <img src="${school.image}" 
-                                     alt="${school.name}" 
-                                     style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <div style="padding: 8px;">
-                                <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${school.name}</h3>
-                                <p style="margin: 0; font-size: 13px; color: #4b5563;">
-                                    Distance: ${distanceKm} km
-                                </p>
-                            </div>
-                        </div>
-                    `;
-                    school.marker.setPopupContent(schoolPopupContent);
-                    
-                    // Create routing path (actual road path)
-                    var control = L.Routing.control({
-                        waypoints: [
-                            L.latLng(dorm.lat, dorm.lng),
-                            L.latLng(school.lat, school.lng)
-                        ],
-                        routeWhileDragging: false,
-                        show: false,
-                        lineOptions: {
-                            styles: [{color: '#3b82f6', weight: 4, opacity: 0.7}]
+            // Add filtered dorm markers
+            var filteredDorms = [
+                {% for dorm in dorms %}
+                    {% if dorm.latitude and dorm.longitude %}
+                        {
+                            name: "{{ dorm.name|escapejs }}",
+                            lat: {{ dorm.latitude }},
+                            lng: {{ dorm.longitude }},
+                            url: "{% url 'dormitory:dorm_detail' dorm.id %}",
+                            price: {{ dorm.price|default:"0" }},
+                            image: "{% if dorm.images.first %}{{ dorm.images.first.image.url }}{% else %}{% static 'images/default_dorm.svg' %}{% endif %}"
                         },
-                        createMarker: function() { return null; }
-                    }).addTo(map);
-                    
-                    routingControls.push(control);
+                    {% endif %}
+                {% endfor %}
+            ];
+            
+            // Add markers to cluster group
+            filteredDorms.forEach(function(dorm) {
+                var marker = L.marker([dorm.lat, dorm.lng], {
+                    icon: L.icon({
+                        iconUrl: '{% static "images/dorm-marker.png" %}',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32]
+                    })
                 });
+                
+                // Create popup content with smaller image
+                var popupContent = `
+                    <div style="width: 180px;">
+                        <div style="height: 100px; overflow: hidden; border-radius: 4px 4px 0 0;">
+                            <img src="${dorm.image}" 
+                                 alt="${dorm.name}" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div style="padding: 8px;">
+                            <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${dorm.name}</h3>
+                            <p style="margin: 0; font-size: 13px; color: #4b5563;">
+                                ₱${dorm.price.toLocaleString()}/month
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                marker.on('click', function(e) {
+                    // Clear existing routing controls
+                    routingControls.forEach(function(control) {
+                        map.removeControl(control);
+                    });
+                    routingControls = [];
+                    
+                    // Remove previous distance labels
+                    schools.forEach(function(school) {
+                        if (school.distanceLabel) {
+                            map.removeLayer(school.distanceLabel);
+                            school.distanceLabel = null;
+                        }
+                    });
+                    
+                    // Create routes to all schools and add distance labels
+                    schools.forEach(function(school) {
+                        // Calculate straight-line distance
+                        var distance = map.distance([dorm.lat, dorm.lng], [school.lat, school.lng]);
+                        var distanceKm = (distance / 1000).toFixed(1);
+                        
+                        // Add distance label above the school marker
+                        school.distanceLabel = L.marker([school.lat, school.lng], {
+                            icon: createDistanceLabel(distanceKm),
+                            zIndexOffset: 1000
+                        }).addTo(map);
+                        
+                        // Update school popup with distance info
+                        var schoolPopupContent = `
+                            <div style="width: 200px;">
+                                <div style="height: 100px; overflow: hidden; border-radius: 4px 4px 0 0;">
+                                    <img src="${school.image}" 
+                                         alt="${school.name}" 
+                                         style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="padding: 8px;">
+                                    <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${school.name}</h3>
+                                    <p style="margin: 0; font-size: 13px; color: #4b5563;">
+                                        Distance: ${distanceKm} km
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                        school.marker.setPopupContent(schoolPopupContent);
+                        
+                        // Create routing path (actual road path)
+                        var control = L.Routing.control({
+                            waypoints: [
+                                L.latLng(dorm.lat, dorm.lng),
+                                L.latLng(school.lat, school.lng)
+                            ],
+                            routeWhileDragging: false,
+                            show: false,
+                            lineOptions: {
+                                styles: [{color: '#3b82f6', weight: 4, opacity: 0.7}]
+                            },
+                            createMarker: function() { return null; }
+                        }).addTo(map);
+                        
+                        routingControls.push(control);
+                    });
+                });
+                
+                markers.addLayer(marker);
             });
             
-            markers.addLayer(marker);
-        });
-        
-        // Fit map to show all filtered markers
-        if (filteredDorms.length > 0) {
-            var bounds = markers.getBounds();
-            map.fitBounds(bounds, { padding: [50, 50] });
+            // Fit map to show all filtered markers
+            if (filteredDorms.length > 0) {
+                var bounds = markers.getBounds();
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
         }
-    }
 
-    // Initial map markers update
-    updateMapMarkers();
+        // Initial map markers update
+        updateMapMarkers();
 
-    // Layer control
-    var overlayMaps = {
-        "Dorms": markers,
-        "Schools": schoolLayer
-    };
-    
-    L.control.layers(null, overlayMaps).addTo(map);
-});
+        // Layer control
+        var overlayMaps = {
+            "Dorms": markers,
+            "Schools": schoolLayer
+        };
+        
+        L.control.layers(null, overlayMaps).addTo(map);
+    });
 
-// Hide loader when page is fully loaded - Added at the end of script section
-window.addEventListener('load', function() {
-    const loader = document.getElementById('page-loader');
-    loader.style.opacity = '0';
-    setTimeout(() => {
-        loader.style.display = 'none';
-    }, 300); // Match this with your transition duration
-});
+    // Hide loader when page is fully loaded - Added at the end of script section
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('page-loader');
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 300); // Match this with your transition duration
+    });
 </script>
 
 <style>

@@ -212,191 +212,217 @@
 <br>
 
 <!-- Reviews Section -->
-<h3 class="text-2xl font-bold text-black mb-4">Reviews</h3>
-
-<!-- Main container with Alpine.js data -->
-<div x-data="{
+<div class="mb-8" x-data="{ 
+    openReviewModal: false, 
     openEditModal: false,
-    openDeleteModal: false,
-    selectedRating: 0,
-    currentReviewId: null,
-    currentReviewComment: '',
-    setReviewData(reviewId, rating, comment) {
-        this.currentReviewId = reviewId;
-        this.selectedRating = rating;
-        this.currentReviewComment = comment;
-        this.openEditModal = true;
+    currentReview: {
+        id: null,
+        rating: 0,
+        comment: ''
     }
 }">
-    {% for review in dorm.reviews.all %}
-    <div class="relative mb-4 p-6 bg-white rounded-lg shadow-md border border-gray-200">
-        <!-- Profile Picture (Top Right) -->
-        <div class="absolute top-4 right-6">
-            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'profile_pictures/default.jpg' %}{% endif %}" 
-                 alt="{{ review.user.username }}"
-                 class="w-12 h-12 rounded-full object-cover border border-gray-300">
-        </div>
+    <h3 class="text-2xl font-bold text-black mb-4">Reviews</h3>
 
-        <!-- Review Content -->
-        <div>
-            <strong class="text-lg">{{ review.user.username }}</strong>
-            <div class="flex">
-                {% for i in "12345" %}
-                    {% if i|add:"0" <= review.rating %}
-                        <span class="text-yellow-500">★</span>
-                    {% else %}
-                        <span class="text-gray-400">★</span>
-                    {% endif %}
-                {% endfor %}
-            </div>
+    <!-- Reservation Button for Students -->
+    {% if request.user.user_type == "student" and request.user != dorm.landlord %}
+        <a href="{% url 'dormitory:reserve_dorm' dorm.id %}" 
+           class="inline-block mb-6 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition">
+            Make a Reservation
+        </a>
+    {% endif %}
 
-            <!-- Review Comment -->
-            <p class="mt-2 text-gray-700">{{ review.comment|default:"No comment provided." }}</p>
+    <!-- Review Form or Message -->
+    {% if request.user.user_type == "student" %}
+        {% with completed_reservation=request.user.reservation_set.filter|dictsort:"created_at"|last %}
+            {% if completed_reservation and completed_reservation.status == 'completed' and not completed_reservation.review_set.exists %}
+                <!-- Review Modal Button -->
+                <button @click="openReviewModal = true" 
+                    class="mb-6 ml-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition">
+                    Write a Review
+                </button>
 
-            <!-- Timestamp -->
-            <small class="text-gray-500">Posted on {{ review.created_at }}</small>
+                <!-- Review Modal -->
+                <div x-show="openReviewModal" 
+                     x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-md w-full">
+                        <h2 class="text-xl font-bold text-black mb-4">Write a Review for {{ dorm.name }}</h2>
+                        <form method="post" action="{% url 'dormitory:add_review' dorm.id %}" class="space-y-4">
+                            {% csrf_token %}
+                            <!-- Star Rating Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Rating</label>
+                                <div id="star-rating" class="flex space-x-1 mt-2">
+                                    {% for i in "12345" %}
+                                        <span class="cursor-pointer text-gray-300 text-2xl hover:text-yellow-500 transition"
+                                            data-value="{{ i }}">★</span>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="rating" id="selected-rating" value="0">
+                            </div>
 
-            <!-- Edit and Delete Dropdown (Only for Review Owner) -->
-            {% if request.user == review.user %}
-            <div class="mt-4 flex items-center space-x-4">
-                <!-- Dropdown Button -->
-                <div class="relative">
-                    <button id="dropdownButton{{ review.id }}" data-dropdown-toggle="dropdownMenu{{ review.id }}"
-                        class="inline-block text-gray-500 hover:bg-gray-100 
-                        focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg text-sm p-1.5" 
-                        type="button">
-                        <span class="sr-only">Open menu</span>
-                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 3">
-                            <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
-                        </svg>
-                    </button>
+                            <!-- Review Comment -->
+                            <div>
+                                <label for="id_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
+                                <textarea name="comment" id="id_comment" rows="4"
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                    focus:ring-blue-500 focus:border-blue-500" required></textarea>
+                            </div>
 
-                    <!-- Dropdown Menu -->
-                    <div id="dropdownMenu{{ review.id }}" class="z-10 hidden text-base list-none bg-white divide-y divide-gray-100 
-                        rounded-lg shadow-sm w-44">
-                        <ul class="py-2" aria-labelledby="dropdownButton{{ review.id }}">
-                            <li>
-                                <button @click="setReviewData('{{ review.id }}', {{ review.rating }}, `{{ review.comment|escapejs }}`)"
-                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    ✏️ Edit
+                            <div class="flex justify-end gap-4 mt-6">
+                                <button type="submit" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">
+                                    Submit Review
                                 </button>
-                            </li>
-                            <li>
-                                <button @click="openDeleteModal = true; currentReviewId = '{{ review.id }}'"
-                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    🗑️ Delete
+                                <button type="button" @click="openReviewModal = false"
+                                    class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
+                                    Cancel
                                 </button>
-                            </li>
-                        </ul>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% empty %}
-    <p class="text-gray-600">No reviews yet. Be the first to review!</p>
-    {% endfor %}
-
-    <!-- Edit Modal -->
-    <template x-if="openEditModal">
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-md w-full">
-                <h2 class="text-xl font-bold text-black mb-4">Edit Your Review</h2>
-
-                <form method="post" :action="'/dormitory/dorms/{{ dorm.id }}/reviews/' + currentReviewId + '/edit/'">
-                    {% csrf_token %}
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Rating</label>
-                        <div class="flex space-x-1 mt-2">
-                            {% for i in "12345" %}
-                                <span class="cursor-pointer text-2xl transition"
-                                    :class="selectedRating >= {{ i }} ? 'text-yellow-500' : 'text-gray-300'"
-                                    @click="selectedRating = {{ i }}"
-                                    data-value="{{ i }}">★</span>
-                            {% endfor %}
+            {% elif completed_reservation and completed_reservation.review_set.exists %}
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
                         </div>
-                        <input type="hidden" name="rating" x-model="selectedRating">
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                You have already reviewed this dorm. Thank you for your feedback!
+                            </p>
+                        </div>
                     </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
 
-                    <div class="mb-4">
-                        <label for="id_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
-                        <textarea name="comment" id="id_comment" rows="4" x-model="currentReviewComment"
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                            focus:ring-blue-500 focus:border-blue-500"></textarea>
+    <!-- Edit Review Modal -->
+    <div x-show="openEditModal" 
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-md w-full">
+            <h2 class="text-xl font-bold text-black mb-4">Edit Your Review</h2>
+            <form method="post" :action="`/dormitory/dorms/{{ dorm.id }}/reviews/${currentReview.id}/edit/`" class="space-y-4">
+                {% csrf_token %}
+                <!-- Star Rating Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Rating</label>
+                    <div class="flex space-x-1 mt-2">
+                        <template x-for="i in 5">
+                            <span class="cursor-pointer text-2xl transition"
+                                  :class="i <= currentReview.rating ? 'text-yellow-500' : 'text-gray-300'"
+                                  @click="currentReview.rating = i">★</span>
+                        </template>
                     </div>
+                    <input type="hidden" name="rating" x-model="currentReview.rating">
+                </div>
 
-                    <div class="flex justify-end gap-4">
-                        <button type="submit"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">
-                            Save Changes
-                        </button>
-                        <button type="button" @click="openEditModal = false"
-                            class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </template>
+                <!-- Review Comment -->
+                <div>
+                    <label for="edit_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
+                    <textarea name="comment" id="edit_comment" rows="4"
+                        x-model="currentReview.comment"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                        focus:ring-blue-500 focus:border-blue-500" required></textarea>
+                </div>
 
-    <!-- Delete Modal -->
-    <template x-if="openDeleteModal">
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div class="bg-white p-6 rounded-lg shadow-md max-w-sm">
-                <h2 class="text-xl font-bold text-black mb-4">Confirm Deletion</h2>
-                <p class="text-gray-600 mb-6">Are you sure you want to delete this review?</p>
-                <div class="flex justify-end gap-4">
-                    <form :action="'/dormitory/dorms/{{ dorm.id }}/reviews/' + currentReviewId + '/delete/'" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg">
-                            Yes, Delete
-                        </button>
-                    </form>
-                    <button @click="openDeleteModal = false"
+                <div class="flex justify-end gap-4 mt-6">
+                    <button type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">
+                        Update Review
+                    </button>
+                    <button type="button" @click="openEditModal = false"
                         class="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg">
                         Cancel
                     </button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing Reviews List -->
+    <div class="space-y-4">
+        {% for review in dorm.reviews.all %}
+        <div class="relative p-6 bg-white rounded-lg shadow-md border border-gray-200">
+            <!-- Profile Picture -->
+            <div class="absolute top-4 right-6">
+                <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'profile_pictures/default.jpg' %}{% endif %}" 
+                     alt="{{ review.user.username }}"
+                     class="w-12 h-12 rounded-full object-cover border border-gray-300">
+            </div>
+
+            <!-- Review Content -->
+            <div>
+                <strong class="text-lg">{{ review.user.username }}</strong>
+                <div class="flex items-center mt-1">
+                    {% for i in "12345" %}
+                        {% if i|add:"0" <= review.rating %}
+                            <span class="text-yellow-500">★</span>
+                        {% else %}
+                            <span class="text-gray-300">★</span>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="ml-2 text-sm text-gray-600">
+                        {% if review.reservation %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                Verified Stay
+                            </span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <p class="mt-3 text-gray-700">{{ review.comment }}</p>
+                <small class="block mt-2 text-gray-500">Posted on {{ review.created_at|date:"F j, Y" }}</small>
+
+                {% if request.user == review.user %}
+                <div class="mt-4 flex items-center space-x-4">
+                    <button @click="openEditModal = true; currentReview = { id: '{{ review.id }}', rating: {{ review.rating }}, comment: `{{ review.comment|escapejs }}` }"
+                            class="text-blue-600 hover:text-blue-800">
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Edit
+                        </span>
+                    </button>
+                    <form action="{% url 'dormitory:delete_review' dorm.id review.id %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 hover:text-red-800"
+                                onclick="return confirm('Are you sure you want to delete this review?');">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                            </span>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
-    </template>
-</div>
-
-<!-- Add Review Form -->
-{% if request.user.user_type == "student" %}
-<h2 class="text-xl font-bold text-black mb-2">Write a Review for {{ dorm.name }}</h2>
-<form method="post" class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-    {% csrf_token %}
-
-    <!-- Star Rating Selection -->
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Rating</label>
-        <div id="star-rating" class="flex space-x-1 mt-2">
-            {% for i in "12345" %}
-                <span class="cursor-pointer text-gray-300 text-2xl hover:text-yellow-500 transition"
-                      data-value="{{ i }}">★</span>
-            {% endfor %}
+        {% empty %}
+        <div class="text-center py-8">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M34 24v-4c0-1.1-.9-2-2-2h-4v-4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v4h-4c-1.1 0-2 .9-2 2v4h-4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h4v4c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-4h4c1.1 0 2-.9 2-2v-4h4c1.1 0 2-.9 2-2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No reviews yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Be the first to review this dorm!</p>
         </div>
-        <input type="hidden" name="rating" id="selected-rating" value="0">
+        {% endfor %}
     </div>
-
-    <!-- Comment Textarea -->
-    <div class="mb-4">
-        <label for="id_comment" class="block text-sm font-medium text-gray-700">Your Review</label>
-        <textarea name="comment" id="id_comment" rows="4"
-                  class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ form.comment.value }}</textarea>
-    </div>
-
-    <!-- Submit Button -->
-    <button type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition">
-        Submit Review
-    </button>
-</form>
-{% endif %}
+</div>
 
 <!-- Load Leaflet.js CSS and JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -628,6 +654,70 @@ window.addEventListener('load', function() {
     .leaflet-marker-icon.distance-label-container {
         z-index: 1000;
     }
+
+    [x-cloak] { 
+        display: none !important; 
+    }
 </style>
+
+<!-- Initialize Alpine.js Data -->
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('reviewSection', () => ({
+        openReviewModal: false,
+        openEditModal: false,
+        currentReview: {
+            id: null,
+            rating: 0,
+            comment: ''
+        }
+    }))
+})
+</script>
+
+<!-- Star Rating JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll("#star-rating span");
+    const ratingInput = document.getElementById("selected-rating");
+    
+    if (stars.length && ratingInput) {
+        stars.forEach(star => {
+            star.addEventListener("click", function() {
+                const value = this.getAttribute("data-value");
+                ratingInput.value = value;
+                
+                stars.forEach((s, index) => {
+                    if (index < value) {
+                        s.classList.remove("text-gray-300");
+                        s.classList.add("text-yellow-500");
+                    } else {
+                        s.classList.remove("text-yellow-500");
+                        s.classList.add("text-gray-300");
+                    }
+                });
+            });
+            
+            star.addEventListener("mouseover", function() {
+                const value = this.getAttribute("data-value");
+                stars.forEach((s, index) => {
+                    if (index < value) {
+                        s.classList.add("text-yellow-300");
+                    }
+                });
+            });
+            
+            star.addEventListener("mouseout", function() {
+                stars.forEach(s => {
+                    if (!ratingInput.value || s.getAttribute("data-value") > ratingInput.value) {
+                        s.classList.remove("text-yellow-300", "text-yellow-500");
+                        s.classList.add("text-gray-300");
+                    }
+                });
+            });
+        });
+    }
+});
+</script>
 
 {% endblock %}

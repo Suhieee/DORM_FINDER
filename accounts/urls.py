@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
         RegisterView, LoginView, DashboardView,
-        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView
     )
 
 app_name = "accounts"
@@ -20,4 +20,9 @@ urlpatterns = [
 
     path("notifications/", NotificationListView.as_view(), name="notification_list"),
     path("notifications/read/<int:pk>/", MarkNotificationAsReadView.as_view(), name="mark_notification_read"),
+
+    path('create-admin/', CreateAdminView.as_view(), name='create_admin'),
+    path('manage-users/', ManageUsersView.as_view(), name='manage_users'),
+    path('toggle-user-status/<int:pk>/', ToggleUserStatusView.as_view(), name='toggle_user_status'),
+    path('delete-user/<int:pk>/', DeleteUserView.as_view(), name='delete_user'),
 ]

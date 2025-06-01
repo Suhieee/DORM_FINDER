@@ -1,0 +1,261 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold">Manage Reservations</h1>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="text-sm text-gray-600">Pending Reservations</div>
+                    <div class="text-2xl font-bold text-yellow-600">{{ pending_count }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="text-sm text-gray-600">Confirmed Reservations</div>
+                    <div class="text-2xl font-bold text-green-600">{{ confirmed_count }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="text-sm text-gray-600">Completed Transactions</div>
+                    <div class="text-2xl font-bold text-purple-600">{{ completed_count }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="text-sm text-gray-600">Declined Reservations</div>
+                    <div class="text-2xl font-bold text-red-600">{{ declined_count }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations List and Chat Interface -->
+        <div class="grid grid-cols-12 gap-6">
+            <!-- Reservations List -->
+            <div class="col-span-5 bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b">
+                    <h2 class="text-lg font-semibold">Reservations</h2>
+                </div>
+                <div class="divide-y divide-gray-200 max-h-[800px] overflow-y-auto">
+                    {% for reservation in reservations %}
+                    <div class="p-4 hover:bg-gray-50 cursor-pointer reservation-item {% if selected_reservation.id == reservation.id %}bg-blue-50{% endif %}"
+                         data-reservation-id="{{ reservation.id }}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold">{{ reservation.student.username }}</p>
+                                <p class="text-sm text-gray-600">{{ reservation.dorm.name }}</p>
+                                <p class="text-xs text-gray-500">{{ reservation.created_at|date:"M d, Y" }}</p>
+                            </div>
+                            <div>
+                                {% if reservation.status == 'pending_payment' %}
+                                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Pending Payment</span>
+                                {% elif reservation.status == 'pending' %}
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Under Review</span>
+                                {% elif reservation.status == 'confirmed' %}
+                                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Confirmed</span>
+                                {% elif reservation.status == 'completed' %}
+                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Completed</span>
+                                {% elif reservation.status == 'declined' %}
+                                    <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Declined</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-gray-500">
+                        No reservations found
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Chat and Details Interface -->
+            <div class="col-span-7 bg-white rounded-lg shadow-lg overflow-hidden">
+                {% if selected_reservation %}
+                <div class="h-full flex flex-col">
+                    <!-- Reservation Details Header -->
+                    <div class="p-4 bg-gray-50 border-b">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-semibold">{{ selected_reservation.student.username }}</h3>
+                                <p class="text-sm text-gray-600">{{ selected_reservation.dorm.name }}</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                {% if selected_reservation.status == 'pending' %}
+                                    <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="confirm">
+                                        <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                            Confirm
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="decline">
+                                        <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                            Decline
+                                        </button>
+                                    </form>
+                                {% elif selected_reservation.status == 'confirmed' %}
+                                    <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="complete">
+                                        <button type="submit" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
+                                            Complete Transaction
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if selected_reservation.status == 'completed' %}
+                        <div class="mt-2 bg-green-100 text-green-800 px-3 py-2 rounded-md text-sm">
+                            Transaction completed on {{ selected_reservation.completed_at|date:"F j, Y g:i A" }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Payment Proof (if available) -->
+                    {% if selected_reservation.payment_proof %}
+                    <div class="p-4 border-b">
+                        <h4 class="font-semibold mb-2">Payment Proof</h4>
+                        <img src="{{ selected_reservation.payment_proof.url }}" alt="Payment Proof" 
+                             class="max-h-48 object-contain rounded">
+                        <p class="text-xs text-gray-500 mt-1">
+                            Submitted: {{ selected_reservation.payment_submitted_at|date:"F j, Y g:i A" }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Chat Messages -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-4">
+                        {% for message in selected_reservation.messages.all %}
+                        <div class="mb-4 {% if message.sender == request.user %}ml-auto{% endif %}">
+                            <div class="{% if message.sender == request.user %}bg-blue-100 ml-12{% else %}bg-gray-100 mr-12{% endif %} rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold text-sm">{{ message.sender.username }}</span>
+                                    <span class="text-xs text-gray-500 ml-2">{{ message.timestamp|date:"g:i A" }}</span>
+                                </div>
+                                <p class="text-gray-700">{{ message.content }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-center text-gray-500">No messages yet</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Message Input -->
+                    {% if selected_reservation.status != 'declined' and selected_reservation.status != 'completed' %}
+                    <div class="p-4 border-t">
+                        <form id="message-form" class="flex space-x-2" data-reservation-id="{{ selected_reservation.id }}">
+                            {% csrf_token %}
+                            <input type="text" id="message-input" name="content"
+                                   class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Type your message...">
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    {% if selected_reservation.status == 'completed' %}
+                    <div class="p-4 border-t bg-gray-50">
+                        <p class="text-center text-gray-600">This conversation has been closed as the transaction is complete.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="h-full flex items-center justify-center text-gray-500">
+                    Select a reservation to view details and chat
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle reservation selection
+    document.querySelectorAll('.reservation-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const reservationId = this.dataset.reservationId;
+            window.location.href = `?selected_reservation=${reservationId}`;
+        });
+    });
+
+    // Chat functionality
+    const messageForm = document.getElementById('message-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            const reservationId = this.dataset.reservationId;
+            
+            if (!content) return;
+            
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            fetch(`/dormitory/reservation/${reservationId}/message/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addMessage(data.message);
+                    input.value = '';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+
+    // Function to add a new message to the chat
+    function addMessage(message) {
+        const container = document.getElementById('messages-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-4 ${message.is_sender ? 'ml-auto' : ''}`;
+        
+        messageDiv.innerHTML = `
+            <div class="${message.is_sender ? 'bg-blue-100 ml-12' : 'bg-gray-100 mr-12'} rounded-lg p-3">
+                <div class="flex items-center mb-1">
+                    <span class="font-semibold text-sm">${message.sender}</span>
+                    <span class="text-xs text-gray-500 ml-2">${message.timestamp}</span>
+                </div>
+                <p class="text-gray-700">${message.content}</p>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Auto-scroll to bottom of messages
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    // Call on page load
+    scrollToBottom();
+
+    // Poll for new messages every few seconds
+    setInterval(function() {
+        if (document.getElementById('messages-container')) {
+            const lastMessage = document.querySelector('#messages-container > div:last-child');
+            if (lastMessage) {
+                const lastMessageId = lastMessage.dataset.messageId;
+                // Implement polling for new messages here
+            }
+        }
+    }, 5000);
+</script>
+{% endblock %} 

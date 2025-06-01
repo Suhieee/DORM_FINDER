@@ -1,0 +1,53 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">GCash Payment</h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h4>Reservation Details</h4>
+                        <p><strong>Dorm:</strong> {{ reservation.dorm.name }}</p>
+                        <p><strong>Price:</strong> ₱{{ reservation.dorm.price }}</p>
+                        <p><strong>Reservation Date:</strong> {{ reservation.reservation_date|date:"F d, Y" }}</p>
+                        <p><strong>Reservation ID:</strong> {{ reservation.id }}</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="text-center">
+                        <h4 class="mb-4">Scan QR Code to Pay</h4>
+                        {% if reservation.qr_code %}
+                            <img src="{{ reservation.qr_code.url }}" alt="GCash QR Code" class="img-fluid mb-4" style="max-width: 300px;">
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-info text-center">
+                        <h5 class="mb-3">GCash Payment Instructions:</h5>
+                        <ol class="text-start">
+                            <li>Open your GCash app</li>
+                            <li>Scan the QR code above</li>
+                            <li>Verify the payment amount</li>
+                            <li>Complete the payment</li>
+                            <li>Take a screenshot of your payment confirmation</li>
+                        </ol>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <strong>Important:</strong> After making the payment, please send the screenshot of your payment confirmation to the landlord through the chat system.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'dormitory:chat' %}" class="btn btn-primary">Go to Chat</a>
+                        <a href="{% url 'dormitory:dorm_detail' reservation.dorm.id %}" class="btn btn-secondary">Back to Dorm</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -15,7 +15,7 @@
     <!-- Age -->
     <div>
         <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
-        <input type="number" name="age" id="age" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your age" required>
+        <input type="number" name="age" id="age" min="16" max="100" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your age" required>
     </div>
 
     <!-- Profile Image Upload -->
@@ -27,36 +27,81 @@
     <!-- Contact Number -->
     <div>
         <label for="contact_number" class="block text-sm font-medium text-gray-700">Contact Number</label>
-        <input type="text" name="contact_number" id="contact_number" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your contact number" required>
+        <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-gray-500 sm:text-sm">+63</span>
+            </div>
+            <input type="tel" name="contact_number" id="contact_number" 
+                   class="mt-1 block w-full pl-12 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="9XX XXX XXXX"
+                   pattern="^9[0-9]{9}$"
+                   title="Please enter a valid Philippine mobile number starting with 9"
+                   required>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Format: 9XXXXXXXXX (Philippine mobile number)</p>
     </div>
 
     <!-- Hobbies -->
     <div>
         <label for="hobbies" class="block text-sm font-medium text-gray-700">Hobbies</label>
-        <textarea name="hobbies" id="hobbies" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your hobbies"></textarea>
+        <textarea name="hobbies" id="hobbies" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Reading, Gaming, Sports, Music"></textarea>
     </div>
 
-        <!-- Mood (Dropdown) -->
-        <div>
-            <label for="mood" class="block text-sm font-medium text-gray-700">Mood</label>
-            <select name="mood" id="mood" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                {% for key, value in form.fields.mood.choices %}
-                <option value="{{ key }}" {% if form.mood.value == key %}selected{% endif %}>{{ value }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-
-    <!-- Preferred Budget -->
+    <!-- Mood (Dropdown) -->
     <div>
-        <label for="preferred_budget" class="block text-sm font-medium text-gray-700">Preferred Budget</label>
-        <input type="number" name="preferred_budget" id="preferred_budget" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your budget" required>
+        <label for="mood" class="block text-sm font-medium text-gray-700">Personality Type</label>
+        <select name="mood" id="mood" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            {% for key, value in form.fields.mood.choices %}
+            <option value="{{ key }}" {% if form.mood.value == key %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+        </select>
+        <p class="mt-1 text-xs text-gray-500">Choose the personality type that best describes you</p>
+    </div>
+
+    <!-- Preferred Budget Range -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Budget Range (₱)</label>
+        <div class="grid grid-cols-2 gap-4 mt-1">
+            <div>
+                <label for="min_budget" class="block text-xs text-gray-500">Minimum</label>
+                <input type="number" name="preferred_budget_min" id="min_budget" 
+                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                       min="0" step="500" placeholder="Min Budget"
+                       oninput="updateBudget()" required>
+            </div>
+            <div>
+                <label for="max_budget" class="block text-xs text-gray-500">Maximum</label>
+                <input type="number" name="preferred_budget_max" id="max_budget" 
+                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                       min="0" step="500" placeholder="Max Budget"
+                       oninput="updateBudget()" required>
+            </div>
+        </div>
+        <input type="hidden" name="preferred_budget" id="preferred_budget">
+        <p class="mt-1 text-xs text-gray-500">Your average budget will be calculated automatically</p>
     </div>
 
     <!-- Preferred Location -->
     <div>
         <label for="preferred_location" class="block text-sm font-medium text-gray-700">Preferred Location</label>
-        <input type="text" name="preferred_location" id="preferred_location" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter preferred location">
+        <div class="mt-1">
+            <input type="text" name="preferred_location" id="preferred_location" list="locations"
+                   class="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="Enter location or select from suggestions">
+            <datalist id="locations">
+                <option value="España, Manila (Near UST)">
+                <option value="Sampaloc, Manila">
+                <option value="Taft Avenue, Manila (Near DLSU)">
+                <option value="Katipunan, Quezon City (Near ADMU)">
+                <option value="University Belt, Manila">
+                <option value="Malate, Manila">
+                <option value="Diliman, Quezon City (Near UP)">
+                <option value="Vito Cruz, Manila">
+                <option value="Morayta, Manila">
+                <option value="Recto, Manila">
+            </datalist>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Choose a location or type your preferred area</p>
     </div>
 
     <!-- Amenities -->
@@ -75,13 +120,31 @@
     <!-- Description -->
     <div>
         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-        <textarea name="description" id="description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter a description about yourself"></textarea>
+        <textarea name="description" id="description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Describe yourself and what you're looking for in a roommate..."></textarea>
     </div>
 
     <!-- Submit Button -->
     <div class="text-center">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">Post Roommate Listing</button>
+        <button type="submit" class="bg-red-800 hover:bg-red-900 text-white px-6 py-2 rounded-md transition-colors duration-200">Post Roommate Listing</button>
     </div>
 </form>
+
+<script>
+// Budget calculation
+function updateBudget() {
+    const minBudget = parseFloat(document.getElementById('min_budget').value) || 0;
+    const maxBudget = parseFloat(document.getElementById('max_budget').value) || 0;
+    
+    if (minBudget && maxBudget) {
+        if (maxBudget < minBudget) {
+            document.getElementById('max_budget').value = minBudget;
+            document.getElementById('preferred_budget').value = minBudget;
+        } else {
+            const avgBudget = (minBudget + maxBudget) / 2;
+            document.getElementById('preferred_budget').value = avgBudget;
+        }
+    }
+}
+</script>
 
 {% endblock %}

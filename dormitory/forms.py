@@ -1,5 +1,5 @@
 from django import forms
-from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review
+from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation
 
 class DormForm(forms.ModelForm):
     amenities = forms.ModelMultipleChoiceField(
@@ -25,13 +25,22 @@ class DormForm(forms.ModelForm):
 
     class Meta:
         model = Dorm
-        fields = ['name', 'address', 'latitude', 'longitude', 'price', 'description', 'permit', 'available', 'amenities']
+        fields = ['name', 'address', 'latitude', 'longitude', 'price', 'description', 'permit', 'payment_qr', 'available', 'amenities']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
-            'permit': forms.FileInput(attrs={'accept': 'image/*'})
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'price': forms.NumberInput(attrs={'step': '0.01'}),
+            'permit': forms.FileInput(attrs={'accept': 'image/*'}),
+            'payment_qr': forms.FileInput(attrs={'accept': 'image/*'})
+        }
+        help_texts = {
+            'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
+            'permit': 'Upload your business permit or registration',
+            'price': 'Enter the price per month in PHP',
         }
         labels = {
-            'permit': 'Business Permit (Image only)'
+            'permit': 'Business Permit (Image only)',
+            'payment_qr': 'Payment QR Code (GCash/Maya)'
         }
 
     def __init__(self, *args, **kwargs):
@@ -51,13 +60,43 @@ class RoommatePostForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
         required=False
     )
+    
+    preferred_budget_min = forms.DecimalField(
+        required=True,
+        min_value=0,
+        max_digits=8,
+        decimal_places=2,
+        help_text="Minimum monthly budget"
+    )
+    
+    preferred_budget_max = forms.DecimalField(
+        required=True,
+        min_value=0,
+        max_digits=8,
+        decimal_places=2,
+        help_text="Maximum monthly budget"
+    )
 
     class Meta:
         model = RoommatePost
         fields = [
-            "name", "age","profile_image", "contact_number", "hobbies", "mood",
-            "preferred_budget", "preferred_location", "amenities", "description"
+            "name", "age", "profile_image", "contact_number", "hobbies", "mood",
+            "preferred_location", "amenities", "description",
+            "preferred_budget_min", "preferred_budget_max"
         ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        min_budget = cleaned_data.get('preferred_budget_min')
+        max_budget = cleaned_data.get('preferred_budget_max')
+
+        if min_budget and max_budget:
+            if max_budget < min_budget:
+                raise forms.ValidationError("Maximum budget cannot be less than minimum budget")
+            # Calculate average budget for the model
+            cleaned_data['preferred_budget'] = (min_budget + max_budget) / 2
+
+        return cleaned_data
 
 class ReviewForm(forms.ModelForm):
     rating = forms.IntegerField(
@@ -88,3 +127,9 @@ class ReviewForm(forms.ModelForm):
                 "Please provide either a rating or a comment (or both)"
             )
         return cleaned_data
+    
+
+class ReservationForm(forms.ModelForm):
+    class Meta:
+        model = Reservation
+        fields = []  # No extra fields, student and dorm assigned in view

@@ -1,0 +1,27 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<h2>Chat</h2>
+&nbsp;
+&nbsp;
+
+<div style="max-height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px;">
+    {% for msg in messages %}
+        <p><strong>{{ msg.sender.username }}:</strong> {{ msg.content }} <small>{{ msg.timestamp }}</small></p>
+    {% empty %}
+        <p>No messages yet.</p>
+    {% endfor %}
+</div>
+&nbsp;
+&nbsp;
+
+<hr>
+<form method="post">
+    {% csrf_token %}
+    <label for="receiver_id">Send To (User ID):</label>
+    <input type="number" name="receiver_id" id="receiver_id" required>
+    <br>
+    <textarea name="content" rows="3" placeholder="Type your message here..." required></textarea>
+    <br>
+    <button type="submit">Send</button>
+</form>
+{% endblock %}

@@ -4,8 +4,9 @@ from .views import (
     MyDormsView, EditDormView, DeleteDormView,
     RoommateListView, RoommateCreateView , RoommateDetailView,
     RoommateUpdateView, RoommateDeleteView,ReviewListView, 
-    ReviewCreateView, ReviewUpdateView, ReviewDeleteView
-
+    ReviewCreateView, ReviewUpdateView, ReviewDeleteView, ReservationCreateView ,ReservationPaymentView, ChatView,
+    LandlordReservationsView, UpdateReservationStatusView, ReservationDetailView, send_reservation_message, update_reservation_status,
+    StudentReservationsView
 )
 
 app_name = "dormitory"
@@ -18,7 +19,6 @@ urlpatterns = [
     path("dormitory/edit/<int:pk>/", EditDormView.as_view(), name="edit_dorm"),
     path("dormitory/delete/<int:pk>/", DeleteDormView.as_view(), name="delete_dorm"),
 
-
     path("roommate-finder/", RoommateListView.as_view(), name="roommate_list"),
     path("roommate-finder/add/", RoommateCreateView.as_view(), name="add_roommate"),
     path("roommate-finder/<int:pk>/", RoommateDetailView.as_view(), name="roommate_detail"),
@@ -30,4 +30,13 @@ urlpatterns = [
     path("dorms/<int:dorm_id>/reviews/<int:pk>/edit/", ReviewUpdateView.as_view(), name="edit_review"),
     path("dorms/<int:dorm_id>/reviews/<int:pk>/delete/", ReviewDeleteView.as_view(), name="delete_review"),
 
+    path("dormitory/<int:dorm_id>/reserve/", ReservationCreateView.as_view(), name="reserve_dorm"),
+    path("chat/", ChatView.as_view(), name="chat"),
+    path('reservation/payment/<int:reservation_id>/', ReservationPaymentView.as_view(), name='reservation_payment'),
+    path('landlord/reservations/', LandlordReservationsView.as_view(), name='landlord_reservations'),
+    path('my-reservations/', StudentReservationsView.as_view(), name='student_reservations'),
+    path('landlord/reservations/<int:reservation_id>/update/', UpdateReservationStatusView.as_view(), name='update_reservation_status'),
+    path('reservation/<int:pk>/', ReservationDetailView.as_view(), name='reservation_detail'),
+    path('reservation/<int:reservation_id>/message/', send_reservation_message, name='send_message'),
+    path('reservation/<int:reservation_id>/status/', update_reservation_status, name='update_status'),
 ]

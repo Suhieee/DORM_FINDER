@@ -1,15 +1,15 @@
 from django.urls import reverse_lazy
 from django.contrib.auth import login , logout
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, FormView, UpdateView ,ListView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, AdminCreationForm
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
-from dormitory.models import Dorm
+from dormitory.models import Dorm, Review, Reservation
 from django.views import View
-from .models import Notification
+from .models import Notification, CustomUser
 from user_profile.models import UserProfile
 from django.http import JsonResponse
 from django.db.models import Avg, Count, F
@@ -17,6 +17,8 @@ from datetime import datetime
 from django.db.models import FloatField
 from django.db.models.functions import Cast
 from django.db.models import ExpressionWrapper
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 
 
 class RegisterView(CreateView):
@@ -94,10 +96,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        context["notifications"] = Notification.objects.filter(user=user, is_read=False)
-
         if user.user_type == "admin":
+            # Get pending dorms
             context["pending_dorms"] = Dorm.objects.filter(approval_status="pending")
+            
+            # Get user statistics
+            User = get_user_model()
+            
+            context["total_users"] = User.objects.count()
+            context["total_students"] = User.objects.filter(user_type="student").count()
+            context["total_landlords"] = User.objects.filter(user_type="landlord").count()
+            context["total_reviews"] = Review.objects.count()
+            context["total_dorms"] = Dorm.objects.count()
+            
+            # Get active users (landlords and students)
+            context["active_landlords"] = User.objects.filter(user_type="landlord", is_active=True)
+            context["active_students"] = User.objects.filter(user_type="student", is_active=True)
+            
         elif user.user_type == "student":
             # Get current week number for rotation
             week_num = datetime.now().isocalendar()[1]
@@ -130,6 +145,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Get the rotated slice
             context["dorms"] = dorm_list[start_index:end_index]
             
+        elif user.user_type == 'landlord':
+            # Get recent reservations for the landlord's dorms
+            context['recent_reservations'] = Reservation.objects.select_related('dorm', 'student').filter(
+                dorm__landlord=user
+            ).order_by('-reservation_date')[:5]  # Show last 5 reservations
+            
+            # Get reservation statistics
+            reservations = Reservation.objects.filter(dorm__landlord=user)
+            context['pending_count'] = reservations.filter(status='pending').count()
+            context['confirmed_count'] = reservations.filter(status='confirmed').count()
+            context['declined_count'] = reservations.filter(status='declined').count()
+        
         return context
 
 # ✅ Approve Dorm View (CBV)
@@ -232,3 +259,93 @@ class MarkNotificationAsReadView(LoginRequiredMixin, View):
         notification.is_read = True
         notification.save()
         return JsonResponse({"success": True})
+
+class CreateAdminView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = CustomUser
+    template_name = 'accounts/create_admin.html'
+    form_class = AdminCreationForm
+    success_url = reverse_lazy('accounts:dashboard')
+
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.user_type = 'admin'
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+
+        # Create UserProfile for the new admin
+        UserProfile.objects.create(
+            user=user,
+            profile_picture="profile_pictures/default.jpg"
+        )
+        
+        messages.success(self.request, 'New admin user created successfully!')
+        return super().form_valid(form)
+
+class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'accounts/manage_users.html'
+
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['landlords'] = CustomUser.objects.filter(user_type='landlord')
+        context['students'] = CustomUser.objects.filter(user_type='student')
+        return context
+
+class DeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        
+        # Don't allow deleting yourself
+        if user == request.user:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect('accounts:manage_users')
+        
+        # Don't allow deleting other admins
+        if user.user_type == 'admin':
+            messages.error(request, "You cannot delete admin accounts.")
+            return redirect('accounts:manage_users')
+        
+        # Delete associated data
+        if user.user_type == 'landlord':
+            # Delete all dorms owned by this landlord
+            Dorm.objects.filter(landlord=user).delete()
+        elif user.user_type == 'student':
+            # Delete all reservations made by this student
+            Reservation.objects.filter(student=user).delete()
+            
+        # Delete user profile
+        if hasattr(user, 'userprofile'):
+            user.userprofile.delete()
+            
+        # Delete notifications
+        Notification.objects.filter(user=user).delete()
+        
+        # Delete the user
+        username = user.username
+        user.delete()
+        
+        messages.success(request, f"User {username} has been deleted successfully.")
+        return redirect('accounts:manage_users')
+
+class ToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        user.is_active = not user.is_active
+        user.save()
+        
+        action = "activated" if user.is_active else "deactivated"
+        messages.success(request, f"User {user.username} has been {action}.")
+        
+        return redirect('accounts:manage_users')

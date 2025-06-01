@@ -1,0 +1,86 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div class="min-h-[90vh] flex items-center justify-center px-4">
+    <div class="max-w-3xl w-full text-center">
+        <!-- Error Image -->
+        <div class="text-center py-8">
+            <img src="{% static 'images/question.svg' %}" alt="404 Not Found" class="mx-auto w-48 mb-4">
+        </div>
+
+        <!-- Error Message -->
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            Oops! Page Not Found
+        </h1>
+        <p class="text-lg text-gray-600 mb-8">
+            The page you're looking for doesn't exist or has been moved.
+        </p>
+
+        <!-- Available Paths -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Available Pages:</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% if user.is_authenticated %}
+                    {% if user.user_type == 'student' %}
+                        <a href="{% url 'accounts:dashboard' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            🏠 Dashboard
+                        </a>
+                        <a href="{% url 'dormitory:dorm_list' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            🔍 Browse Dorms
+                        </a>
+                        <a href="{% url 'dormitory:roommate_list' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            👥 Find Roommates
+                        </a>
+                        <a href="{% url 'dormitory:student_reservations' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            📋 My Reservations
+                        </a>
+                    {% elif user.user_type == 'landlord' %}
+                        <a href="{% url 'accounts:dashboard' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            🏠 Dashboard
+                        </a>
+                        <a href="{% url 'dormitory:my_dorms' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            🏘️ My Properties
+                        </a>
+                        <a href="{% url 'dormitory:add_dorm' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            ➕ Add Dorm
+                        </a>
+                        <a href="{% url 'dormitory:landlord_reservations' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            📋 Manage Reservations
+                        </a>
+                    {% elif user.user_type == 'admin' %}
+                        <a href="{% url 'accounts:dashboard' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            🏠 Dashboard
+                        </a>
+                        <a href="{% url 'accounts:manage_users' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            👥 Manage Users
+                        </a>
+                        <a href="{% url 'accounts:create_admin' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                            ➕ Create Admin
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                        🔑 Login
+                    </a>
+                    <a href="{% url 'accounts:register' %}" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                        📝 Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Back Buttons -->
+        <div class="flex justify-center gap-4">
+            <a href="javascript:history.back()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                ← Go Back
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                Go to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

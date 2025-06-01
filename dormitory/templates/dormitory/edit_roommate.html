@@ -52,11 +52,61 @@
 </div>
 
 
-    <!-- Preferred Budget -->
+    <!-- Preferred Budget Range -->
     <div>
-        <label for="preferred_budget" class="block text-sm font-medium text-gray-700">Preferred Budget</label>
-        <input type="number" name="preferred_budget" id="preferred_budget" step="0.01" value="{{ form.preferred_budget.value }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+        <label class="block text-sm font-medium text-gray-700">Budget Range (₱)</label>
+        <div class="grid grid-cols-2 gap-4 mt-1">
+            <div>
+                <label for="preferred_budget_min" class="block text-xs text-gray-500">Minimum Budget</label>
+                <input type="number" 
+                       name="preferred_budget_min" 
+                       id="preferred_budget_min" 
+                       value="{{ form.preferred_budget_min.value }}"
+                       min="0" 
+                       step="500" 
+                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                       required
+                       oninput="updateBudget()">
+            </div>
+            <div>
+                <label for="preferred_budget_max" class="block text-xs text-gray-500">Maximum Budget</label>
+                <input type="number" 
+                       name="preferred_budget_max" 
+                       id="preferred_budget_max" 
+                       value="{{ form.preferred_budget_max.value }}"
+                       min="0" 
+                       step="500" 
+                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                       required
+                       oninput="updateBudget()">
+            </div>
+        </div>
+        <input type="hidden" name="preferred_budget" id="preferred_budget" value="{{ form.preferred_budget.value }}">
+        <p class="mt-1 text-xs text-gray-500">Your average budget will be calculated automatically</p>
+        <p id="average_budget" class="mt-1 text-sm font-medium text-gray-700"></p>
     </div>
+
+    <script>
+    function updateBudget() {
+        const minBudget = parseFloat(document.getElementById('preferred_budget_min').value) || 0;
+        const maxBudget = parseFloat(document.getElementById('preferred_budget_max').value) || 0;
+        
+        if (minBudget && maxBudget) {
+            if (maxBudget < minBudget) {
+                document.getElementById('preferred_budget_max').value = minBudget;
+                document.getElementById('preferred_budget').value = minBudget;
+                document.getElementById('average_budget').textContent = `Average: ₱${minBudget.toLocaleString()}`;
+            } else {
+                const avgBudget = (minBudget + maxBudget) / 2;
+                document.getElementById('preferred_budget').value = avgBudget;
+                document.getElementById('average_budget').textContent = `Average: ₱${avgBudget.toLocaleString()}`;
+            }
+        }
+    }
+
+    // Initialize average budget display on page load
+    document.addEventListener('DOMContentLoaded', updateBudget);
+    </script>
 
     <!-- Preferred Location -->
     <div>
