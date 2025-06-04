@@ -31,6 +31,12 @@ class Dorm(models.Model):
         ('rejected', 'Rejected'),
     )
 
+    ACCOMMODATION_TYPE_CHOICES = (
+        ('whole_unit', 'Whole Unit'),
+        ('bedspace', 'Bed Space'),
+        ('room_sharing', 'Room Sharing'),
+    )
+
     landlord = models.ForeignKey(CustomUser , on_delete=models.CASCADE, limit_choices_to={'user_type': 'landlord'})
     name = models.CharField(max_length=255)
     address = models.TextField()
@@ -45,7 +51,16 @@ class Dorm(models.Model):
     rejection_reason = models.TextField(null=True, blank=True)
     amenities = models.ManyToManyField("Amenity", blank=True, related_name='dorms')
     nearby_schools = models.ManyToManyField('School', blank=True, related_name='nearby_dorms')
-    reservations_count = models.PositiveIntegerField(default=0)  # New field to track reservations
+    reservations_count = models.PositiveIntegerField(default=0)
+    recent_views = models.PositiveIntegerField(default=0)  # Field to track recent views
+
+    # New fields for enhanced dorm filtering
+    accommodation_type = models.CharField(max_length=20, choices=ACCOMMODATION_TYPE_CHOICES, default='whole_unit')
+    total_beds = models.PositiveIntegerField(default=1, help_text="Total number of beds available (for bedspace/room sharing)")
+    available_beds = models.PositiveIntegerField(default=1, help_text="Number of beds currently available")
+    is_aircon = models.BooleanField(default=False, help_text="Does the room have air conditioning?")
+    max_occupants = models.PositiveIntegerField(default=1, help_text="Maximum number of occupants allowed")
+    utilities_included = models.BooleanField(default=False, help_text="Are utilities (electricity, water) included in the price?")
 
     def get_average_rating(self):
         average = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -215,13 +230,57 @@ class RoommatePost(models.Model):
             self.preferred_budget = (self.preferred_budget_min + self.preferred_budget_max) / 2
         super().save(*args, **kwargs)
 
+    def get_compatibility_score(self):
+        """Calculate compatibility score with the current user's post."""
+        from .services import RoommateMatchingService
+        
+        # Get the current user's post
+        user_post = RoommatePost.objects.filter(user=self.user).first()
+        if not user_post or user_post == self:
+            return None
+            
+        # Calculate compatibility score
+        score = RoommateMatchingService.calculate_compatibility(user_post, self)
+        return round(float(score), 1)
+
     def __str__(self):
         return f"{self.name} - {self.get_mood_display()} ({self.preferred_location})"
 
+class Message(models.Model):
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField(blank=True)  # Make content optional since we might have only file/image
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
+    reservation = models.ForeignKey('Reservation', on_delete=models.CASCADE, related_name='chat_messages', null=True, blank=True)
+    attachment = models.FileField(upload_to='chat_attachments/', null=True, blank=True)
+    image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Message from {self.sender} to {self.receiver} at {self.timestamp}"
+
+    class Meta:
+        ordering = ['timestamp']
+
+    @property
+    def is_image(self):
+        if self.image:
+            return True
+        if self.attachment:
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+            return any(self.attachment.name.lower().endswith(ext) for ext in image_extensions)
+        return False
+
+    @property
+    def get_file_name(self):
+        if self.attachment:
+            return self.attachment.name.split('/')[-1]
+        return None
+
 class Reservation(models.Model):
     STATUS_CHOICES = (
-        ('pending_payment', 'Pending Payment'),
-        ('pending', 'Payment Submitted - Pending Approval'),
+        ('pending', 'Pending Confirmation'),
         ('confirmed', 'Confirmed'),
         ('completed', 'Transaction Completed'),
         ('declined', 'Declined'),
@@ -232,26 +291,34 @@ class Reservation(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'student'})
     reservation_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending_payment')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_proof = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
     payment_submitted_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    has_paid_reservation = models.BooleanField(default=False)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
         db_table = 'dormitory_reservation'
 
     def save(self, *args, **kwargs):
-        # Ensure created_at is set on creation
         if not self.id:
             self.created_at = timezone.now()
-        # Set completed_at when status changes to completed
         if self.status == 'completed' and not self.completed_at:
             self.completed_at = timezone.now()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.student.username}'s reservation for {self.dorm.name}"
+
+    @property
+    def is_reviewable(self):
+        """Check if the reservation is eligible for review."""
+        return (
+            self.status in ['confirmed', 'completed'] and
+            not hasattr(self, 'review')
+        )
 
 class Review(models.Model):
     RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]  # Rating from 1 to 5
@@ -273,9 +340,9 @@ class Review(models.Model):
         return f"{self.user.username} - {self.dorm.name} ({self.rating}/5)"
 
     def clean(self):
-        if self.reservation and self.reservation.status != 'completed':
+        if self.reservation and self.reservation.status not in ['confirmed', 'completed']:
             raise ValidationError({
-                'reservation': 'Reviews can only be created for completed reservations.'
+                'reservation': 'Reviews can only be created for confirmed or completed reservations.'
             })
 
 class ReservationMessage(models.Model):
@@ -292,15 +359,6 @@ class ReservationMessage(models.Model):
     def __str__(self):
         return f"Message from {self.sender.username} on {self.timestamp}"
 
-class Message(models.Model):
-    sender = models.ForeignKey(CustomUser, related_name='sent_messages', on_delete=models.CASCADE)
-    receiver = models.ForeignKey(CustomUser, related_name='received_messages', on_delete=models.CASCADE)
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Msg from {self.sender} to {self.receiver} at {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
-
 class School(models.Model):
     name = models.CharField(max_length=255)
     address = models.TextField()
@@ -309,3 +367,53 @@ class School(models.Model):
     
     def __str__(self):
         return self.name
+
+class RoommateMatch(models.Model):
+    initiator = models.ForeignKey(RoommatePost, on_delete=models.CASCADE, related_name='initiated_matches')
+    target = models.ForeignKey(RoommatePost, on_delete=models.CASCADE, related_name='received_matches')
+    compatibility_score = models.DecimalField(max_digits=5, decimal_places=2)  # Store as percentage
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('accepted', 'Accepted'),
+            ('rejected', 'Rejected'),
+        ],
+        default='pending'
+    )
+    
+    class Meta:
+        unique_together = ('initiator', 'target')
+        ordering = ['-compatibility_score']
+
+    def __str__(self):
+        return f"{self.initiator.name} → {self.target.name} ({self.compatibility_score}%)"
+
+class RoommateChat(models.Model):
+    match = models.ForeignKey(RoommateMatch, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_roommate_messages')
+    receiver = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name='received_roommate_messages',
+        null=True  # Allow null temporarily for migration
+    )
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def save(self, *args, **kwargs):
+        # Auto-set receiver based on match if not set
+        if not self.receiver:
+            if self.sender == self.match.initiator.user:
+                self.receiver = self.match.target.user
+            else:
+                self.receiver = self.match.initiator.user
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Message from {self.sender.username} at {self.timestamp}"

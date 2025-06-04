@@ -2,193 +2,559 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold">My Reservations</h1>
-            <div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="text-sm text-gray-600">Pending Payment</div>
-                    <div class="text-2xl font-bold text-yellow-600">{{ pending_payment_count }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="text-sm text-gray-600">Under Review</div>
-                    <div class="text-2xl font-bold text-blue-600">{{ pending_count }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="text-sm text-gray-600">Confirmed</div>
-                    <div class="text-2xl font-bold text-green-600">{{ confirmed_count }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="text-sm text-gray-600">Completed</div>
-                    <div class="text-2xl font-bold text-purple-600">{{ completed_count }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="text-sm text-gray-600">Declined</div>
-                    <div class="text-2xl font-bold text-red-600">{{ declined_count }}</div>
+<!-- Image Preview Modal -->
+<div id="imagePreviewModal" class="fixed inset-0 bg-black/100 z-50 hidden flex items-center justify-center">
+    <div class="relative w-full h-full">
+        <!-- Main Image Container -->
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="relative" style="width: 70vw; max-width: 900px;">
+                <img id="previewImage" src="" alt="Preview" class="w-full h-auto max-h-[70vh] object-contain">
+                
+                <!-- Navigation Arrows -->
+                <button id="prevImage" class="absolute left-0 top-[50%] -translate-y-1/2 p-2 text-white hover:text-gray-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button id="nextImage" class="absolute right-0 top-[50%] -translate-y-1/2 p-2 text-white hover:text-gray-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+
+                <!-- Image Counter -->
+                <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-white text-sm">
+                    <span id="currentImageIndex">1</span> / <span id="totalImages">1</span>
                 </div>
             </div>
         </div>
 
-        <!-- Reservations List and Details -->
-        <div class="grid grid-cols-12 gap-6">
-            <!-- Reservations List -->
-            <div class="col-span-5 bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="p-4 bg-gray-50 border-b">
-                    <h2 class="text-lg font-semibold">My Reservations</h2>
+        <!-- Close Button -->
+        <button onclick="closeImagePreview()" class="absolute top-4 right-4 p-2 text-white hover:text-gray-300">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+
+        <!-- Thumbnail Strip -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 overflow-x-auto">
+            <div id="thumbnailContainer" class="flex space-x-2">
+                <!-- Thumbnails will be inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid h-screen bg-gray-100">
+    <div class="flex h-[calc(100vh-4rem)]">
+        <!-- Left Sidebar - Reservations List -->
+        <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
+            <!-- Search Bar -->
+            <div class="p-4 border-b flex-shrink-0">
+                <div class="relative">
+                    <input type="text" id="reservation-search" placeholder="Search reservations" 
+                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
                 </div>
-                <div class="divide-y divide-gray-200 max-h-[800px] overflow-y-auto">
+            </div>
+
+            <!-- Status Filters -->
+            <div class="p-4 border-b flex-shrink-0">
+                <h3 class="text-sm font-semibold text-gray-600 mb-2">Filter by Status</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Pending Payment</span>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ pending_payment_count }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Pending</span>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ pending_count }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Confirmed</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{{ confirmed_count }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Completed</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ completed_count }}</span>
+                </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Declined</span>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">{{ declined_count }}</span>
+                </div>
+            </div>
+        </div>
+
+            <!-- Reservations List -->
+            <div class="flex-1 overflow-hidden">
+                <div class="h-full overflow-y-auto">
                     {% for reservation in reservations %}
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer reservation-item {% if selected_reservation.id == reservation.id %}bg-blue-50{% endif %}"
+                <div class="reservation-item p-3 hover:bg-gray-50 cursor-pointer {% if selected_reservation.id == reservation.id %}bg-blue-50{% endif %}"
                          data-reservation-id="{{ reservation.id }}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-semibold">{{ reservation.dorm.name }}</p>
-                                <p class="text-sm text-gray-600">{{ reservation.dorm.address }}</p>
-                                <p class="text-xs text-gray-500">Reserved on: {{ reservation.created_at|date:"M d, Y" }}</p>
-                            </div>
-                            <div>
-                                {% if reservation.status == 'pending_payment' %}
-                                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Pending Payment</span>
-                                {% elif reservation.status == 'pending' %}
-                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Under Review</span>
-                                {% elif reservation.status == 'confirmed' %}
-                                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Confirmed</span>
-                                {% elif reservation.status == 'completed' %}
-                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Completed</span>
-                                {% elif reservation.status == 'declined' %}
-                                    <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Declined</span>
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                 onclick="previewImage(this)">
+                                {% if reservation.dorm.landlord.userprofile.profile_picture %}
+                                    <img src="{{ reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                                 {% endif %}
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if reservation.dorm.landlord.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} border-2 border-white"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-sm truncate">{{ reservation.dorm.name }}</h3>
+                                <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.landlord.get_full_name }}</p>
+                            <div class="flex items-center mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
+                                {% if reservation.status == 'pending_payment' %}
+                                        bg-yellow-100 text-yellow-800
+                                {% elif reservation.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                {% elif reservation.status == 'confirmed' %}
+                                        bg-green-100 text-green-800
+                                {% elif reservation.status == 'completed' %}
+                                        bg-blue-100 text-blue-800
+                                {% elif reservation.status == 'declined' %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                                {% if reservation.unread_messages_count %}
+                                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">
+                                        {{ reservation.unread_messages_count }}
+                                    </span>
+                                {% endif %}
+                            </div>
                             </div>
                         </div>
                     </div>
                     {% empty %}
                     <div class="p-4 text-center text-gray-500">
-                        You haven't made any reservations yet.
-                        <div class="mt-2">
-                            <a href="{% url 'dormitory:dorm_list' %}" class="text-blue-600 hover:underline">Browse Available Dorms</a>
+                    No reservations yet
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col h-screen">
+            {% if selected_reservation %}
+                <!-- Chat Header -->
+                <div class="p-4 bg-white border-b flex items-center justify-between z-10 flex-shrink-0">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="previewImage(this)">
+                            {% if selected_reservation.dorm.landlord.userprofile.profile_picture %}
+                                <img src="{{ selected_reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                            {% else %}
+                                <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                            {% endif %}
                         </div>
+                        <div>
+                            <h2 class="font-semibold">{{ selected_reservation.dorm.landlord.get_full_name }}</h2>
+                            <p class="text-xs text-gray-500">Last active {{ selected_reservation.dorm.landlord.last_login|timesince }} ago</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        {% if selected_reservation.status == 'pending_payment' %}
+                            <span class="bg-yellow-100 text-yellow-800 px-4 py-1.5 rounded-full text-sm font-medium">
+                                Payment Required
+                            </span>
+                        {% endif %}
+                        <button id="toggle-details" class="p-2 hover:bg-gray-100 rounded-full">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Container -->
+                <div class="flex-1 overflow-hidden">
+                    <div id="messages-container" class="h-full overflow-y-auto p-3 space-y-2 bg-gray-50">
+                        {% for message in selected_reservation.chat_messages.all %}
+                        <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
+                            {% if message.sender != request.user %}
+                            <div class="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                 onclick="previewImage(this)">
+                                {% if message.sender.userprofile.profile_picture %}
+                                    <img src="{{ message.sender.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="relative max-w-[70%] {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-1.5 shadow-sm">
+                                <button onclick="deleteMessage({{ message.id }})" 
+                                        class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
+                                        {% if message.sender != request.user %}style="display: none;"{% endif %}>
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                                <p class="text-sm">{{ message.content }}</p>
+                                
+                                {% if message.image %}
+                                <div class="mt-2">
+                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
+                                </div>
+                                {% elif message.attachment %}
+                                <div class="mt-2">
+                                    <a href="{{ message.attachment.url }}" target="_blank" class="{% if message.sender == request.user %}text-blue-100{% else %}text-blue-500{% endif %} hover:text-{% if message.sender == request.user %}white{% else %}blue-700{% endif %} flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                        </svg>
+                                        {{ message.get_file_name }}
+                                    </a>
+                                </div>
+                                {% endif %}
+                                
+                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-100{% else %}text-gray-500{% endif %} block mt-0.5">
+                                    {{ message.timestamp|date:"g:i A" }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="border-t bg-white flex-shrink-0">
+                    <form id="chat-form" class="p-4" enctype="multipart/form-data" data-reservation-id="{{ selected_reservation.id }}">
+                        {% csrf_token %}
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <textarea id="message-input" name="content" rows="1" 
+                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    placeholder="Type your message..."></textarea>
+                            </div>
+                            
+                            <!-- File Upload Button -->
+                            <div class="relative">
+                                <input type="file" id="file-upload" name="attachment" class="hidden" accept="*/*">
+                                <button type="button" onclick="document.getElementById('file-upload').click()" 
+                                    class="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Image Upload Button -->
+                            <div class="relative">
+                                <input type="file" id="image-upload" name="image" class="hidden" accept="image/*">
+                                <button type="button" onclick="document.getElementById('image-upload').click()" 
+                                    class="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Send
+                            </button>
+                        </div>
+
+                        <!-- File Preview Area -->
+                        <div id="file-preview" class="hidden mt-2">
+                            <div class="flex items-center justify-between p-2 bg-gray-100 rounded-lg">
+                                <span id="file-name" class="text-sm text-gray-600"></span>
+                                <button type="button" onclick="clearFileUpload()" 
+                                    class="text-red-500 hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <div class="flex-1 flex items-center justify-center bg-gray-50">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No reservation selected</h3>
+                        <p class="mt-2 text-sm text-gray-500">Choose a reservation from the list to start messaging</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Sidebar - Dorm Details -->
+        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 top-0 h-full overflow-y-auto z-30">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-40">
+                <h3 class="font-semibold text-lg">Dorm Details</h3>
+                <button id="close-details" class="p-2 hover:bg-gray-100 rounded-full">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 space-y-4">
+                <!-- Dorm Images -->
+                <div class="space-y-2">
+                    <h4 class="font-semibold text-lg">Dorm Images</h4>
+                    <div class="grid grid-cols-2 gap-2" id="dormImages">
+                        {% for image in selected_reservation.dorm.images.all %}
+                        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="openImageGallery({{ forloop.counter0 }})">
+                            <img src="{{ image.image.url }}" alt="Dorm Image" class="w-full h-full object-cover gallery-image">
+                        </div>
+                        {% empty %}
+                        <div class="col-span-2 aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span class="text-gray-400">No images available</span>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Reservation Details and Chat -->
-            <div class="col-span-7 bg-white rounded-lg shadow-lg overflow-hidden">
-                {% if selected_reservation %}
-                <div class="h-full flex flex-col">
-                    <!-- Reservation Details Header -->
-                    <div class="p-4 bg-gray-50 border-b">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-semibold">{{ selected_reservation.dorm.name }}</h3>
-                                <p class="text-sm text-gray-600">{{ selected_reservation.dorm.address }}</p>
-                                <p class="text-sm text-gray-600">Landlord: {{ selected_reservation.dorm.landlord.username }}</p>
+                <!-- User Profiles -->
+                <div class="flex justify-between items-center border-t pt-4">
+                    <!-- Student Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="previewImage(this)">
+                            {% if request.user.userprofile.profile_picture %}
+                                <img src="{{ request.user.userprofile.profile_picture.url }}" alt="Student Profile" class="w-full h-full object-cover">
+                            {% else %}
+                                <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                            {% endif %}
                             </div>
                             <div>
-                                {% if selected_reservation.status == 'completed' %}
-                                <div class="text-sm text-gray-600">
-                                    Completed on: {{ selected_reservation.completed_at|date:"F j, Y" }}
-                                </div>
-                                {% endif %}
-                            </div>
+                            <p class="font-semibold text-sm">{{ request.user.get_full_name }}</p>
+                            <p class="text-xs text-gray-500">Student</p>
                         </div>
                     </div>
+                    <!-- Landlord Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div>
+                            <p class="font-semibold text-sm text-right">{{ selected_reservation.dorm.landlord.get_full_name }}</p>
+                            <p class="text-xs text-gray-500 text-right">Landlord</p>
+                                </div>
+                        <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="previewImage(this)">
+                            {% if selected_reservation.dorm.landlord.userprofile.profile_picture %}
+                                <img src="{{ selected_reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Landlord Profile" class="w-full h-full object-cover">
+                            {% else %}
+                                <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                                {% endif %}
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Payment Proof Section -->
-                    {% if selected_reservation.payment_proof %}
-                    <div class="p-4 border-b">
-                        <h4 class="font-semibold mb-2">Payment Proof</h4>
-                        <img src="{{ selected_reservation.payment_proof.url }}" alt="Payment Proof" 
-                             class="max-h-48 object-contain rounded">
-                        <p class="text-xs text-gray-500 mt-1">
-                            Submitted: {{ selected_reservation.payment_submitted_at|date:"F j, Y g:i A" }}
+                <!-- Dorm Info -->
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-semibold truncate">{{ selected_reservation.dorm.name }}</h4>
+                    <p class="text-sm text-gray-600 truncate">{{ selected_reservation.dorm.address }}</p>
+                    <p class="text-sm font-semibold">₱{{ selected_reservation.dorm.price|floatformat:2 }}/month</p>
+                    
+                    <!-- Accommodation Type -->
+                    <div class="mt-2">
+                        <p class="text-sm">
+                            <span class="text-gray-600">Type:</span>
+                            <span class="ml-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
+                                {{ selected_reservation.dorm.accommodation_type }}
+                            </span>
+                        </p>
+                        {% if selected_reservation.dorm.accommodation_type == 'Bed Space' %}
+                        <p class="text-sm mt-1">
+                            <span class="text-gray-600">Beds:</span>
+                            <span class="text-gray-800">{{ selected_reservation.dorm.available_beds }} available of {{ selected_reservation.dorm.total_beds }} total</span>
+                        </p>
+                        {% endif %}
+                        <p class="text-sm mt-1">
+                            <span class="text-gray-600">Max Occupants:</span>
+                            <span class="text-gray-800">{{ selected_reservation.dorm.max_occupants }}</span>
                         </p>
                     </div>
-                    {% elif selected_reservation.status == 'pending_payment' %}
-                    <div class="p-4 border-b">
-                        <form method="post" action="{% url 'dormitory:reservation_detail' selected_reservation.id %}" 
-                              enctype="multipart/form-data" class="space-y-4">
-                            {% csrf_token %}
-                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                                <div class="text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                    </svg>
+
+                    <!-- Amenities -->
                                     <div class="mt-4">
-                                        <label for="payment_proof" class="cursor-pointer">
-                                            <span class="mt-2 text-sm text-gray-600">Upload payment proof</span>
-                                            <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="hidden" required>
-                                        </label>
-                                    </div>
-                                    <p class="mt-1 text-xs text-gray-500">PNG, JPG up to 10MB</p>
-                                </div>
+                        <h5 class="text-sm font-semibold text-gray-700 mb-2">Amenities</h5>
+                        <div class="flex flex-wrap gap-2">
+                            {% if selected_reservation.dorm.has_aircon %}
+                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Air Conditioning</span>
+                            {% endif %}
+                            {% if selected_reservation.dorm.has_wifi %}
+                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">WiFi</span>
+                            {% endif %}
+                            {% if selected_reservation.dorm.has_kitchen %}
+                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Kitchen</span>
+                            {% endif %}
+                            {% if selected_reservation.dorm.has_bathroom %}
+                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Private Bathroom</span>
+                            {% endif %}
                             </div>
-                            <div class="flex justify-end">
-                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                    Submit Payment
-                                </button>
-                            </div>
-                        </form>
                     </div>
+
+                    <!-- Utilities -->
+                    <div class="mt-4">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-2">Utilities Included</h5>
+                        <div class="flex flex-wrap gap-2">
+                            {% if selected_reservation.dorm.electricity_included %}
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Electricity</span>
+                            {% endif %}
+                            {% if selected_reservation.dorm.water_included %}
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Water</span>
+                            {% endif %}
+                            {% if selected_reservation.dorm.internet_included %}
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Internet</span>
                     {% endif %}
-
-                    <!-- Chat Messages -->
-                    <div id="messages-container" class="flex-1 overflow-y-auto p-4">
-                        {% for message in selected_reservation.messages.all %}
-                        <div class="mb-4 {% if message.sender == request.user %}ml-auto{% endif %}">
-                            <div class="{% if message.sender == request.user %}bg-blue-100 ml-12{% else %}bg-gray-100 mr-12{% endif %} rounded-lg p-3">
-                                <div class="flex items-center mb-1">
-                                    <span class="font-semibold text-sm">{{ message.sender.username }}</span>
-                                    <span class="text-xs text-gray-500 ml-2">{{ message.timestamp|date:"g:i A" }}</span>
-                                </div>
-                                <p class="text-gray-700">{{ message.content }}</p>
-                            </div>
                         </div>
-                        {% empty %}
-                        <p class="text-center text-gray-500">No messages yet</p>
-                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Reservation Status -->
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-2">Status</h4>
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm
+                            {% if selected_reservation.status == 'pending' %}
+                                bg-yellow-100 text-yellow-800
+                            {% elif selected_reservation.status == 'confirmed' %}
+                                bg-green-100 text-green-800
+                            {% elif selected_reservation.status == 'completed' %}
+                                bg-blue-100 text-blue-800
+                            {% elif selected_reservation.status == 'declined' %}
+                                bg-red-100 text-red-800
+                            {% elif selected_reservation.status == 'cancelled' %}
+                                bg-gray-100 text-gray-800
+                            {% endif %}">
+                            {{ selected_reservation.get_status_display }}
                     </div>
 
-                    <!-- Message Input -->
-                    {% if selected_reservation.status != 'declined' and selected_reservation.status != 'completed' %}
-                    <div class="p-4 border-t">
-                        <form id="message-form" class="flex space-x-2" data-reservation-id="{{ selected_reservation.id }}">
+                        <!-- Cancel Button - Only show for confirmed but unpaid reservations -->
+                        {% if selected_reservation.status == 'confirmed' and not selected_reservation.has_paid_reservation %}
+                        <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
                             {% csrf_token %}
-                            <input type="text" id="message-input" name="content"
-                                   class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="Type your message...">
-                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                                Send
+                            <input type="hidden" name="action" value="cancel">
+                            <button type="submit" onclick="return confirm('Are you sure you want to cancel this reservation? This action cannot be undone.')"
+                                    class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                                Cancel Reservation
                             </button>
                         </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Payment Section -->
+                {% if selected_reservation.status == 'confirmed' and not selected_reservation.has_paid_reservation %}
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-4">Optional Payment</h4>
+                    
+                    <!-- Payment Details -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="space-y-2">
+                            <p><span class="text-gray-600">Amount:</span> ₱{{ selected_reservation.dorm.price }}</p>
+                            <p><span class="text-gray-600">Reservation ID:</span> {{ selected_reservation.id }}</p>
+                            <p class="text-sm text-gray-500">Payment is optional but recommended to secure your slot.</p>
+                        </div>
+                    </div>
+
+                    <!-- GCash QR Code -->
+                    {% if selected_reservation.qr_code %}
+                    <div class="text-center mb-4">
+                        <h5 class="font-medium mb-2">Scan QR Code to Pay</h5>
+                        <img src="{{ selected_reservation.qr_code.url }}" alt="GCash QR Code" class="mx-auto max-w-[200px] rounded-lg">
                     </div>
                     {% endif %}
 
-                    {% if selected_reservation.status == 'completed' or selected_reservation.status == 'declined' %}
-                    <div class="p-4 border-t bg-gray-50">
-                        <p class="text-center text-gray-600">
-                            {% if selected_reservation.status == 'completed' %}
-                                This conversation has been closed as the transaction is complete.
-                            {% else %}
-                                This reservation has been declined.
-                            {% endif %}
-                        </p>
+                    <!-- Payment Instructions -->
+                    <div class="bg-blue-50 text-blue-800 p-4 rounded-lg mb-4">
+                        <h5 class="font-medium mb-2">GCash Payment Instructions:</h5>
+                        <ol class="list-decimal list-inside space-y-1 text-sm">
+                            <li>Open your GCash app</li>
+                            <li>Scan the QR code above</li>
+                            <li>Verify the payment amount</li>
+                            <li>Complete the payment</li>
+                            <li>Take a screenshot of your payment confirmation</li>
+                        </ol>
                     </div>
-                    {% endif %}
-                </div>
-                {% else %}
-                <div class="h-full flex items-center justify-center text-gray-500">
-                    Select a reservation to view details
+
+                    <!-- Upload Payment Proof -->
+                    <form method="post" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Payment Proof</label>
+                            <input type="file" name="payment_proof" accept="image/*" required
+                                   class="w-full text-sm text-gray-500
+                                          file:mr-4 file:py-2 file:px-4
+                                          file:rounded-full file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-blue-50 file:text-blue-700
+                                          hover:file:bg-blue-100">
+                            <p class="mt-1 text-sm text-gray-500">Please upload a screenshot of your payment confirmation</p>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Submit Payment Proof
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
+
+                <!-- Display Payment Proof if Already Submitted -->
+                {% if selected_reservation.payment_proof %}
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-2">Payment Proof</h4>
+                    <div class="rounded-lg overflow-hidden">
+                        <img src="{{ selected_reservation.payment_proof.url }}" alt="Payment Proof" class="w-full cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="openImageGallery(this.src)">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Reservation Details -->
+                <div class="border-t pt-4 space-y-2">
+                    <h4 class="font-semibold">Reservation Information</h4>
+                    <div class="text-sm">
+                        <p><span class="text-gray-600">Reserved on:</span> {{ selected_reservation.reservation_date|date:"F j, Y" }}</p>
+                        <p><span class="text-gray-600">Landlord:</span> {{ selected_reservation.dorm.landlord.get_full_name }}</p>
+                        <p><span class="text-gray-600">Contact:</span> {{ selected_reservation.dorm.landlord.email }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // Add getCookie function at the top of your script
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Auto-scroll to bottom of messages
+    function scrollToBottom() {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+    scrollToBottom();
+
     // Handle reservation selection
     document.querySelectorAll('.reservation-item').forEach(item => {
         item.addEventListener('click', function() {
@@ -197,104 +563,384 @@
         });
     });
 
-    // Chat functionality
-    const messageForm = document.getElementById('message-form');
-    if (messageForm) {
-        messageForm.addEventListener('submit', function(e) {
+    // Handle chat form submission
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+        chatForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
+            const formData = new FormData(this);
             const reservationId = this.dataset.reservationId;
+            const imageFile = document.getElementById('image-upload').files[0];
+            const attachmentFile = document.getElementById('file-upload').files[0];
             
-            if (!content) return;
+            if (!reservationId) {
+                console.error('No reservation ID found');
+                return;
+            }
             
-            const formData = new FormData();
-            formData.append('content', content);
-            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            // Add the reservation ID to the form data
+            formData.append('reservation_id', reservationId);
             
-            fetch(`/dormitory/reservation/${reservationId}/message/`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            // Handle image and attachment separately
+            if (imageFile) {
+                formData.set('image', imageFile);  // Use set instead of append to avoid duplicate
+            }
+            if (attachmentFile) {
+                formData.set('attachment', attachmentFile);  // Use set instead of append to avoid duplicate
+            }
+            
+            try {
+                const response = await fetch('/dormitory/messages/send/', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const messagesContainer = document.getElementById('messages-container');
+                    let messageHtml = `
+                        <div class="flex justify-end items-end space-x-2 group">
+                            <div class="relative max-w-[70%] bg-blue-500 text-white rounded-lg px-3 py-1.5 shadow-sm">
+                                <p class="text-sm">${data.message.content}</p>`;
+                    
+                    // Add file/image preview if present
+                    if (data.message.has_image) {
+                        messageHtml += `
+                            <div class="mt-2">
+                                <img src="${data.message.image_url}" alt="Uploaded image" class="max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
+                            </div>`;
+                    } else if (data.message.has_attachment) {
+                        messageHtml += `
+                            <div class="mt-2">
+                                <a href="${data.message.file_url}" target="_blank" class="text-blue-100 hover:text-white flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                    </svg>
+                                    ${data.message.file_name}
+                                </a>
+                            </div>`;
+                    }
+                    
+                    messageHtml += `
+                                <span class="text-[10px] text-blue-100 block mt-0.5">${data.message.timestamp}</span>
+                            </div>
+                        </div>`;
+                    
+                    messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+                    scrollToBottom();
+                    
+                    // Clear form and file preview
+                    this.reset();
+                    document.getElementById('file-preview').classList.add('hidden');
                 }
-            })
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        });
+    }
+
+    // Check for new messages periodically
+    function checkNewMessages() {
+        const reservationId = new URLSearchParams(window.location.search).get('selected_reservation');
+        if (!reservationId) return;
+
+        fetch(`/dormitory/messages/check-new/${reservationId}/`)
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
-                    addMessage(data.message);
-                    input.value = '';
+                if (data.hasNewMessages) {
+                    window.location.reload();
                 }
             })
             .catch(error => console.error('Error:', error));
-        });
     }
 
-    // Function to add a new message to the chat
-    function addMessage(message) {
-        const container = document.getElementById('messages-container');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `mb-4 ${message.is_sender ? 'ml-auto' : ''}`;
-        
-        messageDiv.innerHTML = `
-            <div class="${message.is_sender ? 'bg-blue-100 ml-12' : 'bg-gray-100 mr-12'} rounded-lg p-3">
-                <div class="flex items-center mb-1">
-                    <span class="font-semibold text-sm">${message.sender}</span>
-                    <span class="text-xs text-gray-500 ml-2">${message.timestamp}</span>
-                </div>
-                <p class="text-gray-700">${message.content}</p>
-            </div>
-        `;
-        
-        container.appendChild(messageDiv);
-        scrollToBottom();
-    }
+    // Check for new messages every 30 seconds
+    setInterval(checkNewMessages, 30000);
 
-    // Preview uploaded image
-    const paymentProofInput = document.getElementById('payment_proof');
-    if (paymentProofInput) {
-        paymentProofInput.addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.createElement('img');
-                    preview.src = e.target.result;
-                    preview.className = 'mt-4 mx-auto max-h-48 rounded-lg';
-                    
-                    const container = document.querySelector('.border-dashed');
-                    const existingPreview = container.querySelector('img');
-                    if (existingPreview) {
-                        existingPreview.remove();
-                    }
-                    container.appendChild(preview);
+    // Handle message deletion
+    function deleteMessage(messageId) {
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        fetch(`/dormitory/messages/delete/${messageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Remove the message element from the DOM
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.remove();
+                } else {
+                    window.location.reload();
                 }
-                reader.readAsDataURL(e.target.files[0]);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Image Gallery Variables
+    let currentImageIndex = 0;
+    let galleryImages = [];
+    let isProfileImage = false;
+
+    function openImageGallery(index) {
+        const modal = document.getElementById('imagePreviewModal');
+        const images = Array.from(document.querySelectorAll('.gallery-image'));
+        galleryImages = images.map(img => img.src);
+        currentImageIndex = index;
+        isProfileImage = false;
+        updateGalleryView();
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        createThumbnails();
+    }
+
+    function previewImage(element) {
+        const modal = document.getElementById('imagePreviewModal');
+        const img = element.querySelector('img');
+        
+        if (img) {
+            isProfileImage = true;
+            galleryImages = [img.src];
+            currentImageIndex = 0;
+            updateGalleryView();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            hideThumbnailsAndNavigation();
+        }
+    }
+
+    function updateGalleryView() {
+        const previewImg = document.getElementById('previewImage');
+        const currentIndexSpan = document.getElementById('currentImageIndex');
+        const totalImagesSpan = document.getElementById('totalImages');
+        
+        previewImg.src = galleryImages[currentImageIndex];
+        currentIndexSpan.textContent = currentImageIndex + 1;
+        totalImagesSpan.textContent = galleryImages.length;
+    }
+
+    function createThumbnails() {
+        const container = document.getElementById('thumbnailContainer');
+        container.innerHTML = '';
+        
+        galleryImages.forEach((src, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = `w-20 h-20 rounded-lg overflow-hidden cursor-pointer ${index === currentImageIndex ? 'ring-2 ring-blue-500' : ''}`;
+            thumb.onclick = () => {
+                currentImageIndex = index;
+                updateGalleryView();
+                updateThumbnailSelection();
+            };
+            
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'w-full h-full object-cover';
+            thumb.appendChild(img);
+            container.appendChild(thumb);
+        });
+    }
+
+    function updateThumbnailSelection() {
+        const thumbs = document.querySelectorAll('#thumbnailContainer > div');
+        thumbs.forEach((thumb, index) => {
+            if (index === currentImageIndex) {
+                thumb.classList.add('ring-2', 'ring-blue-500');
+            } else {
+                thumb.classList.remove('ring-2', 'ring-blue-500');
             }
         });
     }
 
-    // Auto-scroll to bottom of messages
-    function scrollToBottom() {
-        const container = document.getElementById('messages-container');
-        if (container) {
-            container.scrollTop = container.scrollHeight;
+    function hideThumbnailsAndNavigation() {
+        document.getElementById('prevImage').style.display = 'none';
+        document.getElementById('nextImage').style.display = 'none';
+        document.getElementById('thumbnailContainer').parentElement.style.display = 'none';
+    }
+
+    function showThumbnailsAndNavigation() {
+        document.getElementById('prevImage').style.display = '';
+        document.getElementById('nextImage').style.display = '';
+        document.getElementById('thumbnailContainer').parentElement.style.display = '';
+    }
+
+    function closeImagePreview() {
+        const modal = document.getElementById('imagePreviewModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        showThumbnailsAndNavigation();
+    }
+
+    // Navigation event listeners
+    document.getElementById('prevImage').addEventListener('click', () => {
+        if (!isProfileImage) {
+            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateGalleryView();
+            updateThumbnailSelection();
+        }
+    });
+
+    document.getElementById('nextImage').addEventListener('click', () => {
+        if (!isProfileImage) {
+            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+            updateGalleryView();
+            updateThumbnailSelection();
+        }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (document.getElementById('imagePreviewModal').classList.contains('hidden')) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                if (!isProfileImage) {
+                    currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+                    updateGalleryView();
+                    updateThumbnailSelection();
+                }
+                break;
+            case 'ArrowRight':
+                if (!isProfileImage) {
+                    currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+                    updateGalleryView();
+                    updateThumbnailSelection();
+                }
+                break;
+            case 'Escape':
+                closeImagePreview();
+                break;
+        }
+    });
+
+    // Close modal when clicking outside the image
+    document.getElementById('imagePreviewModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImagePreview();
+        }
+    });
+
+    // Handle details panel toggle with proper initialization
+    const detailsPanel = document.getElementById('details-panel');
+    const toggleDetailsBtn = document.getElementById('toggle-details');
+    const closeDetailsBtn = document.getElementById('close-details');
+    const mainContainer = document.querySelector('.flex.h-\\[calc\\(100vh-4rem\\)]');
+    let detailsVisible = true;
+
+    function toggleDetails() {
+        detailsVisible = !detailsVisible;
+        if (detailsVisible) {
+            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+            detailsPanel.classList.add('shadow-lg');
+            mainContainer.classList.remove('pr-0');
+            mainContainer.classList.add('pr-80');
+        } else {
+            detailsPanel.classList.add('translate-x-full', 'shadow-none');
+            detailsPanel.classList.remove('shadow-lg');
+            mainContainer.classList.remove('pr-80');
+            mainContainer.classList.add('pr-0');
         }
     }
 
-    // Call on page load
-    scrollToBottom();
+    toggleDetailsBtn.addEventListener('click', toggleDetails);
+    closeDetailsBtn.addEventListener('click', toggleDetails);
 
-    // Poll for new messages every few seconds
-    setInterval(function() {
-        if (document.getElementById('messages-container')) {
-            const lastMessage = document.querySelector('#messages-container > div:last-child');
-            if (lastMessage) {
-                const lastMessageId = lastMessage.dataset.messageId;
-                // Implement polling for new messages here
-            }
+    // Initialize panel state based on screen size
+    function initializePanelState() {
+        if (window.innerWidth < 768) {
+            detailsVisible = false;
+            detailsPanel.classList.add('translate-x-full', 'shadow-none');
+            detailsPanel.classList.remove('shadow-lg');
+            mainContainer.classList.remove('pr-80');
+            mainContainer.classList.add('pr-0');
+        } else {
+            detailsVisible = true;
+            mainContainer.classList.add('pr-80');
+            detailsPanel.classList.add('shadow-lg');
+            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
         }
-    }, 5000);
+    }
+
+    // Initialize on load
+    initializePanelState();
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(initializePanelState, 100);
+    });
+
+    // Add this to your existing JavaScript
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-preview').classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('image-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-preview').classList.remove('hidden');
+        }
+    });
+
+    function clearFileUpload() {
+        document.getElementById('file-upload').value = '';
+        document.getElementById('image-upload').value = '';
+        document.getElementById('file-preview').classList.add('hidden');
+    }
 </script>
+
+<style>
+    /* Smooth transitions for panel */
+    .transform {
+        --tw-translate-x: 0;
+        transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate))
+                  skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+    }
+    
+    .translate-x-full {
+        --tw-translate-x: 100%;
+    }
+    
+    .transition-transform {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
+
+    /* Prevent content overlap */
+    .z-10 { z-index: 10; }
+    .z-20 { z-index: 20; }
+    .z-30 { z-index: 30; }
+    .z-40 { z-index: 40; }
+
+    #imagePreviewModal {
+        background-color: black !important;
+    }
+
+    #prevImage, #nextImage {
+        transform: translateY(-50%);
+        transition: opacity 0.2s;
+    }
+
+    #prevImage:hover, #nextImage:hover {
+        opacity: 0.8;
+    }
+</style>
 {% endblock %} 

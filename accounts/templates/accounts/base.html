@@ -105,38 +105,12 @@
                             <li><a href="{% url 'dormitory:dorm_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Browse Dorms</a></li>
                             <li><a href="{% url 'dormitory:roommate_list' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100">Roommate Finder</a></li>
                             <li>
-                                <a href="{% url 'dormitory:student_reservations' %}" id="reservationsButton" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center">
+                                <a href="{% url 'dormitory:student_reservations' %}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center">
                                     <span>My Reservations</span>
                                     {% if user_pending_reservations %}
                                         <span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>
                                     {% endif %}
                                 </a>
-                                <!-- Reservations Dropdown -->
-                                <div id="reservationsDropdown" class="hidden absolute mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200">
-                                    <div class="flex justify-between items-center bg-blue-800 text-white font-medium px-4 py-2 rounded-t-lg">
-                                        <span>Recent Reservations</span>
-                                        <a href="{% url 'dormitory:student_reservations' %}" class="text-xs text-white hover:text-gray-200">View All</a>
-                                    </div>
-                                    <div class="divide-y divide-gray-100">
-                                        {% for reservation in user_pending_reservations %}
-                                        <a href="{% url 'dormitory:reservation_detail' pk=reservation.id %}" class="block px-4 py-3 hover:bg-gray-100">
-                                            <div class="flex justify-between items-center">
-                                                <div>
-                                                    <p class="font-semibold text-sm">{{ reservation.dorm.name }}</p>
-                                                    <p class="text-xs text-gray-600">Status: 
-                                                        <span class="{% if reservation.status == 'pending' %}text-yellow-600{% elif reservation.status == 'confirmed' %}text-green-600{% else %}text-red-600{% endif %}">
-                                                            {{ reservation.status|title }}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                                <span class="text-xs text-gray-500">{{ reservation.created_at|date:"M d, Y" }}</span>
-                                            </div>
-                                        </a>
-                                        {% empty %}
-                                        <div class="px-4 py-3 text-center text-gray-600">No pending reservations</div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
                             </li>
 
                         {% endif %}

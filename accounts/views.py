@@ -12,13 +12,13 @@ from django.views import View
 from .models import Notification, CustomUser
 from user_profile.models import UserProfile
 from django.http import JsonResponse
-from django.db.models import Avg, Count, F
-from datetime import datetime
-from django.db.models import FloatField
-from django.db.models.functions import Cast
-from django.db.models import ExpressionWrapper
+from django.db.models import Avg, Count, F, Q, ExpressionWrapper, FloatField, Value
+from django.db.models.functions import Cast, Coalesce
+from datetime import datetime, timedelta
+from math import radians, sin, cos, sqrt, atan2
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.db.models import Case, When
 
 
 class RegisterView(CreateView):
@@ -92,6 +92,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         else:
             return ["accounts/student_dashboard.html"]
 
+    def calculate_distance(self, lat1, lon1, lat2, lon2):
+        """Calculate distance between two points using Haversine formula."""
+        R = 6371  # Earth's radius in kilometers
+
+        lat1, lon1, lat2, lon2 = map(radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return R * c
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
@@ -114,36 +126,77 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context["active_students"] = User.objects.filter(user_type="student", is_active=True)
             
         elif user.user_type == "student":
-            # Get current week number for rotation
-            week_num = datetime.now().isocalendar()[1]
-            
-            # Get student-specific seed if you want personalized rotation
-            student_seed = user.id if hasattr(user, 'id') else 0
-            
-            # First get all approved dorms with their scores
-            queryset = Dorm.objects.filter(
+            # Get current date for recent activity calculations
+            now = datetime.now()
+            recent_date = now - timedelta(days=30)  # Last 30 days activity
+
+            # Base queryset with enhanced annotations
+            base_queryset = Dorm.objects.filter(
                 approval_status="approved",
                 available=True
             ).annotate(
-                avg_rating=Avg('reviews__rating'),
+                avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
+                avg_rating_rounded=Case(
+                    When(avg_rating__isnull=True, then=0),
+                    default=ExpressionWrapper(
+                        Cast('avg_rating', FloatField()),
+                        output_field=FloatField()
+                    ),
+                    output_field=FloatField()
+                ),
                 review_count=Count('reviews'),
-                value_score=ExpressionWrapper(
-                    F('avg_rating') * 0.7 + (1 - (Cast(F('price'), FloatField())/50000)) * 0.3,
+                recent_reviews=Count('reviews', filter=Q(reviews__created_at__gte=recent_date)),
+                recent_reservations=Count('reservations', filter=Q(reservations__created_at__gte=recent_date)),
+                amenity_count=Count('amenities'),
+                # Calculate popularity score
+                popularity_score=ExpressionWrapper(
+                    F('avg_rating') * 0.3 +  # 30% weight for rating
+                    (F('review_count') * 0.2) +  # 20% weight for total reviews
+                    (F('recent_reviews') * 0.25) +  # 25% weight for recent reviews
+                    (F('recent_reservations') * 0.25),  # 25% weight for recent reservations
                     output_field=FloatField()
                 )
-            ).order_by('-value_score', '-review_count')
+            )
+
+            # Calculate distance score if student has a school
+            if hasattr(user, 'school') and user.school and user.school.latitude and user.school.longitude:
+                for dorm in base_queryset:
+                    distance = self.calculate_distance(
+                        user.school.latitude, 
+                        user.school.longitude,
+                        dorm.latitude, 
+                        dorm.longitude
+                    )
+                    dorm.distance_score = max(0, 1 - (distance / 10))  # 10km as max ideal distance
+            else:
+                for dorm in base_queryset:
+                    dorm.distance_score = 0.5  # Neutral score if no school set
+
+            # Calculate final scores
+            scored_dorms = []
+            for dorm in base_queryset:
+                final_score = (
+                    float(dorm.avg_rating) * 0.25 +  # 25% Rating
+                    dorm.distance_score * 0.25 +     # 25% Distance
+                    (dorm.amenity_count / 10) * 0.25 +  # 25% Amenities (assuming max 10 amenities)
+                    float(dorm.popularity_score) * 0.25  # 25% Popularity
+                )
+                scored_dorms.append((dorm, final_score))
+
+            # Sort and split into regular and bedspace recommendations
+            scored_dorms.sort(key=lambda x: x[1], reverse=True)
             
-            # Convert to list to enable slicing
-            dorm_list = list(queryset)
+            regular_dorms = [d for d, s in scored_dorms if d.accommodation_type == 'whole_unit'][:6]
+            bedspace_dorms = [d for d, s in scored_dorms if d.accommodation_type in ['bedspace', 'room_sharing']][:6]
             
-            # Implement rotation logic
-            rotation_group = (week_num + student_seed) % 3
-            group_size = max(len(dorm_list) // 3, 1)  # Ensure at least 1
-            start_index = rotation_group * group_size
-            end_index = min(start_index + 12, len(dorm_list))  # Prevent overflow
-            
-            # Get the rotated slice
-            context["dorms"] = dorm_list[start_index:end_index]
+            # Get popular dorms (based purely on popularity score)
+            popular_dorms = base_queryset.order_by('-popularity_score')[:6]
+
+            context.update({
+                "dorms": regular_dorms,
+                "bedspace_dorms": bedspace_dorms,
+                "popular_dorms": popular_dorms,  # New section for popular dorms
+            })
             
         elif user.user_type == 'landlord':
             # Get recent reservations for the landlord's dorms

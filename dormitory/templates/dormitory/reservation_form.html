@@ -29,118 +29,77 @@
         {% endif %}
 
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div class="p-6">
-                <h2 class="text-2xl font-bold mb-6 text-center">Confirm Your Reservation</h2>
+            <div class="p-6 bg-gray-50 border-b">
+                <h1 class="text-2xl font-bold text-gray-800">Reserve {{ dorm.name }}</h1>
+                <p class="text-gray-600">Please fill out the form below to start your reservation.</p>
+            </div>
 
-                <!-- Dorm Details Section -->
-                <div class="mb-8 border-b pb-6">
-                    <h3 class="text-xl font-semibold mb-4">Dorm Details</h3>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            {% if dorm.images.first %}
-                                <img src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" 
-                                     class="w-full h-64 object-cover rounded-lg shadow">
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800">{{ dorm.name }}</h4>
-                            <p class="text-gray-600 mt-2">{{ dorm.address }}</p>
-                            <div class="mt-4">
-                                <p class="text-gray-700"><strong>Price:</strong> ₱{{ dorm.price }}/month</p>
-                                <p class="text-gray-700 mt-2"><strong>Landlord:</strong> {{ dorm.landlord.username }}</p>
-                                {% if dorm.amenities.all %}
-                                    <div class="mt-3">
-                                        <strong class="text-gray-700">Amenities:</strong>
-                                        <div class="flex flex-wrap gap-2 mt-2">
-                                            {% for amenity in dorm.amenities.all %}
-                                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                                                    {{ amenity.name }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endif %}
+            <div class="p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Dorm Information -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-2">Dorm Details</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-gray-600">{{ dorm.address }}</p>
+                                <p class="text-gray-600">₱{{ dorm.price }}/month</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Landlord: {{ dorm.landlord.get_full_name }}</p>
+                                <p class="text-gray-600">Contact: {{ dorm.landlord.contact_number }}</p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Reservation Form -->
-                <div>
-                    <h3 class="text-xl font-semibold mb-4">Reservation Details</h3>
-                    <form method="post" enctype="multipart/form-data" class="space-y-4">
-                        {% csrf_token %}
-                        {{ form.as_p }}
+                    <!-- Initial Message -->
+                    <div>
+                        <label for="initial_message" class="block text-sm font-medium text-gray-700 mb-2">
+                            Message to Landlord
+                        </label>
+                        <textarea name="initial_message" id="initial_message" rows="4"
+                                class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Introduce yourself and ask any questions you have about the dorm..."
+                                required>Hi! I'm interested in your dorm. I would like to inquire about availability and possibly make a reservation.</textarea>
+                        <p class="mt-1 text-sm text-gray-500">
+                            This message will start your conversation with the landlord.
+                        </p>
+                    </div>
 
-                        <!-- Payment Proof Upload -->
-                        <div class="mt-6">
-                            <h4 class="font-semibold text-gray-700 mb-2">Payment Proof</h4>
-                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                                <div class="text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                    </svg>
-                                    <div class="mt-4">
-                                        <label for="payment_proof" class="cursor-pointer">
-                                            <span class="mt-2 text-sm text-gray-600">Upload a screenshot of your payment</span>
-                                            <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="hidden" required>
-                                        </label>
-                                    </div>
-                                    <p class="mt-1 text-xs text-gray-500">PNG, JPG up to 10MB</p>
-                                </div>
+                    <!-- Additional Notes -->
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes (Optional)
+                        </label>
+                        <textarea name="notes" id="notes" rows="3"
+                                class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Any additional information you'd like to share..."></textarea>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="terms" name="terms" type="checkbox" required
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3">
+                                <label for="terms" class="text-sm text-gray-700">
+                                    I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a>
+                                    and understand that this reservation is subject to landlord approval.
+                                </label>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Terms and Conditions -->
-                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold text-gray-700 mb-2">Terms and Conditions</h4>
-                            <ul class="list-disc list-inside text-sm text-gray-600 space-y-2">
-                                <li>Payment proof is required to process your reservation</li>
-                                <li>Cancellation policies apply as per the landlord's terms</li>
-                                <li>The landlord will review your reservation after payment submission</li>
-                                <li>You can communicate with the landlord through the chat system</li>
-                            </ul>
-                        </div>
-
-                        <!-- Total Amount -->
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <span class="text-lg font-semibold text-gray-700">Total Amount:</span>
-                                <span class="text-2xl font-bold text-blue-600">₱{{ dorm.price }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Payment QR Code Section -->
-                        <div class="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
-                            <h4 class="text-lg font-semibold text-gray-700 mb-4">Payment Method</h4>
-                            {% if dorm.payment_qr %}
-                                <div class="flex flex-col items-center space-y-4">
-                                    <img src="{{ dorm.payment_qr.url }}" alt="Payment QR Code" class="max-w-xs rounded-lg shadow-md">
-                                    <p class="text-sm text-gray-600 text-center">
-                                        Scan this QR code using GCash or Maya to make your payment.<br>
-                                        Please save a screenshot of your payment as proof.
-                                    </p>
-                                </div>
-                            {% else %}
-                                <div class="text-center text-gray-600">
-                                    <p>No payment QR code available. Please contact the landlord for payment instructions.</p>
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex justify-end space-x-4 mt-6">
-                            <a href="{% url 'dormitory:dorm_detail' dorm.id %}" 
-                               class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                                Cancel
-                            </a>
-                            <button type="submit" 
-                                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                Submit Reservation
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                            Submit Reservation
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 

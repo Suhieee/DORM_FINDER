@@ -2,12 +2,13 @@ from django.urls import path
 from .views import (
     AddDormView, DormListView, DormDetailView,
     MyDormsView, EditDormView, DeleteDormView,
-    RoommateListView, RoommateCreateView , RoommateDetailView,
-    RoommateUpdateView, RoommateDeleteView,ReviewListView, 
-    ReviewCreateView, ReviewUpdateView, ReviewDeleteView, ReservationCreateView ,ReservationPaymentView, ChatView,
-    LandlordReservationsView, UpdateReservationStatusView, ReservationDetailView, send_reservation_message, update_reservation_status,
-    StudentReservationsView
+    RoommateListView, RoommateCreateView, RoommateDetailView,
+    RoommateUpdateView, RoommateDeleteView, ReviewListView, 
+    ReviewCreateView, ReviewUpdateView, ReviewDeleteView,
+    ReservationCreateView, LandlordReservationsView, StudentReservationsView,
+    MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView
 )
+from . import views
 
 app_name = "dormitory"
 
@@ -31,12 +32,18 @@ urlpatterns = [
     path("dorms/<int:dorm_id>/reviews/<int:pk>/delete/", ReviewDeleteView.as_view(), name="delete_review"),
 
     path("dormitory/<int:dorm_id>/reserve/", ReservationCreateView.as_view(), name="reserve_dorm"),
-    path("chat/", ChatView.as_view(), name="chat"),
-    path('reservation/payment/<int:reservation_id>/', ReservationPaymentView.as_view(), name='reservation_payment'),
-    path('landlord/reservations/', LandlordReservationsView.as_view(), name='landlord_reservations'),
     path('my-reservations/', StudentReservationsView.as_view(), name='student_reservations'),
-    path('landlord/reservations/<int:reservation_id>/update/', UpdateReservationStatusView.as_view(), name='update_reservation_status'),
-    path('reservation/<int:pk>/', ReservationDetailView.as_view(), name='reservation_detail'),
-    path('reservation/<int:reservation_id>/message/', send_reservation_message, name='send_message'),
-    path('reservation/<int:reservation_id>/status/', update_reservation_status, name='update_status'),
+    path('landlord/reservations/', LandlordReservationsView.as_view(), name='landlord_reservations'),
+
+    # Messaging URLs
+    path('messages/', MessagesView.as_view(), name='messages'),
+    path('messages/send/', SendMessageView.as_view(), name='send_message'),
+    path('messages/check-new/<int:reservation_id>/', CheckNewMessagesView.as_view(), name='check_new_messages'),
+    path('reservation/<int:reservation_id>/update-status/', UpdateReservationStatusView.as_view(), name='update_reservation_status'),
+
+    # Roommate matching URLs
+    path('roommate-matches/', views.RoommateMatchesView.as_view(), name='roommate_matches'),
+    path('roommate-match/initiate/<int:target_id>/', views.InitiateRoommateMatchView.as_view(), name='initiate_match'),
+    path('roommate-match/status/<int:match_id>/', views.UpdateRoommateMatchStatusView.as_view(), name='update_match_status'),
+    path('roommate-match/chat/<int:match_id>/', views.SendRoommateChatMessageView.as_view(), name='send_roommate_message'),
 ]

@@ -44,10 +44,54 @@
         <textarea name="address" id="address" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter address" required>{{ form.address.value|default:'' }}</textarea>
     </div>
 
+    <!-- Accommodation Type -->
+    <div>
+        <label for="accommodation_type" class="block text-sm font-medium text-gray-700">Accommodation Type</label>
+        <select name="accommodation_type" id="accommodation_type" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            {% for value, label in form.fields.accommodation_type.choices %}
+                <option value="{{ value }}" {% if form.accommodation_type.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Bedspace Options (shown only for bedspace/room sharing) -->
+    <div id="bedspace-options" class="space-y-4">
+        <div>
+            <label for="total_beds" class="block text-sm font-medium text-gray-700">Total Number of Beds</label>
+            <input type="number" name="total_beds" id="total_beds" value="{{ form.total_beds.value|default:'1' }}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <p class="mt-1 text-sm text-gray-500">Total number of beds available in this unit</p>
+        </div>
+
+        <div>
+            <label for="available_beds" class="block text-sm font-medium text-gray-700">Available Beds</label>
+            <input type="number" name="available_beds" id="available_beds" value="{{ form.available_beds.value|default:'1' }}" min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <p class="mt-1 text-sm text-gray-500">Number of beds currently available for rent</p>
+        </div>
+
+        <div>
+            <label for="max_occupants" class="block text-sm font-medium text-gray-700">Maximum Occupants</label>
+            <input type="number" name="max_occupants" id="max_occupants" value="{{ form.max_occupants.value|default:'1' }}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <p class="mt-1 text-sm text-gray-500">Maximum number of people allowed in the unit</p>
+        </div>
+    </div>
+
     <!-- Price -->
     <div>
         <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
         <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+    </div>
+
+    <!-- Additional Amenities -->
+    <div class="space-y-2">
+        <div class="flex items-center">
+            <input type="checkbox" name="is_aircon" id="is_aircon" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.is_aircon.value %}checked{% endif %}>
+            <label for="is_aircon" class="ml-2 text-sm text-gray-700">Air Conditioned</label>
+        </div>
+
+        <div class="flex items-center">
+            <input type="checkbox" name="utilities_included" id="utilities_included" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.utilities_included.value %}checked{% endif %}>
+            <label for="utilities_included" class="ml-2 text-sm text-gray-700">Utilities Included in Rent (Electricity, Water)</label>
+        </div>
     </div>
 
     <!-- Description -->
@@ -225,6 +269,24 @@ document.addEventListener("DOMContentLoaded", function() {
     if (latitudeInput.value && longitudeInput.value) {
         updateAddress(defaultLat, defaultLng);
     }
+});
+
+// Add this JavaScript to show/hide bedspace options based on accommodation type
+document.addEventListener('DOMContentLoaded', function() {
+    const accommodationType = document.getElementById('accommodation_type');
+    const bedspaceOptions = document.getElementById('bedspace-options');
+
+    function toggleBedspaceOptions() {
+        const selectedType = accommodationType.value;
+        if (selectedType === 'bedspace' || selectedType === 'room_sharing') {
+            bedspaceOptions.style.display = 'block';
+        } else {
+            bedspaceOptions.style.display = 'none';
+        }
+    }
+
+    accommodationType.addEventListener('change', toggleBedspaceOptions);
+    toggleBedspaceOptions(); // Run on page load
 });
 </script>
 {% endblock %}

@@ -25,22 +25,38 @@ class DormForm(forms.ModelForm):
 
     class Meta:
         model = Dorm
-        fields = ['name', 'address', 'latitude', 'longitude', 'price', 'description', 'permit', 'payment_qr', 'available', 'amenities']
+        fields = [
+            'name', 'address', 'latitude', 'longitude', 'price', 'description',
+            'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
+            'total_beds', 'available_beds', 'is_aircon', 'max_occupants',
+            'utilities_included'
+        ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'address': forms.Textarea(attrs={'rows': 3}),
             'price': forms.NumberInput(attrs={'step': '0.01'}),
             'permit': forms.FileInput(attrs={'accept': 'image/*'}),
-            'payment_qr': forms.FileInput(attrs={'accept': 'image/*'})
+            'payment_qr': forms.FileInput(attrs={'accept': 'image/*'}),
+            'accommodation_type': forms.Select(attrs={'class': 'form-control'}),
+            'total_beds': forms.NumberInput(attrs={'min': '1', 'class': 'form-control'}),
+            'available_beds': forms.NumberInput(attrs={'min': '0', 'class': 'form-control'}),
+            'max_occupants': forms.NumberInput(attrs={'min': '1', 'class': 'form-control'}),
         }
         help_texts = {
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
             'price': 'Enter the price per month in PHP',
+            'accommodation_type': 'Select the type of accommodation you are offering',
+            'total_beds': 'Total number of beds in the unit',
+            'available_beds': 'Number of beds currently available for rent',
+            'max_occupants': 'Maximum number of people allowed in the unit',
+            'utilities_included': 'Check if electricity and water bills are included in the rent',
         }
         labels = {
             'permit': 'Business Permit (Image only)',
-            'payment_qr': 'Payment QR Code (GCash/Maya)'
+            'payment_qr': 'Payment QR Code (GCash/Maya)',
+            'is_aircon': 'Air Conditioned',
+            'utilities_included': 'Utilities Included in Rent',
         }
 
     def __init__(self, *args, **kwargs):
