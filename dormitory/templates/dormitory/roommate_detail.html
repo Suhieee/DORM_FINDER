@@ -1,5 +1,11 @@
 {% extends "accounts/base.html" %}
 {% block content %}
+
+<!-- Loader -->
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
+
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
         <!-- Profile Header -->
@@ -152,4 +158,70 @@
         </a>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+let imagesLoaded = 0;
+let totalImages = 0;
+
+function hideLoader() {
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 300);
+    }
+}
+
+function checkAllImagesLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded >= totalImages) {
+        hideLoader();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Count total images and set up load listeners
+    const images = document.getElementsByTagName('img');
+    totalImages = images.length;
+
+    if (totalImages === 0) {
+        setTimeout(hideLoader, 3000); // 3 seconds delay for testing
+    } else {
+        // Set up load listeners for each image
+        Array.from(images).forEach(img => {
+            if (img.complete) {
+                setTimeout(checkAllImagesLoaded, 1000); // 1 second delay per image for testing
+            } else {
+                img.addEventListener('load', () => setTimeout(checkAllImagesLoaded, 1000));
+                img.addEventListener('error', checkAllImagesLoaded);
+            }
+        });
+
+        // Fallback: Hide loader after 10 seconds
+        setTimeout(hideLoader, 10000);
+    }
+});
+</script>
+
+<style>
+.loader {
+    border-top-color: #2724e7;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
 {% endblock %}

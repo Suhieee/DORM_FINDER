@@ -795,13 +795,30 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "You cannot cancel this reservation at this stage.")
                 return redirect('dormitory:student_reservations')
             
+            # Get cancellation reason from form
+            cancellation_reason = request.POST.get('cancellation_reason')
+            if not cancellation_reason:
+                messages.error(request, "Please provide a reason for cancellation.")
+                return redirect('dormitory:student_reservations')
+            
             reservation.status = 'cancelled'
+            reservation.cancellation_reason = cancellation_reason
             messages.warning(request, f"Your reservation for {reservation.dorm.name} has been cancelled.")
-            # Create a system message
+            
+            # Create first system message about cancellation
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.dorm.landlord,
                 content="The student has cancelled their reservation.",
+                dorm=reservation.dorm,
+                reservation=reservation
+            )
+            
+            # Create second system message with the reason
+            Message.objects.create(
+                sender=request.user,
+                receiver=reservation.dorm.landlord,
+                content=f"Reason for cancellation: {cancellation_reason}",
                 dorm=reservation.dorm,
                 reservation=reservation
             )

@@ -298,6 +298,7 @@ class Reservation(models.Model):
     notes = models.TextField(blank=True)
     has_paid_reservation = models.BooleanField(default=False)
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cancellation_reason = models.TextField(blank=True, null=True, help_text='Reason for cancellation if the reservation was cancelled')
 
     class Meta:
         db_table = 'dormitory_reservation'

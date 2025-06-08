@@ -1,6 +1,12 @@
 {% extends 'accounts/base.html' %}
 {% block title %} Update Profile {% endblock %}
 {% block content %}
+
+<!-- Loader -->
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
+
 <section class="flex justify-center  text-black py-6">
     <div class="w-full max-w-lg p-6 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8">
         <h1 class="text-2xl font-bold mb-4 text-center text-black">Edit Profile</h1>
@@ -18,16 +24,7 @@
                 <input type="file" name="profile_picture" id="profile_picture" class="hidden" onchange="previewImage(event)">
             </div>
 
-            <script>
-                function previewImage(event) {
-                    const reader = new FileReader();
-                    reader.onload = function() {
-                        const output = document.getElementById('profile_picture_preview');
-                        output.src = reader.result;
-                    }
-                    reader.readAsDataURL(event.target.files[0]);
-                }
-            </script>
+         
 
             <!-- First Name -->
             <div>
@@ -78,4 +75,83 @@
         </form>
     </div>
 </section>
+
+<script>
+    let imagesLoaded = 0;
+    let totalImages = 0;
+
+    function hideLoader() {
+        const loader = document.getElementById('page-loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    function checkAllImagesLoaded() {
+        imagesLoaded++;
+        if (imagesLoaded >= totalImages) {
+            hideLoader();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Count total images and set up load listeners
+        const images = document.getElementsByTagName('img');
+        totalImages = images.length;
+
+        if (totalImages === 0) {
+            // For testing: Add a delay before hiding loader even when no images
+            setTimeout(hideLoader, 3000); // 3 seconds delay
+        } else {
+            // Set up load listeners for each image
+            Array.from(images).forEach(img => {
+                if (img.complete) {
+                    // For testing: Add a delay before counting loaded images
+                    setTimeout(checkAllImagesLoaded, 1000); // 1 second delay per image
+                } else {
+                    img.addEventListener('load', () => setTimeout(checkAllImagesLoaded, 1000));
+                    img.addEventListener('error', () => setTimeout(checkAllImagesLoaded, 1000));
+                }
+            });
+
+            // Fallback: hide loader after 10 seconds
+            setTimeout(hideLoader, 10000);
+        }
+    });
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const output = document.getElementById('profile_picture_preview');
+            output.src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+</script>
+
+<style>
+    /* Loader Styles */
+    #page-loader {
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .loader {
+        border-top-color: #2724e7;
+        -webkit-animation: spinner 1.5s linear infinite;
+        animation: spinner 1.5s linear infinite;
+    }
+
+    @-webkit-keyframes spinner {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
 {% endblock %}

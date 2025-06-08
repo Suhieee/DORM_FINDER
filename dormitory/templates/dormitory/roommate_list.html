@@ -2,6 +2,11 @@
 {% load static %}
 {% block content %}
 
+<!-- Loader -->
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
+
 {% if messages %}
 <div class="mb-4 space-y-2">
     {% for message in messages %}
@@ -209,60 +214,119 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get CSRF token from cookie
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+let imagesLoaded = 0;
+let totalImages = 0;
 
-    // Handle match initiation forms
-    document.querySelectorAll('.initiate-match-form').forEach(form => {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const button = form.querySelector('button');
-            button.disabled = true;
-            
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    window.location.href = `{% url 'dormitory:roommate_matches' %}?selected_match=${data.match_id}`;
-                } else {
-                    if (data.match_id) {
-                        window.location.href = `{% url 'dormitory:roommate_matches' %}?selected_match=${data.match_id}`;
-                    } else {
-                        alert(data.error || 'An error occurred');
-                        button.disabled = false;
-                    }
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred');
-                button.disabled = false;
+function hideLoader() {
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 300);
+    }
+}
+
+function checkAllImagesLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded >= totalImages) {
+        hideLoader();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Count total images and set up load listeners
+    const images = document.getElementsByTagName('img');
+    totalImages = images.length;
+
+    if (totalImages === 0) {
+        setTimeout(hideLoader, 3000); // 3 seconds delay for testing
+    } else {
+        // Set up load listeners for each image
+        Array.from(images).forEach(img => {
+            if (img.complete) {
+                setTimeout(checkAllImagesLoaded, 1000); // 1 second delay per image for testing
+            } else {
+                img.addEventListener('load', () => setTimeout(checkAllImagesLoaded, 1000));
+                img.addEventListener('error', checkAllImagesLoaded);
             }
         });
+
+        // Fallback: Hide loader after 10 seconds
+        setTimeout(hideLoader, 10000);
+    }
+});
+
+// Get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Handle match initiation forms
+document.querySelectorAll('.initiate-match-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const button = form.querySelector('button');
+        button.disabled = true;
+        
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                window.location.href = `{% url 'dormitory:roommate_matches' %}?selected_match=${data.match_id}`;
+            } else {
+                if (data.match_id) {
+                    window.location.href = `{% url 'dormitory:roommate_matches' %}?selected_match=${data.match_id}`;
+                } else {
+                    alert(data.error || 'An error occurred');
+                    button.disabled = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+            button.disabled = false;
+        }
     });
 });
 </script>
+
+<style>
+.loader {
+    border-top-color: #2724e7;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}
 
 {% endblock %}

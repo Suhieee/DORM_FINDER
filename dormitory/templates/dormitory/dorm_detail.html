@@ -3,6 +3,10 @@
 {% block title %} Dorm Details {% endblock %}
 
 {% block content %}
+<form id="favorite-form">
+    {% csrf_token %}
+</form>
+
 <div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
 </div>
@@ -37,17 +41,31 @@
         comment: ''
     }
 }">
-    <!-- Dorm Name and Status -->
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-4xl font-bold text-black">{{ dorm.name }}</h2>
-        <div class="flex items-center gap-2">
-            <span class="px-3 py-1 rounded-full {% if dorm.available %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                {{ dorm.available|yesno:"Available,Not Available" }}
-            </span>
-            {% if dorm.accommodation_type %}
-            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-800">
+    <!-- Dorm Title and Basic Info -->
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-black mb-2">{{ dorm.name }}</h1>
+            <p class="text-gray-600">{{ dorm.address }}</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="px-3 py-1 text-sm font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
                 {{ dorm.get_accommodation_type_display }}
             </span>
+            {% if request.user.is_authenticated and request.user != dorm.landlord %}
+            <button type="button"
+                    data-dorm-id="{{ dorm.id }}"
+                    class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-100 transition duration-200 border border-gray-200 cursor-pointer favorite-btn">
+                <svg class="w-6 h-6 {% if dorm in request.user.userprofile.favorite_dorms.all %}text-red-500{% else %}text-gray-400{% endif %} fill-current" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span class="text-sm font-medium {% if dorm in request.user.userprofile.favorite_dorms.all %}text-red-500{% else %}text-gray-600{% endif %}">
+                    {% if dorm in request.user.userprofile.favorite_dorms.all %}
+                        Remove from Favorites
+                    {% else %}
+                        Add to Favorites
+                    {% endif %}
+                </span>
+            </button>
             {% endif %}
         </div>
     </div>
@@ -332,7 +350,7 @@
                     {% empty %}
                     <div class="text-center py-8 text-gray-500">
                         <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <p class="text-lg font-medium">No reviews yet</p>
                         <p class="text-sm">Be the first to review this dorm!</p>
@@ -458,7 +476,7 @@
                                     <input type="radio" name="rating" value="{{ forloop.counter }}" class="hidden" x-model="rating" required>
                                     <svg class="w-8 h-8" :class="rating >= {{ forloop.counter }} ? 'text-yellow-400' : 'text-gray-300'" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                </svg>
+                                    </svg>
                                 </label>
                                 {% endfor %}
                             </div>
@@ -951,5 +969,71 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </section>
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers to all favorite buttons
+    document.querySelectorAll('.favorite-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dormId = this.getAttribute('data-dorm-id');
+            toggleFavorite(dormId);
+        });
+    });
+});
+
+function toggleFavorite(dormId) {
+    const csrfToken = document.querySelector('#favorite-form [name=csrfmiddlewaretoken]').value;
+    const button = document.querySelector(`button[data-dorm-id="${dormId}"]`);
+    const icon = button.querySelector('svg');
+    const text = button.querySelector('span');
+    
+    fetch(`/profile/favorite/toggle/${dormId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Toggle the heart icon color
+            if (data.is_favorite) {
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-red-500');
+                text.classList.remove('text-gray-600');
+                text.classList.add('text-red-500');
+                text.textContent = 'Remove from Favorites';
+            } else {
+                icon.classList.remove('text-red-500');
+                icon.classList.add('text-gray-400');
+                text.classList.remove('text-red-500');
+                text.classList.add('text-gray-600');
+                text.textContent = 'Add to Favorites';
+            }
+            // Refresh the page to show the message
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update favorites. Please try again.');
+    });
+}
+
+// Hide loader when page is fully loaded
+window.addEventListener('load', function() {
+    const loader = document.getElementById('page-loader');
+    loader.style.opacity = '0';
+    setTimeout(() => {
+        loader.style.display = 'none';
+    }, 300);
+});
+</script>
+{% endblock %}
 
 {% endblock %}
