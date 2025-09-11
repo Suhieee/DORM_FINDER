@@ -31,6 +31,7 @@
 </div>
 {% endif %}
 
+
 <!-- Main Content -->
 <div class="max-w-6xl mx-auto p-6 bg-gray-200 shadow-lg rounded-xl" x-data="{ 
     openEditModal: false, 
@@ -70,77 +71,50 @@
         </div>
     </div>
 
-    <!-- Image Gallery -->
-    {% if dorm.images.all %}
-    <div x-data="{ 
-        activeImage: '{{ dorm.images.first.image.url }}',
-        activeIndex: 0,
-        images: [
-            {% for image in dorm.images.all %}
-                '{{ image.image.url }}'{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ],
-        next() {
-            this.activeIndex = (this.activeIndex + 1) % this.images.length;
-            this.activeImage = this.images[this.activeIndex];
-        },
-        prev() {
-            this.activeIndex = (this.activeIndex - 1 + this.images.length) % this.images.length;
-            this.activeImage = this.images[this.activeIndex];
-        },
-        setActive(index) {
-            this.activeIndex = index;
-            this.activeImage = this.images[index];
-        }
-    }" class="mb-8">
-        <!-- Main Image Container -->
-        <div class="relative w-full h-[600px] bg-black rounded-lg overflow-hidden group">
-            <!-- Main Image -->
-            <img :src="activeImage" 
-                 class="absolute inset-0 w-full h-full object-contain transition-transform duration-500"
-                 alt="Dorm image">
-            
-            <!-- Navigation Arrows - Semi-transparent on hover -->
-            <button @click="prev()" 
-                    class="absolute left-0 top-0 bottom-0 px-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-black/50 to-transparent hover:from-black/70">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-        </button>
-            <button @click="next()" 
-                    class="absolute right-0 top-0 bottom-0 px-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-l from-black/50 to-transparent hover:from-black/70">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-            </button>
 
-            <!-- Image Counter -->
-            <div class="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                <span x-text="activeIndex + 1"></span>/<span x-text="images.length"></span>
-            </div>
+<div x-data="{
+  images: [{% for image in dorm.images.all %}'{{ image.image.url }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+  showModal: false,
+  currentIndex: 0,
+  openModal(idx) { this.currentIndex = idx; this.showModal = true; document.body.style.overflow = 'hidden'; },
+  closeModal() { this.showModal = false; document.body.style.overflow = ''; },
+  next() { this.currentIndex = (this.currentIndex + 1) % this.images.length; },
+  prev() { this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length; },
+  handleKey(e) {
+    if (!this.showModal) return;
+    if (e.key === 'ArrowRight') this.next();
+    if (e.key === 'ArrowLeft') this.prev();
+    if (e.key === 'Escape') this.closeModal();
+  }
+}"
+@keydown.window="handleKey($event)">
+  <div class="bg-white rounded-2xl shadow-lg p-4 max-w-xl mx-auto mb-8">
+    {% with images=dorm.images.all %}
+    {% if images|length > 0 %}
+      <div class="grid grid-cols-2 gap-2" id="dormImages">
+        {% for image in dorm.images.all %}
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+             onclick="openImageGallery({{ forloop.counter0 }})">
+          <img src="{{ image.image.url }}" alt="Dorm Image" class="w-full h-full object-cover gallery-image">
         </div>
-
-        <!-- Thumbnails Strip -->
-        <div class="mt-4 flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-            <template x-for="(image, index) in images" :key="index">
-                <button @click="setActive(index)" 
-                        class="flex-none w-24 h-24 rounded-lg overflow-hidden focus:outline-none transition-transform hover:scale-105"
-                        :class="{'ring-2 ring-blue-500': activeIndex === index}">
-                    <img :src="image" 
-                         class="w-full h-full object-cover"
-                         alt="Thumbnail">
-        </button>
-            </template>
+        {% empty %}
+        <div class="col-span-2 aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400">No images available</span>
         </div>
-    </div>
+        {% endfor %}
+      </div>
     {% else %}
-    <div class="mb-8 p-12 bg-gray-100 rounded-lg text-center">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      <div class="flex flex-col items-center justify-center h-60 bg-blue-50 rounded-xl border-2 border-blue-100">
+        <svg class="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
-        <p class="text-gray-500">No images available for this property</p>
-    </div>
+        <p class="text-blue-400 mt-2">No images available for this property</p>
+      </div>
     {% endif %}
+    {% endwith %}
+  </div>
+</div>
 
     <!-- Dorm Details and Tabs -->
     <div x-data="{ activeTab: 'details', mapInitialized: false }" class="md:flex h-full">
@@ -189,6 +163,13 @@
                         Actions
                     </button>
                 </li>
+                <li>
+                    <button @click="activeTab = 'rooms'" 
+                            :class="activeTab === 'rooms' ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300'" 
+                            class="inline-flex items-center px-4 py-3 rounded-lg w-full hover:bg-gray-100 transition">
+                        Rooms
+                    </button>
+                </li>
             {% endif %}
         </ul>
         
@@ -201,40 +182,40 @@
                 <!-- Price and Basic Info -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-lg mb-2">Price & Availability</h4>
-                        <p class="text-2xl font-bold text-green-600 mb-2">₱{{ dorm.price }}/month</p>
+                        <h4 class="font-bold text-2xl mb-3">Price & Availability</h4>
+                        <p class="text-4xl font-extrabold text-green-600 mb-3">₱{{ dorm.price }}/month</p>
                         {% if dorm.utilities_included %}
-                        <p class="text-green-600"><i class="fas fa-check-circle"></i> Utilities Included</p>
+                        <p class="text-lg text-green-600"><i class="fas fa-check-circle"></i> Utilities Included</p>
                         {% endif %}
                     </div>
                     
                     <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-lg mb-2">Accommodation Details</h4>
-                        <p class="mb-1"><strong>Type:</strong> {{ dorm.get_accommodation_type_display }}</p>
+                        <h4 class="font-bold text-2xl mb-3">Accommodation Details</h4>
+                        <p class="mb-2 text-lg"><strong>Type:</strong> {{ dorm.get_accommodation_type_display }}</p>
                         {% if dorm.accommodation_type != 'whole_unit' %}
-                        <p class="mb-1"><strong>Total Beds:</strong> {{ dorm.total_beds }}</p>
-                        <p class="mb-1"><strong>Available Beds:</strong> {{ dorm.available_beds }}</p>
-                        <p class="mb-1"><strong>Max Occupants:</strong> {{ dorm.max_occupants }}</p>
+                        <p class="mb-2 text-lg"><strong>Total Beds:</strong> {{ dorm.total_beds }}</p>
+                        <p class="mb-2 text-lg"><strong>Available Beds:</strong> {{ dorm.available_beds }}</p>
+                        <p class="mb-2 text-lg"><strong>Max Occupants:</strong> {{ dorm.max_occupants }}</p>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Address and Description -->
                 <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-2">Location & Description</h4>
-                    <p class="mb-3"><strong>Address:</strong> {{ dorm.address }}</p>
-                    <p><strong>Description:</strong> {{ dorm.description }}</p>
-                    </div>
-                    
+                    <h4 class="font-bold text-2xl mb-3">Location & Description</h4>
+                    <p class="mb-3 text-lg"><strong>Address:</strong> {{ dorm.address }}</p>
+                    <p class="text-lg"><strong>Description:</strong> {{ dorm.description }}</p>
+                </div>
+                
                 <!-- Features -->
                 <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-2">Features</h4>
+                    <h4 class="font-bold text-2xl mb-3">Features</h4>
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="flex items-center">
+                        <div class="flex items-center text-xl font-semibold">
                             <i class="fas {% if dorm.is_aircon %}fa-check text-green-600{% else %}fa-times text-red-600{% endif %} mr-2"></i>
                             Air Conditioning
                         </div>
-                        <div class="flex items-center">
+                        <div class="flex items-center text-xl font-semibold">
                             <i class="fas {% if dorm.utilities_included %}fa-check text-green-600{% else %}fa-times text-red-600{% endif %} mr-2"></i>
                             Utilities Included
                         </div>
@@ -244,41 +225,50 @@
             
             <!-- Amenities Tab -->
             <div x-show="activeTab === 'amenities'" class="space-y-4">
-                <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Available Amenities</h3>
+                <h3 class="text-3xl font-bold text-black mb-6 border-b pb-2">Available Amenities</h3>
                 {% if amenities %}
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {% for amenity in amenities %}
-                    <div class="flex items-center bg-gray-50 p-3 rounded-lg">
+                    <div class="flex items-center bg-gray-300 p-4 rounded-lg text-xl font-semibold">
                         <i class="fas fa-check-circle text-green-600 mr-2"></i>
                         <span>{{ amenity.name }}</span>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-gray-600">No amenities listed for this dorm.</p>
+                <p class="text-lg text-gray-600">No amenities listed for this dorm.</p>
                 {% endif %}
             </div>
 
             <!-- Landlord Info Tab -->
             <div x-show="activeTab === 'landlord'" class="space-y-4">
-                <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Landlord Information</h3>
+                <h3 class="text-3xl font-bold text-black mb-6 border-b pb-2">Landlord Information</h3>
                 <div class="flex flex-col items-center">
-                    <img class="w-24 h-24 rounded-full shadow-lg mb-4" 
+                    <img class="w-36 h-36 rounded-full shadow-xl mb-6 border-4 border-blue-200" 
                          src="{% if dorm.landlord.userprofile.profile_picture %}{{ dorm.landlord.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
                          alt="Landlord Profile Picture">
-                    <h4 class="text-xl font-semibold mb-2">{{ dorm.landlord.get_full_name|default:dorm.landlord.username }}</h4>
-                    <p class="text-gray-600 mb-2">Contact: {{ dorm.landlord.contact_number }}</p>
-                    {% if request.user.is_authenticated and request.user != dorm.landlord %}
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                        Contact Landlord
-                    </button>
-                    {% endif %}
+                    <h4 class="text-2xl font-bold mb-3">{{ dorm.landlord.get_full_name|default:dorm.landlord.username }}</h4>
+                    <p class="text-lg text-gray-700 mb-3">Contact: {{ dorm.landlord.contact_number }}</p>
+                    <div class="flex gap-3">
+                        {% if request.user.is_authenticated and request.user != dorm.landlord %}
+                        <button class="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-blue-700 transition">
+                            Contact Landlord
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'accounts:view_user_profile' dorm.landlord.id %}" 
+                           class="bg-green-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-green-700 transition">
+                            View Profile
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <!-- Map Tab -->
             <div x-show="activeTab === 'map'">
                 <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Location</h3>
+                <button id="route-from-my-location" class="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Route from My Location
+                </button>
                 <div id="dormitory-map" class="h-96 w-full border border-gray-300 rounded-lg"></div>
             </div>
 
@@ -312,15 +302,28 @@
                                     {% else %}
                                         <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                                     {% endif %}
-            </div>
+                                </div>
                                 <div>
-                                    <p class="font-medium">{{ review.user.get_full_name }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{% url 'accounts:view_user_profile' review.user.id %}" class="font-medium hover:text-blue-600 transition-colors">{{ review.user.get_full_name }}</a>
+                                        <!-- Dropdown trigger -->
+                                        <div class="relative inline-block text-left">
+                                            <button type="button" onclick="toggleDropdown('dropdown-{{ review.id }}')" class="p-1 rounded-full hover:bg-gray-200 focus:outline-none" aria-haspopup="true" aria-expanded="false">
+                                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+                                            </button>
+                                            <div id="dropdown-{{ review.id }}" class="hidden origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                                <div class="py-1">
+                                                    <a href="{% url 'accounts:view_user_profile' review.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <p class="text-sm text-gray-500">{{ review.created_at|date:"F j, Y" }}</p>
                                     {% if review.reservation.has_paid_reservation %}
                                         <span class="text-xs text-green-600">Verified Stay</span>
-            {% endif %}            
-        </div>
-    </div>
+                                    {% endif %}            
+                                </div>
+                            </div>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center">
                                     {% for i in "12345" %}
@@ -335,18 +338,18 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
-                                </button>
+                                    </button>
                                     <button @click="openDeleteModal = true; currentReview.id = {{ review.id }}" class="text-red-600 hover:text-red-800">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
-                                </button>
+                                    </button>
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
                         <p class="text-gray-700">{{ review.comment }}</p>
-                        </div>
+                    </div>
                     {% empty %}
                     <div class="text-center py-8 text-gray-500">
                         <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,173 +360,81 @@
                     </div>
                     {% endfor %}
                 </div>
-
-    <!-- Edit Review Modal -->
-    <div x-show="openEditModal" 
-                     class="fixed inset-0 z-50 overflow-y-auto" 
-         x-cloak
-                     @keydown.escape.window="openEditModal = false">
-                    <div class="flex items-center justify-center min-h-screen px-4" @click.self="openEditModal = false">
-                        <div class="fixed inset-0 bg-black opacity-50"></div>
-                        
-                        <div class="relative bg-white rounded-lg max-w-md w-full p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold">Edit Review</h3>
-                                <button @click="openEditModal = false" class="text-gray-500 hover:text-gray-700">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            
-                            <form x-bind:action="'{% url 'dormitory:edit_review' dorm_id=dorm.id pk=0 %}'.replace('/0/', '/' + currentReview.id + '/')" method="post" class="space-y-4">
-                {% csrf_token %}
-                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                                    <div class="flex items-center space-x-2">
-                        <template x-for="i in 5">
-                                            <button type="button" 
-                                                    @click="currentReview.rating = i"
-                                                    class="focus:outline-none">
-                                                <svg class="w-8 h-8" 
-                                                     :class="currentReview.rating >= i ? 'text-yellow-400' : 'text-gray-300'"
-                                                     fill="currentColor" 
-                                                     viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                                </svg>
-                                            </button>
-                        </template>
-                    </div>
-                    <input type="hidden" name="rating" x-model="currentReview.rating">
-                </div>
-                <div>
-                                    <label for="edit-comment" class="block text-sm font-medium text-gray-700 mb-2">Your Review</label>
-                                    <textarea id="edit-comment" 
-                                              name="comment" 
-                        x-model="currentReview.comment"
-                                              rows="4" 
-                                              class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                              required></textarea>
-                </div>
-                                <div class="flex justify-end space-x-3">
-                                    <button type="button" 
-                                            @click="openEditModal = false"
-                                            class="px-4 py-2 border rounded-lg hover:bg-gray-100">
-                        Cancel
-                    </button>
-                                    <button type="submit" 
-                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                                        Save Changes
-                                    </button>
-                </div>
-            </form>
-        </div>
-                    </div>
-                </div>
-
-                <!-- Delete Review Modal -->
-                <div x-show="openDeleteModal" 
-                     class="fixed inset-0 z-50 overflow-y-auto" 
-                     x-cloak
-                     @keydown.escape.window="openDeleteModal = false">
-                    <div class="flex items-center justify-center min-h-screen px-4" @click.self="openDeleteModal = false">
-                        <div class="fixed inset-0 bg-black opacity-50"></div>
-                        
-                        <div class="relative bg-white rounded-lg max-w-md w-full p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold text-red-600">Delete Review</h3>
-                                <button @click="openDeleteModal = false" class="text-gray-500 hover:text-gray-700">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-    </div>
-
-                            <div class="mb-6">
-                                <p class="text-gray-600">Are you sure you want to delete this review? This action cannot be undone.</p>
-            </div>
-
-                            <div class="flex justify-end space-x-3">
-                                <button type="button" 
-                                        @click="openDeleteModal = false"
-                                        class="px-4 py-2 border rounded-lg hover:bg-gray-100">
-                                    Cancel
-                                </button>
-                                <form x-bind:action="'{% url 'dormitory:delete_review' dorm_id=dorm.id pk=0 %}'.replace('/0/', '/' + currentReview.id + '/')" method="post" class="inline">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-                                        Delete Review
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Review Form (only for users with reviewable reservations) -->
-                {% if user_reservation %}
-                <div class="mt-8 border-t pt-6">
-                    <h4 class="text-lg font-semibold mb-4">Write a Review</h4>
-                    <form method="post" class="space-y-4">
-                        {% csrf_token %}
-                        <input type="hidden" name="reservation_id" value="{{ user_reservation.id }}">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                            <div class="flex items-center space-x-2" x-data="{ rating: 0 }">
-                                {% for i in "12345" %}
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="rating" value="{{ forloop.counter }}" class="hidden" x-model="rating" required>
-                                    <svg class="w-8 h-8" :class="rating >= {{ forloop.counter }} ? 'text-yellow-400' : 'text-gray-300'" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                    </svg>
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div>
-                            <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">Your Review</label>
-                            <textarea id="comment" name="comment" rows="4" 
-                                      class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      placeholder="Share your experience with this dorm..." required></textarea>
-                        </div>
-                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                            Submit Review
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Actions Tab (for landlord) -->
             {% if request.user == dorm.landlord %}
-            <div x-show="activeTab === 'actions'" class="space-y-4">
-                <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Manage Dorm</h3>
-                <div class="flex gap-4">
-                    <a href="{% url 'dormitory:edit_dorm' dorm.id %}" 
-                       class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition">
-                        Edit Dorm
-                    </a>
-                    <button onclick="confirmDelete()" 
-                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
-                        Delete Dorm
-                    </button>
+                <div x-show="activeTab === 'actions'" class="space-y-4">
+                    <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Manage Dorm</h3>
+                    <div class="flex gap-4">
+                        <a href="{% url 'dormitory:edit_dorm' dorm.id %}" 
+                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition">
+                            Edit Dorm
+                        </a>
+                        <button onclick="confirmDelete()" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
+                            Delete Dorm
+                        </button>
+                    </div>
                 </div>
-            </div>
+                <div x-show="activeTab === 'rooms'" class="space-y-6">
+                    <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Room Management</h3>
+                    {% if dorm.approval_status == 'approved' %}
+                    <a href="{% url 'dormitory:manage_rooms' dorm.id %}" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Manage Rooms</a>
+                    {% else %}
+                    <p class="text-gray-500">You can manage rooms after this dorm is approved.</p>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Reservation Button (for students) -->
-    {% if request.user.is_authenticated and request.user.user_type == 'student' and dorm.available %}
-    <div class="mt-6 text-center">
-        <a href="{% url 'dormitory:reserve_dorm' dorm.id %}" 
-           class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-3 rounded-lg transition">
+    {% if dorm.accommodation_type == 'whole_unit' %}
+    <div class="flex justify-center my-6">
+        <a href="{% url 'dormitory:reserve_dorm' dorm.id %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-full shadow-lg text-xl transition w-full max-w-xs justify-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             Reserve Now
         </a>
     </div>
-    {% endif %}
-</div>
+    {% else %}
+    <!-- Rooms Section (visible to all users except whole unit) -->
+    <div class="mt-10">
+        <h3 class="text-2xl font-bold text-black mb-4 border-b pb-2">Rooms</h3>
+        {% if dorm.rooms.exists %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for room in dorm.rooms.all %}
+            <div class="bg-gray-50 p-4 rounded shadow">
+                <h4 class="font-bold text-lg mb-2">{{ room.name }}</h4>
+                <p class="mb-1"><strong>Price:</strong> ₱{{ room.price }}/month</p>
+                <p class="mb-1"><strong>Status:</strong> 
+                    {% if room.is_available %}
+                        <span class="text-green-600 font-semibold">Available</span>
+                    {% else %}
+                        <span class="text-red-500 font-semibold">Reserved</span>
+                    {% endif %}
+                </p>
+                <p class="mb-2 text-sm text-gray-600">{{ room.description }}</p>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    {% for image in room.images.all %}
+                    <img src="{{ image.image.url }}" alt="Room Image" class="h-20 w-20 object-cover rounded border">
+                    {% empty %}
+                    <span class="text-xs text-gray-400">No images</span>
+                    {% endfor %}
+                </div>
+                {% if room.is_available %}
+                    <a href="{% url 'dormitory:reserve_dorm' dorm.id %}?room_id={{ room.id }}" class="mt-2 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Reserve</a>
+                {% else %}
+                    <span class="mt-2 inline-block bg-gray-300 text-gray-600 px-4 py-2 rounded cursor-not-allowed">Not Available</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500">No rooms added yet.</p>
+        {% endif %}
+    </div>
+{% endif %}
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
@@ -539,6 +450,128 @@
         </div>
     </div>
 </div>
+
+<!-- IMAGE PREVIEW MODAL (copied from reservation detail) -->
+<div id="imagePreviewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center" style="background: #000 !important;">
+    <div class="relative w-full h-full">
+        <!-- Main Image Container -->
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="relative" style="width: 70vw; max-width: 900px;">
+                <img id="previewImage" src="" alt="Preview" class="w-full h-auto max-h-[70vh] object-contain">
+                <!-- Navigation Arrows -->
+                <button id="prevImage" class="absolute left-0 top-[50%] -translate-y-1/2 p-2 text-white hover:text-gray-300 bg-black/60 rounded-full shadow-lg">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button id="nextImage" class="absolute right-0 top-[50%] -translate-y-1/2 p-2 text-white hover:text-gray-300 bg-black/60 rounded-full shadow-lg">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <!-- Image Counter -->
+                <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-white text-sm">
+                    <span id="currentImageIndex">1</span> / <span id="totalImages">1</span>
+                </div>
+            </div>
+        </div>
+        <!-- Close Button -->
+        <button onclick="closeImagePreview()" class="absolute top-4 right-4 p-2 text-white hover:text-gray-300">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+        <!-- Thumbnail Strip -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 overflow-x-auto">
+            <div id="thumbnailContainer" class="flex space-x-2">
+                <!-- Thumbnails will be inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Similar Dorms Section -->
+{% if similar_dorms %}
+<div class="mt-16 max-w-6xl mx-auto">
+    <h2 class="text-2xl font-bold text-black mb-6">Similar Dorms</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+        {% for dorm in similar_dorms %}
+        <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col relative">
+            <!-- Images Row -->
+            <div class="flex overflow-x-auto gap-2 mb-4">
+                {% for image in dorm.images.all|slice:':6' %}
+                <img src="{{ image.image.url }}" alt="Dorm Image" class="h-16 w-24 object-cover rounded border flex-shrink-0">
+                {% empty %}
+                <div class="h-16 w-24 bg-gray-100 flex items-center justify-center rounded text-gray-400">No Image</div>
+                {% endfor %}
+            </div>
+            <!-- Type Badge -->
+            <span class="absolute left-6 top-6 px-3 py-1 text-xs font-semibold rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
+                {{ dorm.get_accommodation_type_display }}
+            </span>
+            <!-- Dorm Info -->
+            <div class="mt-2">
+                <h3 class="text-xl font-bold text-gray-900 mb-1">{{ dorm.name }}</h3>
+                <p class="text-gray-600 text-sm mb-2">{{ dorm.address }}</p>
+                <div class="flex items-center mb-2">
+                    <!-- Rating -->
+                    <span class="flex items-center text-yellow-400 mr-2">
+                        {% for i in "12345" %}
+                        <svg class="w-4 h-4 {% if forloop.counter <= dorm.avg_rating|default:0 %}text-yellow-400{% else %}text-gray-300{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        {% endfor %}
+                    </span>
+                    <span class="text-gray-500 text-sm">{{ dorm.avg_rating|default:"0.0" }} ({{ dorm.review_count|default:"0" }})</span>
+                    <span class="mx-2 text-gray-400">•</span>
+                    <span class="text-gray-500 text-sm flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>{{ dorm.recent_views|default:"0" }} views</span>
+                </div>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    {% if dorm.available_beds and dorm.accommodation_type != 'whole_unit' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600 font-semibold">{{ dorm.available_beds }} beds available</span>
+                    {% endif %}
+                    {% for amenity in dorm.amenities.all|slice:':3' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">{{ amenity.name }}</span>
+                    {% endfor %}
+                    {% if dorm.amenities.count > 3 %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">+{{ dorm.amenities.count|add:"-3" }} more</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-lg font-bold text-blue-600">₱{{ dorm.price|floatformat:2 }}/month</span>
+                    <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">View Details →</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+<!-- END IMAGE PREVIEW MODAL -->
+<style>
+#imagePreviewModal {
+  background: #000 !important;
+}
+</style>
+
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+</script>
+
+<!-- Leaflet.js CSS and JS (must be loaded before custom scripts) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Load Leaflet Routing Machine -->
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
 <script>
 // Hide loader when page is fully loaded
@@ -564,191 +597,171 @@ document.addEventListener('keydown', function(e) {
 
 // Initialize map function remains unchanged
 function initializeMap() {
-    const map = L.map('dormitory-map').setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
+    const mapElement = document.getElementById('dormitory-map');
+    if (!mapElement) return;
+    
+    // Clear any existing map
+    while (mapElement.firstChild) {
+        mapElement.removeChild(mapElement.firstChild);
+    }
+    
+    {% if dorm.latitude and dorm.longitude %}
+    var manilaBounds = L.latLngBounds([
+        [14.47, 120.90], // Southwest corner
+        [14.70, 121.07]  // Northeast corner
+    ]);
+    var map = L.map(mapElement, {
+        center: [{{ dorm.latitude }}, {{ dorm.longitude }}],
+        zoom: 15,
+        minZoom: 12,
+        maxZoom: 16,
+        maxBounds: manilaBounds
+    });
+    map.on('drag', function() {
+        map.panInsideBounds(manilaBounds, { animate: false });
+    });
+    
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-    L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}]).addTo(map);
-}
-
-// Delete confirmation functions remain unchanged
-function confirmDelete() {
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-}
-</script>
-
-<!-- Load Leaflet.js CSS and JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Load Leaflet Routing Machine -->
-<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-
-<!-- JavaScript for Star Rating Selection and Map -->
-<script>
-    // Declare map variable globally
-    let map;
-
-    document.addEventListener("DOMContentLoaded", function() {
-        // Star Rating Functionality
-        const stars = document.querySelectorAll("#star-rating span");
-        const ratingInput = document.getElementById("selected-rating");
+    
+    // Create custom icons
+    const dormIcon = L.icon({
+        iconUrl: '{% static "images/dorm-marker.png" %}',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+    });
+    
+    const schoolIcon = L.icon({
+        iconUrl: '{% static "images/school-marker.png" %}',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+    });
+    
+    // Add dorm marker
+    const dormMarker = L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}], {
+        icon: dormIcon
+    }).addTo(map)
+    .bindPopup(`
+        <div class="font-bold">{{ dorm.name }}</div>
+        <div class="text-sm">{{ dorm.address }}</div>
+    `)
+    .openPopup();
+    
+    // Variables to store routing controls and distance labels
+    let routingControls = [];
+    let distanceLabels = [];
+    
+    // Add schools with distance calculation
+    {% for school in schools %}
+    (function() {
+        const schoolLat = {{ school.latitude }};
+        const schoolLng = {{ school.longitude }};
+        const schoolName = "{{ school.name|escapejs }}";
         
-        if (stars.length && ratingInput) {
-            stars.forEach(star => {
-                star.addEventListener("click", function() {
-                    const selectedValue = parseInt(this.getAttribute("data-value"));
-                    ratingInput.value = selectedValue;
-                    
-                    // Update star colors
-                    stars.forEach((s, index) => {
-                        if (index < selectedValue) {
-                            s.classList.remove("text-gray-300");
-                            s.classList.add("text-yellow-500");
-                        } else {
-                            s.classList.remove("text-yellow-500");
-                            s.classList.add("text-gray-300");
-                        }
-                    });
-                });
-                
-                // Add hover effect
-                star.addEventListener("mouseover", function() {
-                    const hoverValue = parseInt(this.getAttribute("data-value"));
-                    stars.forEach((s, index) => {
-                        if (index < hoverValue && !ratingInput.value) {
-                            s.classList.add("text-yellow-300");
-                        }
-                    });
-                });
-                
-                star.addEventListener("mouseout", function() {
-                    stars.forEach(s => {
-                        s.classList.remove("text-yellow-300");
-                    });
-                });
-            });
-        }
+        // Calculate distance
+        const distance = map.distance(
+            [{{ dorm.latitude }}, {{ dorm.longitude }}],
+            [schoolLat, schoolLng]
+        );
+        const distanceKm = (distance / 1000).toFixed(1);
+        
+        // Create school marker
+        const schoolMarker = L.marker([schoolLat, schoolLng], {
+            icon: schoolIcon
+        }).addTo(map)
+        .bindPopup(`
+            <div class="font-bold">${schoolName}</div>
+            <div class="text-sm">Distance: ${distanceKm} km</div>
+        `);
+        
+        // Create distance label
+        const distanceLabel = L.marker([schoolLat, schoolLng], {
+            icon: L.divIcon({
+                className: 'distance-label-container',
+                html: `<div class="distance-label">${distanceKm} km</div>`,
+                iconSize: [60, 20],
+                iconAnchor: [30, 0]
+            }),
+            zIndexOffset: 1000
+        }).addTo(map);
+        
+        // Create routing path
+        const control = L.Routing.control({
+            waypoints: [
+                L.latLng({{ dorm.latitude }}, {{ dorm.longitude }}),
+                L.latLng(schoolLat, schoolLng)
+            ],
+            routeWhileDragging: false,
+            show: false, // Hide the instructions panel
+            lineOptions: {
+                styles: [{color: '#3b82f6', weight: 4, opacity: 0.7}]
+            },
+            createMarker: function() { return null; } // Don't create markers
+        }).addTo(map);
+        
+        // Store references for cleanup
+        routingControls.push(control);
+        distanceLabels.push(distanceLabel);
+    })();
+    {% endfor %}
+    
+    // Fix map rendering issues
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 100);
 
-        // Map Initialization Function
-        window.initializeMap = function() {
-            const mapElement = document.getElementById('dormitory-map');
-            if (!mapElement) return;
-            
-            // Clear any existing map
-            while (mapElement.firstChild) {
-                mapElement.removeChild(mapElement.firstChild);
+    // Add routing from user location
+    let userRoutingControl = null;
+    const routeBtn = document.getElementById('route-from-my-location');
+    if (routeBtn) {
+        routeBtn.onclick = function() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
             }
-            
-            {% if dorm.latitude and dorm.longitude %}
-            map = L.map(mapElement).setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19,
-            }).addTo(map);
-            
-            // Create custom icons
-            const dormIcon = L.icon({
-                iconUrl: '{% static "images/dorm-marker.png" %}',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32]
-            });
-            
-            const schoolIcon = L.icon({
-                iconUrl: '{% static "images/school-marker.png" %}',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32]
-            });
-            
-            // Add dorm marker
-            const dormMarker = L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}], {
-                icon: dormIcon
-            }).addTo(map)
-            .bindPopup(`
-                <div class="font-bold">{{ dorm.name }}</div>
-                <div class="text-sm">{{ dorm.address }}</div>
-            `)
-            .openPopup();
-            
-            // Variables to store routing controls and distance labels
-            let routingControls = [];
-            let distanceLabels = [];
-            
-            // Add schools with distance calculation
-            {% for school in schools %}
-            (function() {
-                const schoolLat = {{ school.latitude }};
-                const schoolLng = {{ school.longitude }};
-                const schoolName = "{{ school.name|escapejs }}";
-                
-                // Calculate distance
-                const distance = map.distance(
-                    [{{ dorm.latitude }}, {{ dorm.longitude }}],
-                    [schoolLat, schoolLng]
-                );
-                const distanceKm = (distance / 1000).toFixed(1);
-                
-                // Create school marker
-                const schoolMarker = L.marker([schoolLat, schoolLng], {
-                    icon: schoolIcon
-                }).addTo(map)
-                .bindPopup(`
-                    <div class="font-bold">${schoolName}</div>
-                    <div class="text-sm">Distance: ${distanceKm} km</div>
-                `);
-                
-                // Create distance label
-                const distanceLabel = L.marker([schoolLat, schoolLng], {
-                    icon: L.divIcon({
-                        className: 'distance-label-container',
-                        html: `<div class="distance-label">${distanceKm} km</div>`,
-                        iconSize: [60, 20],
-                        iconAnchor: [30, 0]
-                    }),
-                    zIndexOffset: 1000
-                }).addTo(map);
-                
-                // Create routing path
-                const control = L.Routing.control({
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+                // Remove previous route if it exists
+                if (userRoutingControl) {
+                    map.removeControl(userRoutingControl);
+                }
+                userRoutingControl = L.Routing.control({
                     waypoints: [
-                        L.latLng({{ dorm.latitude }}, {{ dorm.longitude }}),
-                        L.latLng(schoolLat, schoolLng)
+                        userLatLng,
+                        L.latLng({{ dorm.latitude }}, {{ dorm.longitude }})
                     ],
                     routeWhileDragging: false,
-                    show: false, // Hide the instructions panel
+                    show: true,
                     lineOptions: {
                         styles: [{color: '#3b82f6', weight: 4, opacity: 0.7}]
-                    },
-                    createMarker: function() { return null; } // Don't create markers
+                    }
                 }).addTo(map);
-                
-                // Store references for cleanup
-                routingControls.push(control);
-                distanceLabels.push(distanceLabel);
-            })();
-            {% endfor %}
-            
-            // Fix map rendering issues
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-            {% else %}
-            mapElement.innerHTML = `
-                <div class="p-4 text-center text-gray-500">
-                    <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="mt-2">Location data not available</p>
-                </div>
-            `;
-            {% endif %}
+                // Optionally, add a marker for the user's location
+                L.marker(userLatLng, {
+                    icon: L.icon({
+                        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41]
+                    })
+                }).addTo(map).bindPopup('Your Location').openPopup();
+                map.setView(userLatLng, 14);
+            }, function() {
+                alert('Unable to retrieve your location.');
+            });
         };
-});
+    }
+    {% else %}
+    mapElement.innerHTML = `
+        <div class="p-4 text-center text-gray-500">
+            <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="mt-2">Location data not available</p>
+        </div>
+    `;
+    {% endif %}
+}
 </script>
 
 <style>
@@ -831,209 +844,6 @@ function closeDeleteModal() {
     }
 </style>
 
-<!-- Initialize Alpine.js Data -->
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('reviewSection', () => ({
-        openReviewModal: false,
-        openEditModal: false,
-        currentReview: {
-            id: null,
-            rating: 0,
-            comment: ''
-        }
-    }))
-})
-</script>
-
-<!-- Star Rating JavaScript -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const stars = document.querySelectorAll("#star-rating span");
-    const ratingInput = document.getElementById("selected-rating");
-    
-    if (stars.length && ratingInput) {
-        stars.forEach(star => {
-            star.addEventListener("click", function() {
-                const value = this.getAttribute("data-value");
-                ratingInput.value = value;
-                
-                stars.forEach((s, index) => {
-                    if (index < value) {
-                        s.classList.remove("text-gray-300");
-                        s.classList.add("text-yellow-500");
-                    } else {
-                        s.classList.remove("text-yellow-500");
-                        s.classList.add("text-gray-300");
-                    }
-                });
-            });
-            
-            star.addEventListener("mouseover", function() {
-                const value = this.getAttribute("data-value");
-                stars.forEach((s, index) => {
-                    if (index < value) {
-                        s.classList.add("text-yellow-300");
-                    }
-                });
-            });
-            
-            star.addEventListener("mouseout", function() {
-                stars.forEach(s => {
-                    if (!ratingInput.value || s.getAttribute("data-value") > ratingInput.value) {
-                        s.classList.remove("text-yellow-300", "text-yellow-500");
-                        s.classList.add("text-gray-300");
-                    }
-                });
-            });
-        });
-    }
-});
-</script>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<!-- Similar Dorms Section -->
-<section class="mt-12 mb-16">
-    <div class="container mx-auto px-4">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Similar Dorms You Might Like</h2>
-            <div class="flex items-center">
-                <span class="text-red-500 mr-2">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                    </svg>
-                </span>
-                <span class="text-lg font-semibold text-gray-600">Recommended For You</span>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for dorm in similar_dorms %}
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
-                {% if dorm.images.first %}
-                <img src="{{ dorm.images.first.image.url }}" alt="{{ dorm.name }}" class="w-full h-48 object-cover">
-                {% endif %}
-                <div class="p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-lg font-semibold">{{ dorm.name }}</h3>
-                        <span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs">
-                            {{ dorm.get_accommodation_type_display }}
-                        </span>
-                    </div>
-                    <div class="flex items-center mb-2">
-                        <div class="flex text-yellow-400">
-                            {% for i in "12345" %}
-                            {% if forloop.counter <= dorm.avg_rating|default:0 %}
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                            </svg>
-                            {% else %}
-                            <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                            </svg>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                        <span class="ml-1 text-sm text-gray-600">
-                            {{ dorm.avg_rating|default:0|floatformat:1 }}
-                            <span class="text-gray-500">({{ dorm.review_count|default:0 }})</span>
-                        </span>
-                    </div>
-                    <p class="text-gray-600 text-sm mb-2 truncate">{{ dorm.address }}</p>
-                    <div class="flex justify-between items-center mb-2">
-                        <p class="text-lg font-bold text-blue-600">₱{{ dorm.price }}/month</p>
-                    </div>
-                    <div class="flex flex-wrap gap-1 mb-3">
-                        {% for amenity in dorm.amenities.all|slice:":2" %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
-                            {{ amenity.name }}
-                        </span>
-                        {% endfor %}
-                        {% if dorm.amenities.count > 2 %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                            +{{ dorm.amenities.count|add:"-2" }} more
-                        </span>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="block w-full text-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-300">
-                        View Details
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-{% block extra_js %}
-{{ block.super }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click handlers to all favorite buttons
-    document.querySelectorAll('.favorite-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const dormId = this.getAttribute('data-dorm-id');
-            toggleFavorite(dormId);
-        });
-    });
-});
-
-function toggleFavorite(dormId) {
-    const csrfToken = document.querySelector('#favorite-form [name=csrfmiddlewaretoken]').value;
-    const button = document.querySelector(`button[data-dorm-id="${dormId}"]`);
-    const icon = button.querySelector('svg');
-    const text = button.querySelector('span');
-    
-    fetch(`/profile/favorite/toggle/${dormId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        credentials: 'include'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Toggle the heart icon color
-            if (data.is_favorite) {
-                icon.classList.remove('text-gray-400');
-                icon.classList.add('text-red-500');
-                text.classList.remove('text-gray-600');
-                text.classList.add('text-red-500');
-                text.textContent = 'Remove from Favorites';
-            } else {
-                icon.classList.remove('text-red-500');
-                icon.classList.add('text-gray-400');
-                text.classList.remove('text-red-500');
-                text.classList.add('text-gray-600');
-                text.textContent = 'Add to Favorites';
-            }
-            // Refresh the page to show the message
-            window.location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to update favorites. Please try again.');
-    });
-}
-
-// Hide loader when page is fully loaded
-window.addEventListener('load', function() {
-    const loader = document.getElementById('page-loader');
-    loader.style.opacity = '0';
-    setTimeout(() => {
-        loader.style.display = 'none';
-    }, 300);
-});
-</script>
-{% endblock %}
 
 {% endblock %}
+

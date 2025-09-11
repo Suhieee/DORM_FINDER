@@ -1,0 +1,150 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Report Details{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-8">
+  <div class="flex flex-col md:flex-row gap-8">
+    <!-- Left: Report Info -->
+    <div class="flex-1">
+      <div class="mb-4 flex items-center gap-2">
+        <span class="text-2xl font-bold text-blue-800">Report #{{ report.id }}</span>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold
+          {% if report.status == 'pending' %}bg-yellow-100 text-yellow-800
+          {% elif report.status == 'investigating' %}bg-blue-100 text-blue-800
+          {% elif report.status == 'resolved' %}bg-green-100 text-green-800
+          {% elif report.status == 'dismissed' %}bg-gray-200 text-gray-700{% endif %}">
+          {{ report.get_status_display }}
+        </span>
+      </div>
+      <div class="mb-2 text-gray-700">
+        <span class="font-semibold">Reason:</span> {{ report.get_reason_display }}
+      </div>
+      <div class="mb-2 text-gray-700">
+        <span class="font-semibold">Reporter:</span>
+        <a href="{% url 'accounts:view_user_profile' report.reporter.id %}" class="text-blue-700 hover:underline">{{ report.reporter.username }}</a>
+      </div>
+      <div class="mb-2 text-gray-700">
+        <span class="font-semibold">Reported User:</span>
+        <a href="{% url 'accounts:view_user_profile' report.reported_user.id %}" class="text-blue-700 hover:underline">{{ report.reported_user.username }}</a>
+      </div>
+      <div class="mb-2 text-gray-700">
+        <span class="font-semibold">Created:</span> {{ report.created_at|date:"M d, Y H:i" }}
+      </div>
+      <div class="mb-4">
+        <span class="font-semibold">Description:</span>
+        <div class="bg-gray-50 rounded p-3 mt-1">{{ report.description }}</div>
+      </div>
+      {% if report.evidence %}
+      <div class="mb-4">
+        <span class="font-semibold">Evidence:</span>
+        <div class="bg-gray-50 rounded p-3 mt-1">{{ report.evidence }}</div>
+      </div>
+      {% endif %}
+      {% if report.admin_notes %}
+      <div class="mb-4">
+        <span class="font-semibold">Admin Notes:</span>
+        <div class="bg-blue-50 rounded p-3 mt-1">{{ report.admin_notes|linebreaks }}</div>
+      </div>
+      {% endif %}
+    </div>
+    <!-- Right: Reported User Info -->
+    <div class="w-full md:w-64 bg-gray-50 rounded-xl p-4 flex flex-col items-center">
+      <img src="{{ report.reported_user.userprofile.profile_picture.url|default:'default.png' }}" class="w-20 h-20 rounded-full mb-2 border" alt="Profile">
+      <div class="font-bold text-lg">{{ report.reported_user.username }}</div>
+      <div class="text-xs text-gray-500 mb-2">{{ report.reported_user.get_user_type_display }}</div>
+      <div class="mb-2 text-gray-700"><span class="font-semibold">Email:</span> {{ report.reported_user.email }}</div>
+      <div class="mb-2 text-gray-700"><span class="font-semibold">Member Since:</span> {{ report.reported_user.date_joined|date:'M d, Y' }}</div>
+      <div class="mt-3">
+        <h6 class="font-semibold text-gray-700">Account Status:</h6>
+        {% if report.reported_user.is_active %}
+          <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Active</span>
+        {% else %}
+          <div class="bg-red-100 text-red-700 px-3 py-2 rounded mt-1">
+            <strong>{{ report.reported_user.ban_status }}</strong>
+            {% if report.reported_user.ban_reason %}
+              <br><span class="text-xs">Reason: {{ report.reported_user.ban_reason }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+      {% if user_dorms %}
+      <div class="mt-3 w-full">
+        <h6 class="font-semibold text-gray-700 mb-1">User's Dorms ({{ user_dorms.count }}):</h6>
+        <div class="max-h-32 overflow-y-auto pr-1">
+          {% for dorm in user_dorms %}
+            <div class="border-b pb-1 mb-1">
+              <span class="font-semibold">{{ dorm.name }}</span><br>
+              <span class="text-xs text-gray-500">{{ dorm.address|truncatechars:30 }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if user_reviews %}
+      <div class="mt-3 w-full">
+        <h6 class="font-semibold text-gray-700 mb-1">User's Reviews ({{ user_reviews.count }}):</h6>
+        <div class="max-h-32 overflow-y-auto pr-1">
+          {% for review in user_reviews %}
+            <div class="border-b pb-1 mb-1">
+              <span class="font-semibold">{{ review.dorm.name }}</span>
+              <span class="ml-1 text-yellow-500">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span><br>
+              <span class="text-xs text-gray-500">{{ review.comment|truncatechars:50 }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <!-- Admin Actions Section -->
+  <div class="mt-8">
+    {% if report.status == 'pending' or report.status == 'investigating' %}
+      <div class="bg-white rounded-xl shadow p-6 border mt-4">
+        <h5 class="text-lg font-bold mb-4 text-blue-800 flex items-center gap-2"><i class="fas fa-gavel"></i> Take Action</h5>
+        <form method="post" action="{% url 'accounts:resolve_report' report.id %}">
+          {% csrf_token %}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="{{ resolve_form.action.id_for_label }}" class="block font-semibold text-gray-700 mb-1">Action to Take *</label>
+              {{ resolve_form.action }}
+              {% if resolve_form.action.errors %}
+                <div class="text-red-600 text-xs mt-1">
+                  {% for error in resolve_form.action.errors %}<span>{{ error }}</span>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            <div>
+              <label for="{{ resolve_form.notes.id_for_label }}" class="block font-semibold text-gray-700 mb-1">Admin Notes</label>
+              {{ resolve_form.notes }}
+              {% if resolve_form.notes.errors %}
+                <div class="text-red-600 text-xs mt-1">
+                  {% for error in resolve_form.notes.errors %}<span>{{ error }}</span>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="bg-yellow-50 text-yellow-800 px-4 py-3 rounded mt-4 flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>Warning:</strong> Actions taken will be recorded and cannot be undone easily.</span>
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition">
+              <i class="fas fa-check"></i> Take Action
+            </button>
+            <a href="{% url 'accounts:manage_reports' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition">
+              <i class="fas fa-times"></i> Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    {% else %}
+      <div class="bg-blue-50 text-blue-800 px-4 py-3 rounded mt-4 flex items-center gap-2">
+        <i class="fas fa-info-circle"></i>
+        <span>This report has already been resolved. No further actions can be taken.</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

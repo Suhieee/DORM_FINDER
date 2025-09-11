@@ -1,5 +1,5 @@
 from django import forms
-from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation
+from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation, Room, RoomImage
 
 class DormForm(forms.ModelForm):
     amenities = forms.ModelMultipleChoiceField(
@@ -28,8 +28,8 @@ class DormForm(forms.ModelForm):
         fields = [
             'name', 'address', 'latitude', 'longitude', 'price', 'description',
             'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
-            'total_beds', 'available_beds', 'is_aircon', 'max_occupants',
-            'utilities_included'
+            'total_beds', 'available_beds','max_occupants',
+
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
@@ -46,17 +46,13 @@ class DormForm(forms.ModelForm):
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
             'price': 'Enter the price per month in PHP',
-            'accommodation_type': 'Select the type of accommodation you are offering',
             'total_beds': 'Total number of beds in the unit',
             'available_beds': 'Number of beds currently available for rent',
             'max_occupants': 'Maximum number of people allowed in the unit',
-            'utilities_included': 'Check if electricity and water bills are included in the rent',
         }
         labels = {
             'permit': 'Business Permit (Image only)',
             'payment_qr': 'Payment QR Code (GCash/Maya)',
-            'is_aircon': 'Air Conditioned',
-            'utilities_included': 'Utilities Included in Rent',
         }
 
     def __init__(self, *args, **kwargs):
@@ -146,6 +142,38 @@ class ReviewForm(forms.ModelForm):
     
 
 class ReservationForm(forms.ModelForm):
+    room = forms.ModelChoiceField(queryset=Room.objects.none(), required=False, label="Select Room")
+
     class Meta:
         model = Reservation
-        fields = []  # No extra fields, student and dorm assigned in view
+        fields = ['room']
+
+    def __init__(self, *args, **kwargs):
+        dorm = kwargs.pop('dorm', None)
+        super().__init__(*args, **kwargs)
+        if dorm is not None:
+            if dorm.accommodation_type == 'whole_unit':
+                self.fields['room'].widget = forms.HiddenInput()
+                self.fields['room'].required = False
+            else:
+                self.fields['room'].queryset = dorm.rooms.filter(is_available=True)
+                self.fields['room'].required = True
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = [
+            'name', 'price', 'is_available', 'description'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'price': forms.NumberInput(attrs={'step': '0.01'}),
+        }
+        help_texts = {
+            'price': 'Enter the price per month for this room',
+        }
+
+class RoomImageForm(forms.ModelForm):
+    class Meta:
+        model = RoomImage
+        fields = ['image']

@@ -1,0 +1,1433 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Browse Dorms - Dorm Finder{% endblock %}
+{% load static %}
+{% block content %}
+
+<!-- CSRF Token -->
+{% csrf_token %}
+
+<!-- Loader -->
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+</div>
+
+<!-- Messages -->
+<div id="message-container" class="fixed top-4 right-4 z-50"></div>
+
+<!-- Messages Section -->
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+    <div class="flex items-center p-4 mb-4 {% if message.tags == 'success' %}text-green-800 bg-green-50{% else %}text-red-800 bg-red-50{% endif %} rounded-lg message-alert" role="alert">
+        <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>
+        <div class="ms-3 text-sm font-medium">{{ message }}</div>
+        <button type="button" class="close-message ms-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex items-center justify-center h-8 w-8 {% if message.tags == 'success' %}text-green-500 bg-green-50 hover:bg-green-200 focus:ring-green-400{% else %}text-red-500 bg-red-50 hover:bg-red-200 focus:ring-red-400{% endif %}" aria-label="Close">
+            <span class="sr-only">Close</span>
+            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+            </svg>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Hero Section -->
+<div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 mb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Browse Available Dorms</h1>
+        <p class="text-xl mb-6 max-w-3xl mx-auto">
+            Find your perfect student accommodation from our carefully curated selection of verified dormitories.
+        </p>
+        
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                <div class="text-2xl font-bold">{{ page_obj.paginator.count|default:"0" }}</div>
+                <div class="text-sm opacity-90">Total Dorms</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                <div class="text-2xl font-bold">{{ amenities.count|default:"0" }}</div>
+                <div class="text-sm opacity-90">Amenities Available</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                <div class="text-2xl font-bold">100%</div>
+                <div class="text-sm opacity-90">Verified Listings</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Public Access Notice -->
+{% if not user.is_authenticated %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">Browse Freely!</h3>
+                <p class="text-blue-700 mb-3">
+                    You can browse all available dorms and view detailed information. 
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">Log in</a> or 
+                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">register</a> 
+                    to reserve, contact landlords, and access all features.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" 
+                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Get Started Free
+                    </a>
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+                       class="inline-flex items-center px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                        </svg>
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<div class="w-full">
+    <!-- Filter Section -->
+    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                </svg>
+                Search & Filters
+            </h2>
+        </div>
+        
+        <form method="get" class="filter-form p-6" id="filterForm">
+            <!-- Search Bar Row -->
+            <div class="mb-6">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" name="search" placeholder="Search by name, location or description..." 
+                        value="{{ request.GET.search }}"
+                        class="w-full p-4 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <!-- Collapsible Filters Section -->
+            <div class="mb-6">
+                <!-- Filters Toggle Button -->
+                <button type="button" 
+                        onclick="toggleFilters()" 
+                        class="w-full p-4 bg-gray-50 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Advanced Filters</span>
+                    <div class="flex items-center space-x-2">
+                        <span id="activeFiltersCount" class="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full"></span>
+                        <svg class="w-5 h-5 transform transition-transform duration-200" id="filtersArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </button>
+
+                <!-- Filters Content -->
+                <div id="filtersContent" class="hidden mt-4 space-y-6">
+                    <!-- Grid Layout for Filters -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="space-y-6">
+                            <!-- Price Range -->
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                    Price Range
+                                </h3>
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="text-sm text-gray-600">₱<span id="priceLabel">{{ request.GET.target_price|default:"10000" }}</span></span>
+                                </div>
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <input type="number" name="min_price" id="minPriceInput" min="1000" max="50000" step="500" placeholder="Min" value="{{ request.GET.min_price|default:"1000" }}" class="flex-1 p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <span class="text-gray-500">-</span>
+                                    <input type="number" name="target_price" id="maxPriceInput" min="1000" max="50000" step="500" placeholder="Max" value="{{ request.GET.target_price|default:"50000" }}" class="flex-1 p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <input type="range" id="priceRange" name="target_price" min="1000" max="50000" step="500"
+                                    value="{{ request.GET.target_price|default:"50000" }}"
+                                    class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                                    <span>₱1,000</span>
+                                    <span>₱50,000</span>
+                                </div>
+                            </div>
+
+                            <!-- Amenities -->
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                    </svg>
+                                    Amenities
+                                </h3>
+                                <div class="space-y-3 max-h-48 overflow-y-auto">
+                                    {% for amenity in amenities %}
+                                    <label class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
+                                        <input type="checkbox" name="amenities" value="{{ amenity.id }}" 
+                                               {% if amenity.id in selected_amenities %}checked{% endif %}
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-3 text-sm text-gray-700">{{ amenity.name }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="space-y-6">
+                            <!-- Interactive Map Filter -->
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Location Filter
+                                </h3>
+                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3">
+                                    <!-- Map will be loaded here -->
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <div class="text-center">
+                                            <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <p class="text-xs text-gray-600">Loading map...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-600 mb-3">
+                                    Click on the map to set a location filter. All dorms within 5km will be shown.
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="hidden" name="lat" id="filterLat" value="{{ request.GET.lat|default:'' }}">
+                                    <input type="hidden" name="lng" id="filterLng" value="{{ request.GET.lng|default:'' }}">
+                                    <input type="text" id="filterLocation" placeholder="Selected location..." 
+                                           value="{{ request.GET.location|default:'' }}" 
+                                           class="flex-1 p-2 border border-gray-300 rounded text-sm" readonly>
+                                    <button type="button" onclick="clearLocationFilter()" 
+                                            class="px-3 py-2 text-xs bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors">
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Accommodation Type -->
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                    Accommodation Type
+                                </h3>
+                                <select name="accommodation_type" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="all">All Types</option>
+                                    <option value="whole_unit" {% if request.GET.accommodation_type == 'whole_unit' %}selected{% endif %}>Whole Unit</option>
+                                    <option value="bedspace" {% if request.GET.accommodation_type == 'bedspace' %}selected{% endif %}>Bed Space</option>
+                                    <option value="room_sharing" {% if request.GET.accommodation_type == 'room_sharing' %}selected{% endif %}>Room Sharing</option>
+                                </select>
+                            </div>
+
+                            <!-- Sort By -->
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+                                    </svg>
+                                    Sort By
+                                </h3>
+                                <select name="sort" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="" {% if not request.GET.sort %}selected{% endif %}>Newest First</option>
+                                    <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                                    <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                                    <option value="rating" {% if request.GET.sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Apply Filters Button -->
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="clearFilters()" 
+                                class="px-6 py-3 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300">
+                            Clear All
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Available Dorms</h2>
+            <p class="text-gray-600 mt-1">
+                Showing {{ page_obj.start_index|default:"0" }}-{{ page_obj.end_index|default:"0" }} of {{ page_obj.paginator.count|default:"0" }} results
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500">View:</span>
+            <button onclick="setViewMode('grid')" id="gridView" class="p-2 rounded-lg bg-blue-100 text-blue-600">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                </svg>
+            </button>
+            <button onclick="setViewMode('list')" id="listView" class="p-2 rounded-lg text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+            <button onclick="toggleMapView()" id="mapView" class="p-2 rounded-lg text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Map View (Hidden by default) -->
+    <div id="mapContainer" class="hidden mb-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                    </svg>
+                    Dorm Locations
+                </h3>
+            </div>
+            <div id="map" class="w-full h-[600px] bg-gray-100">
+                <!-- Map will be loaded here -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <p class="text-gray-600">Loading map...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dorms Grid -->
+    <div id="dormsGrid" class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-8">
+        {% for dorm in dorms %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
+            <!-- Dorm Image with Slider -->
+            <div class="relative h-48 bg-gray-200">
+                {% if dorm.images.all %}
+                <div id="carousel-{{ dorm.id }}" class="h-48" data-carousel="slide">
+                    <div class="h-48 rounded-t-lg">
+                        {% for image in dorm.images.all|slice:':5' %}
+                        <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                            <img src="{{ image.image.url }}" class="block w-full h-full object-cover rounded-t-lg" alt="Dorm Image">
+                        </div>
+                        {% endfor %}
+                        {% if dorm.images.all|length > 1 %}
+                        <button type="button" 
+                                class="absolute top-1/2 left-2 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
+                                data-carousel-prev>
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button type="button" 
+                                class="absolute top-1/2 right-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
+                                data-carousel-next>
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <img class="w-full h-full object-contain scale-90 hover:scale-100 transition-transform duration-300" 
+                     src="{% static 'images/default_dorm.svg' %}" alt="No Image" />
+                {% endif %}
+                
+                <!-- Price Badge -->
+                <div class="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                    ₱{{ dorm.price|floatformat:0 }}
+                </div>
+                
+                <!-- Rating Badge -->
+                {% if dorm.avg_rating %}
+                <div class="absolute bottom-3 left-3 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-sm font-medium flex items-center shadow-lg">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    </svg>
+                    {{ dorm.avg_rating|floatformat:1 }}
+                </div>
+                {% endif %}
+
+                <!-- Accommodation Type Badge -->
+                <div class="absolute top-3 left-3">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ dorm.get_accommodation_type_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Dorm Info -->
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-lg font-semibold text-gray-900">{{ dorm.name }}</h3>
+                    {% if user.is_authenticated and user.user_type == 'student' %}
+                    <button type="button"
+                            data-dorm-id="{{ dorm.id }}"
+                            class="text-red-500 hover:text-red-700 focus:outline-none favorite-btn">
+                        <svg class="w-6 h-6 {% if dorm in user.userprofile.favorite_dorms.all %}text-red-500{% else %}text-gray-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </button>
+                    {% endif %}
+                </div>
+
+                <p class="text-sm text-gray-600 mb-3">{{ dorm.address }}</p>
+
+                <div class="flex items-center mb-3">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= dorm.avg_rating_rounded|default:0 %}
+                        <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="ml-2 text-gray-600">
+                        {{ dorm.avg_rating_rounded|default:0|floatformat:1 }}
+                        <span class="text-gray-500">({{ dorm.review_count|default:0 }})</span>
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-base font-bold text-blue-600">₱{{ dorm.price }}/month</p>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        {{ dorm.recent_views|default:"0" }} views
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% if dorm.available_beds and dorm.accommodation_type != 'whole_unit' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600">
+                        {{ dorm.available_beds }} beds available
+                    </span>
+                    {% endif %}
+                    {% for amenity in dorm.amenities.all|slice:":3" %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
+                        {{ amenity.name }}
+                    </span>
+                    {% endfor %}
+                    {% if dorm.amenities.count > 3 %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                        +{{ dorm.amenities.count|add:"-3" }} more
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end">
+                    <a href="{% url 'dormitory:public_dorm_detail' dorm.pk %}" 
+                       class="inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-16">
+            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">No dorms found</h3>
+            <p class="mt-2 text-gray-600">Try adjusting your search criteria or filters.</p>
+            <button onclick="clearFilters()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Clear All Filters
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex justify-center mb-8">
+        <nav class="flex items-center space-x-2">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
+                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    First
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
+                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Previous
+                </a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
+                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Next
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
+                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Last
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Filter functionality
+function toggleFilters() {
+    const content = document.getElementById('filtersContent');
+    const arrow = document.getElementById('filtersArrow');
+    content.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+    
+    // Initialize filter map when filters are expanded
+    if (!content.classList.contains('hidden')) {
+        setTimeout(function() {
+            initializeFilterMap();
+        }, 100);
+    }
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function setViewMode(mode) {
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+    const mapView = document.getElementById('mapView');
+    const dormsGrid = document.getElementById('dormsGrid');
+    const mapContainer = document.getElementById('mapContainer');
+    
+    if (mode === 'grid') {
+        gridView.className = 'p-2 rounded-lg bg-blue-100 text-blue-600';
+        listView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        mapView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        dormsGrid.className = 'w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-8';
+        mapContainer.classList.add('hidden');
+    } else if (mode === 'list') {
+        gridView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        listView.className = 'p-2 rounded-lg bg-blue-100 text-blue-600';
+        mapView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        dormsGrid.className = 'space-y-4 mb-8';
+        mapContainer.classList.add('hidden');
+    } else if (mode === 'map') {
+        gridView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        listView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
+        mapView.className = 'p-2 rounded-lg bg-blue-100 text-blue-600';
+        dormsGrid.classList.add('hidden');
+        mapContainer.classList.remove('hidden');
+        initializeMap();
+    }
+}
+
+function toggleMapView() {
+    setViewMode('map');
+}
+
+// Map functionality
+let map = null;
+let markers = [];
+let filterMap = null;
+let filterMarker = null;
+
+function initializeMap() {
+    if (map) return; // Map already initialized
+    
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        loadLeafletAPI();
+        return;
+    }
+    
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
+    
+    // Clear loading message
+    mapElement.innerHTML = '';
+    
+    // Initialize map centered on Manila with restricted bounds
+    map = L.map('map', {
+        center: [14.5995, 120.9842], // Manila coordinates
+        zoom: 11,
+        maxBounds: [
+            [14.0, 120.0], // Southwest bounds (south of Manila)
+            [15.5, 122.0]  // Northeast bounds (north of Manila)
+        ],
+        maxBoundsViscosity: 1.0, // Prevent dragging outside bounds
+        minZoom: 9, // Prevent zooming out too far
+        maxZoom: 18
+    });
+    
+    // Add a tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add routing control
+    const routingControl = L.Routing.control({
+        waypoints: [],
+        routeWhileDragging: true,
+        showAlternatives: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+            styles: [{ color: '#3B82F6', opacity: 0.8, weight: 6 }]
+        },
+        createMarker: function() { return null; }, // Don't create default markers
+        addWaypoints: false, // Disable adding waypoints by clicking
+        draggableWaypoints: false, // Disable dragging waypoints
+        show: false // Hide by default
+    }).addTo(map);
+    
+    // Store routing control for later use
+    map.routingControl = routingControl;
+    
+    // Add markers for each dorm
+    const dorms = JSON.parse('{{ dorms_json|escapejs }}');
+    dorms.forEach(function(dorm) {
+        if (dorm.latitude && dorm.longitude) {
+            const marker = L.marker([parseFloat(dorm.latitude), parseFloat(dorm.longitude)]).addTo(map);
+            
+            // Create popup content with route button
+            const popupContent = `
+                <div class="p-3 max-w-xs">
+                    <h3 class="font-semibold text-gray-900 mb-2">${dorm.name}</h3>
+                    <p class="text-sm text-gray-600 mb-2">${dorm.address}</p>
+                    <p class="text-lg font-bold text-blue-600 mb-3">₱${dorm.price}/month</p>
+                    <div class="flex space-x-2">
+                        <a href="/dormitory/dorm/${dorm.id}/" 
+                           class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                            View Details
+                        </a>
+                        <button onclick="showRouteToDorm(${dorm.latitude}, ${dorm.longitude}, '${dorm.name.replace(/'/g, "\\'")}')" 
+                                class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                            Get Route
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="showRouteFromDormToSchools(${dorm.latitude}, ${dorm.longitude}, '${dorm.name.replace(/'/g, "\\'")}')" 
+                                class="w-full bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors">
+                            Route to Schools
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add popup to marker
+            marker.bindPopup(popupContent);
+            
+            markers.push(marker);
+        }
+    });
+    
+    // Add school markers
+    const schools = JSON.parse('{{ schools_json|escapejs }}');
+    schools.forEach(function(school) {
+        if (school.latitude && school.longitude) {
+            const schoolMarker = L.marker([parseFloat(school.latitude), parseFloat(school.longitude)], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#10B981" stroke="white" stroke-width="2"/>
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white"/>
+                            <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" fill="none"/>
+                            <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                    `),
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map);
+            
+            // Create school popup content with route button
+            const schoolPopupContent = `
+                <div class="p-3 max-w-xs">
+                    <h3 class="font-semibold text-gray-900 mb-2">🏫 ${school.name}</h3>
+                    <p class="text-sm text-gray-600 mb-2">${school.address}</p>
+                    <div class="text-xs text-green-600 font-medium mb-2">School</div>
+                    <button onclick="showRouteToSchool(${school.latitude}, ${school.longitude}, '${school.name.replace(/'/g, "\\'")}')" 
+                            class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                        Get Route
+                    </button>
+                </div>
+            `;
+            
+            schoolMarker.bindPopup(schoolPopupContent);
+            markers.push(schoolMarker);
+        }
+    });
+    
+    // Fit bounds to show all markers within Manila area
+    if (markers.length > 0) {
+        const bounds = L.latLngBounds(markers.map(function(m) { return m.getLatLng(); }));
+        map.fitBounds(bounds, { padding: [20, 20] });
+        
+        // If only one marker, zoom in more but stay within bounds
+        if (markers.length === 1) {
+            map.setZoom(15);
+        }
+    }
+}
+
+// Route functions
+function showRouteToDorm(lat, lng, dormName) {
+    if (!map || !map.routingControl) return;
+    
+    // Get user's current location or use a default starting point
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            
+            // Check if user is within Manila bounds
+            if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
+                map.routingControl.setWaypoints([
+                    L.latLng(userLat, userLng),
+                    L.latLng(lat, lng)
+                ]);
+                map.routingControl.show();
+            } else {
+                // Use Manila center as starting point
+                map.routingControl.setWaypoints([
+                    L.latLng(14.5995, 120.9842), // Manila center
+                    L.latLng(lat, lng)
+                ]);
+                map.routingControl.show();
+                alert('Using Manila center as starting point. Enable location access for personalized routes.');
+            }
+        }, function() {
+            // Use Manila center as starting point if geolocation fails
+            map.routingControl.setWaypoints([
+                L.latLng(14.5995, 120.9842), // Manila center
+                L.latLng(lat, lng)
+            ]);
+            map.routingControl.show();
+        });
+    } else {
+        // Use Manila center as starting point if geolocation not supported
+        map.routingControl.setWaypoints([
+            L.latLng(14.5995, 120.9842), // Manila center
+            L.latLng(lat, lng)
+        ]);
+        map.routingControl.show();
+    }
+}
+
+function showRouteToSchool(lat, lng, schoolName) {
+    if (!map || !map.routingControl) return;
+    
+    // Similar to dorm routing but for schools
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            
+            if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
+                map.routingControl.setWaypoints([
+                    L.latLng(userLat, userLng),
+                    L.latLng(lat, lng)
+                ]);
+                map.routingControl.show();
+            } else {
+                map.routingControl.setWaypoints([
+                    L.latLng(14.5995, 120.9842),
+                    L.latLng(lat, lng)
+                ]);
+                map.routingControl.show();
+                alert('Using Manila center as starting point. Enable location access for personalized routes.');
+            }
+        }, function() {
+            map.routingControl.setWaypoints([
+                L.latLng(14.5995, 120.9842),
+                L.latLng(lat, lng)
+            ]);
+            map.routingControl.show();
+        });
+    } else {
+        map.routingControl.setWaypoints([
+            L.latLng(14.5995, 120.9842),
+            L.latLng(lat, lng)
+        ]);
+        map.routingControl.show();
+    }
+}
+
+function showRouteFromDormToSchools(dormLat, dormLng, dormName) {
+    console.log('showRouteFromDormToSchools called with:', { dormLat, dormLng, dormName });
+    
+    if (!map) {
+        console.error('Map not initialized');
+        alert('Map not available. Please refresh the page.');
+        return;
+    }
+    
+    if (!map.routingControl) {
+        console.error('Routing control not available');
+        alert('Routing not available. Please refresh the page.');
+        return;
+    }
+    
+    // Get schools data
+    const schools = JSON.parse('{{ schools_json|escapejs }}');
+    console.log('Schools data:', schools);
+    
+    if (schools.length === 0) {
+        alert('No schools found in the area.');
+        return;
+    }
+    
+    // Calculate distances for ALL schools (no distance limit)
+    const allSchools = [];
+    schools.forEach(function(school) {
+        if (school.latitude && school.longitude) {
+            const distance = calculateDistance(
+                parseFloat(dormLat), parseFloat(dormLng),
+                parseFloat(school.latitude), parseFloat(school.longitude)
+            );
+            allSchools.push({
+                ...school,
+                distance: distance
+            });
+        }
+    });
+    
+    // Sort by distance (nearest first)
+    allSchools.sort((a, b) => a.distance - b.distance);
+    
+    if (allSchools.length === 0) {
+        alert('No schools found in the area.');
+        return;
+    }
+    
+    // Show all schools in the route (up to 10 schools to avoid too many waypoints)
+    const maxSchools = Math.min(10, allSchools.length);
+    const waypoints = [L.latLng(dormLat, dormLng)]; // Start from dorm
+    
+    for (let i = 0; i < maxSchools; i++) {
+        const school = allSchools[i];
+        waypoints.push(L.latLng(school.latitude, school.longitude));
+    }
+    
+    map.routingControl.setWaypoints(waypoints);
+    map.routingControl.show();
+    
+    // Add arrival highlighting for all schools
+    setTimeout(() => {
+        highlightAllSchoolArrivals(allSchools.slice(0, maxSchools));
+    }, 1000);
+    
+    // Show info about the route with distance ranges
+    const nearestSchool = allSchools[0];
+    const farthestSchool = allSchools[maxSchools - 1];
+    const schoolNames = allSchools.slice(0, maxSchools).map(s => s.name).join(', ');
+    alert(`Showing route from ${dormName} to ${maxSchools} schools (${nearestSchool.distance.toFixed(1)}km to ${farthestSchool.distance.toFixed(1)}km): ${schoolNames}`);
+}
+
+// Function to highlight all school arrivals
+function highlightAllSchoolArrivals(schools) {
+    console.log('Attempting to highlight schools:', schools);
+    
+    // Wait a bit longer for the routing panel to be fully rendered
+    setTimeout(() => {
+        const routingPanel = document.querySelector('.leaflet-routing-container');
+        if (!routingPanel) {
+            console.error('Routing panel not found');
+            return;
+        }
+        
+        console.log('Routing panel found, looking for instruction steps');
+        
+        // Try multiple selectors to find all possible instruction steps
+        let instructionSteps = [];
+        
+        // Try different selectors
+        const selectors = [
+            '.leaflet-routing-alt h3',
+            '.leaflet-routing-alt .leaflet-routing-alt-summary',
+            '.leaflet-routing-alt .leaflet-routing-alt-step',
+            '.leaflet-routing-alt .leaflet-routing-alt-step h3',
+            '.leaflet-routing-alt .leaflet-routing-alt-step .leaflet-routing-alt-summary',
+            '.leaflet-routing-alt .leaflet-routing-alt-step .leaflet-routing-alt-instruction',
+            '.leaflet-routing-alt .leaflet-routing-alt-step .leaflet-routing-alt-instruction h3',
+            '.leaflet-routing-alt .leaflet-routing-alt-step .leaflet-routing-alt-instruction .leaflet-routing-alt-summary'
+        ];
+        
+        selectors.forEach(selector => {
+            const elements = routingPanel.querySelectorAll(selector);
+            if (elements.length > 0) {
+                console.log(`Found ${elements.length} elements with selector: ${selector}`);
+                instructionSteps = instructionSteps.concat(Array.from(elements));
+            }
+        });
+        
+        // Remove duplicates
+        instructionSteps = [...new Set(instructionSteps)];
+        
+        console.log('Total unique instruction steps found:', instructionSteps.length);
+        
+        // If still no steps found, try to find any text elements
+        if (instructionSteps.length === 0) {
+            const allTextElements = routingPanel.querySelectorAll('*');
+            instructionSteps = Array.from(allTextElements).filter(el => 
+                el.textContent && 
+                el.textContent.trim().length > 0 && 
+                (el.textContent.includes('destination') || 
+                 el.textContent.includes('arrived') || 
+                 el.textContent.includes('arrival') ||
+                 el.textContent.includes('km') ||
+                 el.textContent.includes('m'))
+            );
+            console.log('Found text elements:', instructionSteps.length);
+        }
+        
+        // Extended color palette for more schools
+        const colors = [
+            '#10B981', // Green
+            '#3B82F6', // Blue
+            '#8B5CF6', // Purple
+            '#F59E0B', // Amber
+            '#EF4444', // Red
+            '#06B6D4', // Cyan
+            '#84CC16', // Lime
+            '#F97316', // Orange
+            '#EC4899', // Pink
+            '#6366F1'  // Indigo
+        ];
+        
+        // If we found instruction steps, try to highlight them
+        if (instructionSteps.length > 0) {
+            schools.forEach((school, schoolIndex) => {
+                console.log(`Looking for school: ${school.name}`);
+                
+                instructionSteps.forEach((step, stepIndex) => {
+                    const stepText = step.textContent.toLowerCase();
+                    const schoolName = school.name.toLowerCase();
+                    
+                    // Try different matching strategies
+                    const isMatch = stepText.includes(schoolName) || 
+                                   stepText.includes('destination') ||
+                                   stepText.includes('arrived') ||
+                                   stepText.includes('arrival') ||
+                                   (stepText.includes('km') && stepIndex === schoolIndex);
+                    
+                    if (isMatch) {
+                        console.log(`Found match for ${school.name} in step:`, stepText);
+                        
+                        // Add arrival highlighting with different colors for each school
+                        const color = colors[schoolIndex % colors.length];
+                        
+                        step.style.backgroundColor = color;
+                        step.style.color = 'white';
+                        step.style.padding = '8px 12px';
+                        step.style.borderRadius = '6px';
+                        step.style.margin = '4px 0';
+                        step.style.fontWeight = 'bold';
+                        step.style.borderLeft = `4px solid ${color}`;
+                        
+                        // Add school number and arrival icon
+                        const arrivalIcon = document.createElement('span');
+                        arrivalIcon.innerHTML = `🏫 School ${schoolIndex + 1}: `;
+                        arrivalIcon.style.marginRight = '8px';
+                        step.insertBefore(arrivalIcon, step.firstChild);
+                        
+                        // Add arrival text with distance
+                        const arrivalText = document.createElement('div');
+                        arrivalText.textContent = `🎓 Arrived at ${school.name} (${school.distance.toFixed(1)}km from dorm)`;
+                        arrivalText.style.fontSize = '12px';
+                        arrivalText.style.marginTop = '4px';
+                        arrivalText.style.opacity = '0.9';
+                        step.appendChild(arrivalText);
+                        
+                        // Add distance category
+                        const distanceCategory = document.createElement('div');
+                        if (school.distance <= 2) {
+                            distanceCategory.textContent = '🚶 Walking distance';
+                            distanceCategory.style.color = '#10B981';
+                        } else if (school.distance <= 5) {
+                            distanceCategory.textContent = '🚌 Short commute';
+                            distanceCategory.style.color = '#F59E0B';
+                        } else if (school.distance <= 10) {
+                            distanceCategory.textContent = '🚇 Medium commute';
+                            distanceCategory.style.color = '#EF4444';
+                        } else {
+                            distanceCategory.textContent = '🚗 Long commute';
+                            distanceCategory.style.color = '#8B5CF6';
+                        }
+                        distanceCategory.style.fontSize = '11px';
+                        distanceCategory.style.marginTop = '2px';
+                        distanceCategory.style.fontWeight = 'bold';
+                        step.appendChild(distanceCategory);
+                    }
+                });
+            });
+        }
+        
+        // If no matches found or no steps found, try to highlight destination steps manually
+        if (schools.length > 0) {
+            const destinationSteps = routingPanel.querySelectorAll('.leaflet-routing-alt h3, .leaflet-routing-alt .leaflet-routing-alt-summary');
+            console.log('Found destination steps:', destinationSteps.length);
+            
+            destinationSteps.forEach((step, index) => {
+                if (index < schools.length) {
+                    const school = schools[index];
+                    const color = colors[index % colors.length];
+                    
+                    console.log(`Highlighting destination step ${index + 1} for school: ${school.name}`);
+                    
+                    step.style.backgroundColor = color;
+                    step.style.color = 'white';
+                    step.style.padding = '8px 12px';
+                    step.style.borderRadius = '6px';
+                    step.style.margin = '4px 0';
+                    step.style.fontWeight = 'bold';
+                    step.style.borderLeft = `4px solid ${color}`;
+                    
+                    // Add school info
+                    const schoolInfo = document.createElement('div');
+                    schoolInfo.innerHTML = `🏫 School ${index + 1}: ${school.name} (${school.distance.toFixed(1)}km)`;
+                    schoolInfo.style.fontSize = '12px';
+                    schoolInfo.style.marginTop = '4px';
+                    step.appendChild(schoolInfo);
+                }
+            });
+        }
+        
+    }, 3000); // Wait 3 seconds for routing panel to be fully rendered
+}
+
+function initializeFilterMap() {
+    if (filterMap) return; // Filter map already initialized
+    
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        loadLeafletAPI();
+        return;
+    }
+    
+    const filterMapElement = document.getElementById('filterMap');
+    if (!filterMapElement) return;
+    
+    // Clear loading message
+    filterMapElement.innerHTML = '';
+    
+    // Initialize filter map
+    filterMap = L.map('filterMap', {
+        center: [14.5995, 120.9842],
+        zoom: 11,
+        maxBounds: [
+            [14.0, 120.0], // Southwest bounds (south of Manila)
+            [15.5, 122.0]  // Northeast bounds (north of Manila)
+        ],
+        maxBoundsViscosity: 1.0, // Prevent dragging outside bounds
+        minZoom: 9, // Prevent zooming out too far
+        maxZoom: 18
+    });
+    
+    // Add a tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(filterMap);
+    
+    // Add all dorm markers to filter map
+    const dorms = JSON.parse('{{ dorms_json|escapejs }}');
+    dorms.forEach(function(dorm) {
+        if (dorm.latitude && dorm.longitude) {
+            const marker = L.marker([parseFloat(dorm.latitude), parseFloat(dorm.longitude)], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                        </svg>
+                    `),
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(filterMap);
+            
+            // Create popup content
+            const popupContent = `
+                <div class="p-2 max-w-xs">
+                    <h3 class="font-semibold text-gray-900 mb-1 text-sm">${dorm.name}</h3>
+                    <p class="text-xs text-gray-600 mb-1">${dorm.address}</p>
+                    <p class="text-sm font-bold text-blue-600">₱${dorm.price}/month</p>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+        }
+    });
+    
+    // Add school markers to filter map
+    const schools = JSON.parse('{{ schools_json|escapejs }}');
+    schools.forEach(function(school) {
+        if (school.latitude && school.longitude) {
+            const schoolMarker = L.marker([parseFloat(school.latitude), parseFloat(school.longitude)], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="8" fill="#10B981" stroke="white" stroke-width="2"/>
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white"/>
+                            <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" fill="none"/>
+                            <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                    `),
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            }).addTo(filterMap);
+            
+            // Create school popup content
+            const schoolPopupContent = `
+                <div class="p-2 max-w-xs">
+                    <h3 class="font-semibold text-gray-900 mb-1 text-xs">🏫 ${school.name}</h3>
+                    <p class="text-xs text-gray-600">${school.address}</p>
+                </div>
+            `;
+            
+            schoolMarker.bindPopup(schoolPopupContent);
+        }
+    });
+    
+    // Add click handler to set location filter
+    filterMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Update hidden inputs
+        document.getElementById('filterLat').value = lat.toFixed(6);
+        document.getElementById('filterLng').value = lng.toFixed(6);
+        
+        // Update location display
+        document.getElementById('filterLocation').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        
+        // Remove existing filter marker
+        if (filterMarker) {
+            filterMap.removeLayer(filterMarker);
+        }
+        
+        // Add new filter marker
+        filterMarker = L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="3"/>
+                        <circle cx="16" cy="16" r="6" fill="white"/>
+                    </svg>
+                `),
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            })
+        }).addTo(filterMap);
+        
+        // Add radius circle (5km)
+        const radiusCircle = L.circle([lat, lng], {
+            color: '#EF4444',
+            fillColor: '#FEE2E2',
+            fillOpacity: 0.3,
+            radius: 5000 // 5km in meters
+        }).addTo(filterMap);
+        
+        // Store circle reference to remove later
+        filterMarker.radiusCircle = radiusCircle;
+        
+        // Center map on selected location
+        filterMap.setView([lat, lng], 13);
+    });
+    
+    // Fit bounds to show all markers
+    const allMarkers = [];
+    filterMap.eachLayer(function(layer) {
+        if (layer instanceof L.Marker) {
+            allMarkers.push(layer.getLatLng());
+        }
+    });
+    
+    if (allMarkers.length > 0) {
+        const bounds = L.latLngBounds(allMarkers);
+        filterMap.fitBounds(bounds);
+    }
+}
+
+function clearLocationFilter() {
+    document.getElementById('filterLat').value = '';
+    document.getElementById('filterLng').value = '';
+    document.getElementById('filterLocation').value = '';
+    
+    if (filterMarker) {
+        filterMap.removeLayer(filterMarker);
+        if (filterMarker.radiusCircle) {
+            filterMap.removeLayer(filterMarker.radiusCircle);
+        }
+        filterMarker = null;
+    }
+}
+
+function loadLeafletAPI() {
+    // Load Leaflet CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    // Load Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    // Load Leaflet Routing Machine CSS
+    const routingCSS = document.createElement('link');
+    routingCSS.rel = 'stylesheet';
+    routingCSS.href = 'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css';
+    document.head.appendChild(routingCSS);
+
+    // Load Leaflet Routing Machine JS
+    const routingScript = document.createElement('script');
+    routingScript.src = 'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js';
+    routingScript.async = true;
+    routingScript.defer = true;
+    document.head.appendChild(routingScript);
+
+    // Wait for both Leaflet and Routing Machine to be loaded before initializing maps
+    let loadedCount = 0;
+    const totalScripts = 2;
+    
+    function checkAllLoaded() {
+        loadedCount++;
+        if (loadedCount === totalScripts) {
+            initializeMap();
+            initializeFilterMap();
+        }
+    }
+    
+    script.onload = checkAllLoaded;
+    routingScript.onload = checkAllLoaded;
+}
+
+// Price range slider
+document.addEventListener('DOMContentLoaded', function() {
+    const priceRange = document.getElementById('priceRange');
+    const priceLabel = document.getElementById('priceLabel');
+    const minPriceInput = document.getElementById('minPriceInput');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+
+    if (priceRange) {
+        priceRange.addEventListener('input', function() {
+            priceLabel.textContent = this.value;
+            maxPriceInput.value = this.value;
+        });
+    }
+
+    if (minPriceInput && maxPriceInput) {
+        minPriceInput.addEventListener('input', function() {
+            if (parseInt(this.value) > parseInt(maxPriceInput.value)) {
+                maxPriceInput.value = this.value;
+                if (priceRange) {
+                    priceRange.value = this.value;
+                    priceLabel.textContent = this.value;
+                }
+            }
+        });
+
+        maxPriceInput.addEventListener('input', function() {
+            if (parseInt(this.value) < parseInt(minPriceInput.value)) {
+                minPriceInput.value = this.value;
+            }
+            if (priceRange) {
+                priceRange.value = this.value;
+                priceLabel.textContent = this.value;
+            }
+        });
+    }
+
+    // Initialize carousels for dorm images
+    initializeCarousels();
+
+    // Hide loader
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+        setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }, 1000);
+    }
+});
+
+// Carousel functionality
+function initializeCarousels() {
+    const carousels = document.querySelectorAll('[data-carousel="slide"]');
+    
+    carousels.forEach(function(carousel) {
+        const items = carousel.querySelectorAll('[data-carousel-item]');
+        const prevButton = carousel.querySelector('[data-carousel-prev]');
+        const nextButton = carousel.querySelector('[data-carousel-next]');
+        
+        if (items.length <= 1) return;
+        
+        let currentIndex = 0;
+        
+        function showItem(index) {
+            items.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+        
+        function nextItem() {
+            currentIndex = (currentIndex + 1) % items.length;
+            showItem(currentIndex);
+        }
+        
+        function prevItem() {
+            currentIndex = (currentIndex - 1 + items.length) % items.length;
+            showItem(currentIndex);
+        }
+        
+        if (prevButton) {
+            prevButton.addEventListener('click', prevItem);
+        }
+        
+        if (nextButton) {
+            nextButton.addEventListener('click', nextItem);
+        }
+        
+        // Auto-advance carousel every 5 seconds
+        setInterval(nextItem, 5000);
+    });
+}
+
+// Message alerts
+document.addEventListener('DOMContentLoaded', function() {
+    const closeButtons = document.querySelectorAll('.close-message');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const messageAlert = this.closest('.message-alert');
+            if (messageAlert) {
+                messageAlert.style.transition = 'opacity 0.3s ease-out';
+                messageAlert.style.opacity = '0';
+                setTimeout(() => {
+                    messageAlert.remove();
+                }, 300);
+            }
+        });
+    });
+
+    // Auto-dismiss messages after 5 seconds
+    const messages = document.querySelectorAll('.message-alert');
+    messages.forEach(message => {
+        setTimeout(() => {
+            if (message) {
+                message.style.transition = 'opacity 0.3s ease-out';
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    message.remove();
+                }, 300);
+            }
+        }, 5000);
+    });
+});
+
+// Helper function to calculate distance between two points
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+</script>
+
+<style>
+/* Loader Styles */
+#page-loader {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.loader {
+    border-top-color: #2724e7;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+/* Message Animation */
+#message-container > div {
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+</style>
+
+{% endblock %} 

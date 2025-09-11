@@ -5,7 +5,12 @@
 
 {% for review in reviews %}
     <div class="review">
-        <strong>{{ review.user.username }}</strong> - Rated: {{ review.rating }}/5
+        <strong>
+            {{ review.user.username }}
+            {% if review.user.userprofile.is_verified %}
+                <span class="ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full align-middle font-semibold">Verified</span>
+            {% endif %}
+        </strong> - Rated: {{ review.rating }}/5
         <p>{{ review.comment }}</p>
         <small>Posted on {{ review.created_at }}</small>
     </div>

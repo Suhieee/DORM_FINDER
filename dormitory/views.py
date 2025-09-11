@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School, 
-    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat
+    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
 from django.db.models import Avg , Q
@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, ListView
 from accounts.models import CustomUser
-import qrcode
+
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -30,7 +30,244 @@ from decimal import Decimal
 from django.db import models
 from .services import RoommateMatchingService
 from django.views.decorators.csrf import csrf_exempt
+from .forms import RoomForm, RoomImageForm
+from django.forms import modelformset_factory
+from django.views.generic import TemplateView
+import json
 
+
+# Add this mixin after the imports and before the views
+
+class LoginRequiredActionMixin:
+    """Mixin to handle login required actions with proper redirect"""
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # Store the current URL to redirect back after login
+            next_url = request.get_full_path()
+            messages.info(request, "Please log in to access this feature.")
+            return redirect(f"{reverse('accounts:login')}?next={next_url}")
+        return super().dispatch(request, *args, **kwargs)
+
+
+# Add these new public views at the top of the file, after the imports
+
+class PublicDormListView(ListView):
+    """Public view for browsing dorms without login requirement"""
+    model = Dorm
+    template_name = "dormitory/public_dorm_list.html"
+    context_object_name = "dorms"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = Dorm.objects.select_related('landlord').prefetch_related(
+            'images', 'amenities', 'reviews'
+        ).filter(
+            available=True, 
+            approval_status="approved"
+        ).annotate(
+            avg_rating=models.Avg('reviews__rating'),
+            review_count=models.Count('reviews')
+        )
+
+        # Search functionality
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                models.Q(name__icontains=search_query) |
+                models.Q(address__icontains=search_query) |
+                models.Q(description__icontains=search_query)
+            )
+
+        # Price filtering
+        min_price = self.request.GET.get('min_price')
+        target_price = self.request.GET.get('target_price')
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if target_price:
+            queryset = queryset.filter(price__lte=target_price)
+
+        # Amenities filtering
+        amenities = self.request.GET.getlist('amenities')
+        if amenities:
+            queryset = queryset.filter(amenities__id__in=amenities).distinct()
+
+        # Location-based filtering
+        lat = self.request.GET.get('lat')
+        lng = self.request.GET.get('lng')
+        if lat and lng:
+            try:
+                lat = float(lat)
+                lng = float(lng)
+                # Filter dorms within 5km radius
+                from math import radians, sin, cos, sqrt, atan2
+                
+                # Haversine formula for distance calculation
+                def calculate_distance(lat1, lon1, lat2, lon2):
+                    R = 6371  # Earth's radius in kilometers
+                    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                    c = 2 * atan2(sqrt(a), sqrt(1-a))
+                    distance = R * c
+                    return distance
+                
+                # Filter dorms within 5km
+                nearby_dorms = []
+                for dorm in queryset:
+                    if dorm.latitude and dorm.longitude:
+                        distance = calculate_distance(lat, lng, float(dorm.latitude), float(dorm.longitude))
+                        if distance <= 5.0:  # 5km radius
+                            nearby_dorms.append(dorm.id)
+                
+                queryset = queryset.filter(id__in=nearby_dorms)
+            except (ValueError, TypeError):
+                pass  # Invalid coordinates, ignore location filter
+
+        # Accommodation type filtering
+        accommodation_type = self.request.GET.get('accommodation_type')
+        if accommodation_type and accommodation_type != 'all':
+            queryset = queryset.filter(accommodation_type=accommodation_type)
+
+        # Sorting
+        sort_by = self.request.GET.get('sort')
+        if sort_by == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort_by == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort_by == 'rating':
+            queryset = queryset.order_by('-avg_rating')
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['amenities'] = Amenity.objects.all()
+        context['selected_amenities'] = self.request.GET.getlist('amenities')
+        
+        # Add dorm data for map
+        dorms_data = []
+        for dorm in context['dorms']:
+            dorms_data.append({
+                'id': dorm.id,
+                'name': dorm.name,
+                'address': dorm.address,
+                'price': float(dorm.price),  # Convert Decimal to float
+                'latitude': float(dorm.latitude) if dorm.latitude else None,  # Convert Decimal to float
+                'longitude': float(dorm.longitude) if dorm.longitude else None,  # Convert Decimal to float
+            })
+        context['dorms_json'] = json.dumps(dorms_data)
+        
+        # Add schools data for map
+        from dormitory.models import School
+        schools_data = []
+        for school in School.objects.all():
+            if school.latitude and school.longitude:
+                schools_data.append({
+                    'id': school.id,
+                    'name': school.name,
+                    'address': school.address,
+                    'latitude': float(school.latitude),
+                    'longitude': float(school.longitude),
+                })
+        context['schools_json'] = json.dumps(schools_data)
+        
+        return context
+
+
+class PublicDormDetailView(DetailView):
+    """Public view for viewing dorm details without login"""
+    model = Dorm
+    template_name = "dormitory/public_dorm_detail.html"
+    context_object_name = "dorm"
+
+    def get(self, request, *args, **kwargs):
+        """Increment the view count when the dorm is viewed"""
+        response = super().get(request, *args, **kwargs)
+        dorm = self.object
+        dorm.recent_views += 1
+        dorm.save(update_fields=['recent_views'])
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['amenities'] = self.object.amenities.all()
+        context['dorm_id'] = self.object.id
+        context['latitude'] = self.object.latitude
+        context['longitude'] = self.object.longitude
+        
+        # Add schools to the context
+        context['schools'] = School.objects.all()
+        
+        # Add schools JSON for map functionality
+        schools_data = []
+        for school in School.objects.all():
+            if school.latitude and school.longitude:
+                schools_data.append({
+                    'id': school.id,
+                    'name': school.name,
+                    'address': school.address,
+                    'latitude': float(school.latitude),
+                    'longitude': float(school.longitude),
+                })
+        context['schools_json'] = json.dumps(schools_data)
+        
+        # Get similar dorms based on price range, amenities, and location
+        current_dorm = self.object
+        price_range = (
+            current_dorm.price * Decimal('0.7'), 
+            current_dorm.price * Decimal('1.3')
+        )
+        
+        similar_dorms = Dorm.objects.select_related('landlord').prefetch_related(
+            'images', 'amenities', 'reviews'
+        ).filter(
+            available=True,
+            approval_status="approved",
+            price__range=price_range,
+            accommodation_type=current_dorm.accommodation_type
+        ).exclude(
+            id=current_dorm.id
+        ).annotate(
+            avg_rating=models.Avg('reviews__rating'),
+            review_count=models.Count('reviews'),
+            amenity_match=models.Count(
+                'amenities',
+                filter=models.Q(amenities__in=current_dorm.amenities.all())
+            )
+        ).order_by('-amenity_match', '-avg_rating')[:4]
+
+        context['similar_dorms'] = similar_dorms
+        
+        return context
+
+
+class PublicRoommateListView(ListView):
+    """Public view for browsing roommate listings without login"""
+    model = RoommatePost
+    template_name = "dormitory/public_roommate_list.html"
+    context_object_name = "roommates"
+    ordering = ["-date_posted"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add amenities for filtering
+        context['amenities'] = RoommateAmenity.objects.all()
+        return context
+
+
+class PublicRoommateDetailView(DetailView):
+    """Public view for viewing roommate details without login"""
+    model = RoommatePost
+    template_name = "dormitory/public_roommate_detail.html"
+    context_object_name = "roommate"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
 
 
 #  Add Dorm (For Landlords)
@@ -188,6 +425,32 @@ class DormListView(LoginRequiredMixin, ListView):
         context['selected_amenities'] = [int(a) for a in self.request.GET.getlist('amenities')]
         context['selected_school'] = self.request.GET.get('school', '')
         context['selected_sort'] = self.request.GET.get('sort', '')
+        
+        # Add dorm data for map (same as public version)
+        dorms_data = []
+        for dorm in context['dorms']:
+            dorms_data.append({
+                'id': dorm.id,
+                'name': dorm.name,
+                'address': dorm.address,
+                'price': float(dorm.price),  # Convert Decimal to float
+                'latitude': float(dorm.latitude) if dorm.latitude else None,  # Convert Decimal to float
+                'longitude': float(dorm.longitude) if dorm.longitude else None,  # Convert Decimal to float
+            })
+        context['dorms_json'] = json.dumps(dorms_data)
+        
+        # Add schools data for map
+        schools_data = []
+        for school in School.objects.all():
+            if school.latitude and school.longitude:
+                schools_data.append({
+                    'id': school.id,
+                    'name': school.name,
+                    'address': school.address,
+                    'latitude': float(school.latitude),
+                    'longitude': float(school.longitude),
+                })
+        context['schools_json'] = json.dumps(schools_data)
         
         return context
 
@@ -399,6 +662,12 @@ class RoommateDetailView(LoginRequiredMixin, DetailView):
     template_name = "dormitory/roommate_detail.html"
     context_object_name = "roommate"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add user's own post to context for Connect button
+        context['user_post'] = RoommatePost.objects.filter(user=self.request.user).first()
+        return context
+
 class RoommateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = RoommatePost
     form_class = RoommatePostForm
@@ -548,6 +817,11 @@ class ReservationCreateView(CreateView):
             
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(dorm=self.dorm, **self.get_form_kwargs())
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dorm'] = self.dorm
@@ -593,6 +867,13 @@ def update_reservation_status(request, reservation_id):
         return JsonResponse({'error': 'Invalid status'}, status=400)
     
     reservation.status = new_status
+    # Update room availability if room is assigned
+    if reservation.room is not None:
+        if new_status == 'confirmed':
+            reservation.room.is_available = False
+        elif new_status == 'declined':
+            reservation.room.is_available = True
+        reservation.room.save()
     reservation.save()
     
     # Create a system message about the status change
@@ -721,6 +1002,15 @@ class UpdateReservationStatusView(View):
                 return redirect('dormitory:student_reservations')
                 
             reservation.status = 'confirmed'
+            # Decrement available_beds if greater than 0
+            dorm = reservation.dorm
+            if dorm.available_beds > 0:
+                dorm.available_beds -= 1
+                dorm.save()
+            # Set room as unavailable if assigned
+            if reservation.room is not None:
+                reservation.room.is_available = False
+                reservation.room.save()
             messages.success(request, f"Reservation for {reservation.dorm.name} has been confirmed.")
             # Create a system message
             Message.objects.create(
@@ -775,14 +1065,23 @@ class UpdateReservationStatusView(View):
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can decline reservations.")
                 return redirect('dormitory:student_reservations')
-                
+            
+            decline_reason = request.POST.get('decline_reason')
+            if not decline_reason:
+                messages.error(request, "Please provide a reason for declining the reservation.")
+                return redirect('dormitory:landlord_reservations')
             reservation.status = 'declined'
+            reservation.cancellation_reason = decline_reason
+            # Set room as available if assigned
+            if reservation.room is not None:
+                reservation.room.is_available = True
+                reservation.room.save()
             messages.warning(request, f"Reservation for {reservation.dorm.name} has been declined.")
             # Create a system message
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.student,
-                content="Your reservation has been declined.",
+                content=f"Your reservation has been declined. Reason: {decline_reason}",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
@@ -803,6 +1102,10 @@ class UpdateReservationStatusView(View):
             
             reservation.status = 'cancelled'
             reservation.cancellation_reason = cancellation_reason
+            # Set room as available if assigned
+            if reservation.room is not None:
+                reservation.room.is_available = True
+                reservation.room.save()
             messages.warning(request, f"Your reservation for {reservation.dorm.name} has been cancelled.")
             
             # Create first system message about cancellation
@@ -921,6 +1224,7 @@ class StudentReservationsView(ListView):
                 reservation.payment_proof = payment_proof
                 reservation.payment_submitted_at = timezone.now()
                 reservation.has_paid_reservation = True
+                reservation.payment_amount = reservation.dorm.price  # Set amount to dorm price
                 reservation.save()
 
                 # Create a message about the payment submission
@@ -933,6 +1237,13 @@ class StudentReservationsView(ListView):
                 )
 
                 messages.success(request, "Payment proof uploaded successfully!")
+            elif 'cancellation_reason' in request.POST:
+                # If cancelling, set the cancellation reason
+                cancellation_reason = request.POST.get('cancellation_reason')
+                reservation.cancellation_reason = cancellation_reason
+                reservation.status = 'cancelled'
+                reservation.save()
+                messages.success(request, "Reservation cancelled.")
             else:
                 messages.error(request, "No payment proof file was uploaded.")
 
@@ -1222,3 +1533,87 @@ class SendRoommateChatMessageView(View):
                 'sender_name': message.sender.get_full_name()
             }
         })
+
+@method_decorator(login_required, name='dispatch')
+class ManageRoomsView(LoginRequiredMixin, View):
+    def get(self, request, dorm_id):
+        dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
+        rooms = dorm.rooms.all()
+        room_form = RoomForm()
+        return render(request, 'dormitory/manage_rooms.html', {
+            'dorm': dorm,
+            'rooms': rooms,
+            'room_form': room_form,
+        })
+
+    def post(self, request, dorm_id):
+        dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
+        room_form = RoomForm(request.POST)
+        if room_form.is_valid():
+            room = room_form.save(commit=False)
+            room.dorm = dorm
+            room.save()
+            # Handle images
+            images = request.FILES.getlist('images')
+            for image in images:
+                RoomImage.objects.create(room=room, image=image)
+            messages.success(request, 'Room added successfully!')
+            return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+        rooms = dorm.rooms.all()
+        return render(request, 'dormitory/manage_rooms.html', {
+            'dorm': dorm,
+            'rooms': rooms,
+            'room_form': room_form,
+        })
+
+# Add this new home page view after the imports and before the existing views
+
+class HomePageView(TemplateView):
+    """Home page for non-logged-in users with recommendations"""
+    template_name = "dormitory/home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get popular dorms (most viewed, highest rated)
+        popular_dorms = Dorm.objects.select_related('landlord').prefetch_related(
+            'images', 'amenities', 'reviews'
+        ).filter(
+            available=True, 
+            approval_status="approved"
+        ).annotate(
+            avg_rating=models.Avg('reviews__rating'),
+            review_count=models.Count('reviews')
+        ).order_by('-recent_views', '-avg_rating')[:6]
+
+        # Get latest dorms
+        latest_dorms = Dorm.objects.select_related('landlord').prefetch_related(
+            'images', 'amenities', 'reviews'
+        ).filter(
+            available=True, 
+            approval_status="approved"
+        ).annotate(
+            avg_rating=models.Avg('reviews__rating'),
+            review_count=models.Count('reviews')
+        ).order_by('-created_at')[:6]
+
+        # Get roommate listings
+        roommate_listings = RoommatePost.objects.select_related('user').prefetch_related(
+            'amenities'
+        ).order_by('-date_posted')[:4]
+
+        # Get statistics
+        total_dorms = Dorm.objects.filter(approval_status="approved", available=True).count()
+        total_roommates = RoommatePost.objects.count()
+        total_schools = School.objects.count()
+
+        context.update({
+            'popular_dorms': popular_dorms,
+            'latest_dorms': latest_dorms,
+            'roommate_listings': roommate_listings,
+            'total_dorms': total_dorms,
+            'total_roommates': total_roommates,
+            'total_schools': total_schools,
+        })
+        
+        return context

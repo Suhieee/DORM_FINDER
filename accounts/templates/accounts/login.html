@@ -71,17 +71,21 @@
                     <div class="relative">
                         <label for="password" class="block mb-2 text-sm font-medium text-white">Password</label>
                         <div class="relative w-full">
-                            <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <!-- SVG Icon -->
                                 <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v3m-3-6V7a3 3 0 1 1 6 0v4m-8 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/>
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z"/>
                                 </svg>
+
                             </div>
                             <!-- Input Field -->
                             <input type="password" id="password" name="password" value="{{ form.password.value|default:'' }}"
-                                   class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                          focus:ring-blue-500 focus:border-blue-500"
+                                   class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                    placeholder="Password" required />
+                            <button type="button" onclick="togglePassword('password', this)" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none">
+                                <svg id="icon-password" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </button>
                         </div>
                         <!-- Error Messages -->
                         {% if form.password.errors %}
@@ -96,7 +100,7 @@
                     <!-- Submit Button -->
                     <button type="submit"
                             class="w-full h-12 rounded-lg bg-red-700 text-white font-medium text-sm 
-                                   hover:bg-red-600 active:bg-red-800 
+                                   hover:bg-blue-600 active:bg-blue-800 
                                    transform hover:scale-[1.02] active:scale-[0.98]
                                    transition-all duration-200 ease-in-out
                                    focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
@@ -130,6 +134,28 @@
     .animate-slide-in {
         animation: slideInFromTop 0.8s ease-out forwards;
     }
+
+    /* Remove button hover color for form buttons */
+    button[type="submit"]:hover {
+        background-color: #ef4444 !important; /* Tailwind red-500, or use your base color */
+        color: #fff !important;
+    }
 </style>
+
+{% block extra_js %}
+<script>
+function togglePassword(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    const icon = btn.querySelector('svg');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.add('text-blue-500');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('text-blue-500');
+    }
+}
+</script>
+{% endblock %}
 
 {% endblock %}

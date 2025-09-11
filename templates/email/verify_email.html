@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Your Email</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 30px;">
+    <div style="max-width: 500px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 32px;">
+        <h2 style="color: #d32f2f;">Welcome to Dorm Finder!</h2>
+        <p>Hi {{ user.username }},</p>
+        <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
+        <p style="text-align: center; margin: 32px 0;">
+            <a href="{{ verification_url }}" style="background: #d32f2f; color: #fff; padding: 12px 28px; border-radius: 5px; text-decoration: none; font-weight: bold;">Verify Email</a>
+        </p>
+        <p>If you did not sign up for Dorm Finder, you can ignore this email.</p>
+        <p style="color: #888; font-size: 13px; margin-top: 32px;">&copy; {{ year }} Dorm Finder</p>
+    </div>
+</body>
+</html> 

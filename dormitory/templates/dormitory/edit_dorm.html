@@ -252,7 +252,17 @@ document.addEventListener("DOMContentLoaded", function() {
     const initialLng = parseFloat(document.getElementById('id_longitude').value) || 120.9842;
     
     // Initialize map
-    const map = L.map('map').setView([initialLat, initialLng], 15);
+    const manilaBounds = L.latLngBounds(
+        [14.47, 120.90], // Southwest corner
+        [14.70, 121.07]  // Northeast corner
+    );
+    const map = L.map('map', {
+        center: [initialLat, initialLng],
+        zoom: 15,
+        minZoom: 12,
+        maxZoom: 16,
+        maxBounds: manilaBounds
+    });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     // Create marker
@@ -310,10 +320,8 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => {
         map.invalidateSize();
     }, 100);
-});
 
-// Add this JavaScript to show/hide bedspace options based on accommodation type
-document.addEventListener('DOMContentLoaded', function() {
+    // Add this JavaScript to show/hide bedspace options based on accommodation type
     const accommodationType = document.getElementById('id_accommodation_type');
     const bedspaceOptions = document.getElementById('bedspace-options');
 
@@ -328,6 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     accommodationType.addEventListener('change', toggleBedspaceOptions);
     toggleBedspaceOptions(); // Run on page load
+
+    // Add this JavaScript to ensure map stays within Manila bounds
+    map.on('drag', function() {
+        map.panInsideBounds(manilaBounds, { animate: false });
+    });
 });
 </script>
 {% endblock %}

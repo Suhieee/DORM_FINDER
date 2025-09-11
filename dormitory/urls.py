@@ -6,13 +6,25 @@ from .views import (
     RoommateUpdateView, RoommateDeleteView, ReviewListView, 
     ReviewCreateView, ReviewUpdateView, ReviewDeleteView,
     ReservationCreateView, LandlordReservationsView, StudentReservationsView,
-    MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView
+    MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView,
+    ManageRoomsView, PublicDormListView, PublicDormDetailView, 
+    PublicRoommateListView, PublicRoommateDetailView, HomePageView
 )
 from . import views
 
 app_name = "dormitory"
 
 urlpatterns = [
+    # Home page
+    path("", HomePageView.as_view(), name="home"),
+    
+    # Public URLs (no login required)
+    path("browse/", PublicDormListView.as_view(), name="public_dorm_list"),
+    path("dorm/<int:pk>/", PublicDormDetailView.as_view(), name="public_dorm_detail"),
+    path("roommates/", PublicRoommateListView.as_view(), name="public_roommate_list"),
+    path("roommate/<int:pk>/", PublicRoommateDetailView.as_view(), name="public_roommate_detail"),
+    
+    # Protected URLs (login required)
     path("add/", AddDormView.as_view(), name="add_dorm"),
     path("list/", DormListView.as_view(), name="dorm_list"),
     path("dormitory/<int:pk>/", DormDetailView.as_view(), name="dorm_detail"),
@@ -46,4 +58,7 @@ urlpatterns = [
     path('roommate-match/initiate/<int:target_id>/', views.InitiateRoommateMatchView.as_view(), name='initiate_match'),
     path('roommate-match/status/<int:match_id>/', views.UpdateRoommateMatchStatusView.as_view(), name='update_match_status'),
     path('roommate-match/chat/<int:match_id>/', views.SendRoommateChatMessageView.as_view(), name='send_roommate_message'),
+
+    # Room management for landlords
+    path('dorms/<int:dorm_id>/rooms/', ManageRoomsView.as_view(), name='manage_rooms'),
 ]

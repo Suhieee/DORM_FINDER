@@ -1,0 +1,608 @@
+{% extends 'accounts/base.html' %}
+{% block title %}{{ dorm.name }} - Dorm Finder{% endblock %}
+{% load static %}
+{% block content %}
+
+<!-- CSRF Token -->
+{% csrf_token %}
+
+<!-- Messages Section -->
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+    <div class="flex items-center p-4 mb-4 {% if message.tags == 'success' %}text-green-800 bg-green-50{% else %}text-red-800 bg-red-50{% endif %} rounded-lg message-alert" role="alert">
+        <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>
+        <div class="ms-3 text-sm font-medium">{{ message }}</div>
+        <button type="button" class="close-message ms-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex items-center justify-center h-8 w-8 {% if message.tags == 'success' %}text-green-500 bg-green-50 hover:bg-green-200 focus:ring-green-400{% else %}text-red-500 bg-red-50 hover:bg-red-200 focus:ring-red-400{% endif %}" aria-label="Close">
+            <span class="sr-only">Close</span>
+            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+            </svg>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Public Access Notice -->
+{% if not user.is_authenticated %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">Login to Reserve!</h3>
+                <p class="text-blue-700 mb-3">
+                    You can view all dorm details, but you need to 
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">log in</a> or 
+                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">register</a> 
+                    to reserve this dorm and contact the landlord.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" 
+                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Get Started Free
+                    </a>
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+                       class="inline-flex items-center px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                        </svg>
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Dorm Details -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+        <!-- Dorm Images -->
+        <div class="relative h-96 bg-gray-200">
+            {% if dorm.images.all %}
+            <div id="dormCarousel" class="h-full">
+                {% for image in dorm.images.all %}
+                <div class="{% if forloop.first %}block{% else %}hidden{% endif %} h-full">
+                    <img src="{{ image.image.url }}" alt="{{ dorm.name }}" class="w-full h-full object-cover">
+                </div>
+                {% endfor %}
+            </div>
+            {% if dorm.images.count > 1 %}
+            <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+            {% endif %}
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center text-gray-500">
+                <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            {% endif %}
+            
+            <!-- Price Badge -->
+            <div class="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-bold shadow-lg">
+                ₱{{ dorm.price|floatformat:0 }}/month
+            </div>
+            
+            <!-- Accommodation Type Badge -->
+            <div class="absolute top-4 left-4">
+                <span class="px-3 py-2 text-sm font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
+                    {{ dorm.get_accommodation_type_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Dorm Info -->
+        <div class="p-8">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6">
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ dorm.name }}</h1>
+                    <p class="text-lg text-gray-600 mb-4">{{ dorm.address }}</p>
+                    
+                    <!-- Rating -->
+                    {% if dorm.avg_rating %}
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-yellow-400">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= dorm.avg_rating %}
+                            <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            {% else %}
+                            <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="ml-2 text-gray-600">
+                            {{ dorm.avg_rating|floatformat:1 }} ({{ dorm.review_count|default:0 }} reviews)
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col space-y-3 mt-6 lg:mt-0 lg:ml-6">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dormitory:reserve_dorm' dorm.pk %}" 
+                           class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors text-center">
+                            Reserve Now
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+                           class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors text-center">
+                            Login to Reserve
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'dormitory:public_dorm_list' %}" 
+                       class="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors text-center">
+                        Back to Browse
+                    </a>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Description</h2>
+                <p class="text-gray-700 leading-relaxed">{{ dorm.description }}</p>
+            </div>
+
+            <!-- Amenities -->
+            {% if dorm.amenities.all %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Amenities</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {% for amenity in dorm.amenities.all %}
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <svg class="w-5 h-5 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700">{{ amenity.name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Dorm Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 mb-2">Accommodation Type</h3>
+                    <p class="text-gray-600">{{ dorm.get_accommodation_type_display }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 mb-2">Total Beds</h3>
+                    <p class="text-gray-600">{{ dorm.total_beds }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 mb-2">Available Beds</h3>
+                    <p class="text-gray-600">{{ dorm.available_beds }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 mb-2">Max Occupants</h3>
+                    <p class="text-gray-600">{{ dorm.max_occupants }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Section -->
+    {% if dorm.latitude and dorm.longitude %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                    </svg>
+                    Location
+                </h2>
+                <button data-dorm-lat="{{ dorm.latitude }}" data-dorm-lng="{{ dorm.longitude }}" data-dorm-name="{{ dorm.name|escapejs }}" 
+                        onclick="showRouteFromDormToSchoolsFromDetail()" 
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    Route to Schools
+                </button>
+            </div>
+        </div>
+        <div id="dormMap" class="w-full h-96 bg-gray-100">
+            <!-- Map will be loaded here -->
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Reviews Section -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>
+                Reviews ({{ dorm.review_count|default:0 }})
+            </h2>
+        </div>
+        <div class="p-6">
+            {% if dorm.reviews.all %}
+                <div class="space-y-6">
+                    {% for review in dorm.reviews.all %}
+                    <div class="border-b border-gray-200 pb-6 last:border-b-0">
+                        <div class="flex items-center mb-3">
+                            <div class="flex text-yellow-400">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                {% else %}
+                                <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="ml-2 text-sm text-gray-600">{{ review.rating }}/5</span>
+                        </div>
+                        <p class="text-gray-700 mb-2">{{ review.comment }}</p>
+                        <p class="text-sm text-gray-500">By {{ review.user.username }} on {{ review.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    </svg>
+                    <p class="text-gray-600">No reviews yet. Be the first to review this dorm!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Image carousel functionality
+let currentImageIndex = 0;
+const images = document.querySelectorAll('#dormCarousel > div');
+
+function changeImage(direction) {
+    if (images.length <= 1) return;
+    
+    images[currentImageIndex].classList.add('hidden');
+    currentImageIndex = (currentImageIndex + direction + images.length) % images.length;
+    images[currentImageIndex].classList.remove('hidden');
+}
+
+// Initialize dorm map
+{% if dorm.latitude and dorm.longitude %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Load Leaflet CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    // Load Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    script.onload = function() {
+        const map = L.map('dormMap').setView([{{ dorm.latitude }}, {{ dorm.longitude }}], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        L.marker([{{ dorm.latitude }}, {{ dorm.longitude }}]).addTo(map)
+            .bindPopup('<b>{{ dorm.name|escapejs }}</b><br>{{ dorm.address|escapejs }}');
+    };
+});
+{% endif %}
+
+// Route to schools functionality
+function showRouteFromDormToSchoolsFromDetail() {
+    const button = event.target.closest('button');
+    const dormLat = parseFloat(button.getAttribute('data-dorm-lat'));
+    const dormLng = parseFloat(button.getAttribute('data-dorm-lng'));
+    const dormName = button.getAttribute('data-dorm-name');
+    
+    // Load schools data from the view
+    const schoolsData = {{ schools_json|safe }};
+    
+    if (schoolsData.length === 0) {
+        alert('No schools found in the area.');
+        return;
+    }
+    
+    // Calculate distances for ALL schools (no distance limit)
+    const allSchools = [];
+    schoolsData.forEach(function(school) {
+        if (school.latitude && school.longitude) {
+            const distance = calculateDistance(
+                dormLat, dormLng,
+                parseFloat(school.latitude), parseFloat(school.longitude)
+            );
+            allSchools.push({
+                ...school,
+                distance: distance
+            });
+        }
+    });
+    
+    // Sort by distance (nearest first)
+    allSchools.sort((a, b) => a.distance - b.distance);
+    
+    if (allSchools.length === 0) {
+        alert('No schools found in the area.');
+        return;
+    }
+    
+    // Load routing library if not already loaded
+    if (typeof L.Routing === 'undefined') {
+        loadRoutingLibrary().then(() => {
+            showRouteToSchools(dormLat, dormLng, dormName, allSchools);
+        });
+    } else {
+        showRouteToSchools(dormLat, dormLng, dormName, allSchools);
+    }
+}
+
+function loadRoutingLibrary() {
+    return new Promise((resolve) => {
+        // Load Leaflet Routing Machine CSS
+        if (!document.querySelector('link[href*="leaflet-routing-machine"]')) {
+            const routingCSS = document.createElement('link');
+            routingCSS.rel = 'stylesheet';
+            routingCSS.href = 'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css';
+            document.head.appendChild(routingCSS);
+        }
+
+        // Load Leaflet Routing Machine JS
+        if (typeof L.Routing === 'undefined') {
+            const routingScript = document.createElement('script');
+            routingScript.src = 'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js';
+            routingScript.onload = resolve;
+            document.head.appendChild(routingScript);
+        } else {
+            resolve();
+        }
+    });
+}
+
+function showRouteToSchools(dormLat, dormLng, dormName, nearbySchools) {
+    const map = L.map('dormMap');
+    
+    // Add routing control
+    const routingControl = L.Routing.control({
+        waypoints: [],
+        routeWhileDragging: true,
+        showAlternatives: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+            styles: [{ color: '#8B5CF6', opacity: 0.8, weight: 6 }]
+        },
+        createMarker: function() { return null; },
+        addWaypoints: false,
+        draggableWaypoints: false,
+        show: false
+    }).addTo(map);
+    
+    // Show all schools in the route (up to 10 schools to avoid too many waypoints)
+    const maxSchools = Math.min(10, nearbySchools.length);
+    const waypoints = [L.latLng(dormLat, dormLng)]; // Start from dorm
+    
+    for (let i = 0; i < maxSchools; i++) {
+        const school = nearbySchools[i];
+        waypoints.push(L.latLng(school.latitude, school.longitude));
+    }
+    
+    routingControl.setWaypoints(waypoints);
+    routingControl.show();
+    
+    // Add arrival highlighting for all schools
+    setTimeout(() => {
+        highlightAllSchoolArrivals(nearbySchools.slice(0, maxSchools));
+    }, 1000);
+    
+    // Show info about the route with distance ranges
+    const nearestSchool = nearbySchools[0];
+    const farthestSchool = nearbySchools[maxSchools - 1];
+    const schoolNames = nearbySchools.slice(0, maxSchools).map(s => s.name).join(', ');
+    alert(`Showing route from ${dormName} to ${maxSchools} schools (${nearestSchool.distance.toFixed(1)}km to ${farthestSchool.distance.toFixed(1)}km): ${schoolNames}`);
+}
+
+// Function to highlight all school arrivals
+function highlightAllSchoolArrivals(schools) {
+    console.log('Attempting to highlight schools:', schools);
+    
+    // Wait a bit longer for the routing panel to be fully rendered
+    setTimeout(() => {
+        const routingPanel = document.querySelector('.leaflet-routing-container');
+        if (!routingPanel) {
+            console.error('Routing panel not found');
+            return;
+        }
+        
+        console.log('Routing panel found, looking for instruction steps');
+        
+        // Try different selectors to find instruction steps
+        const instructionSteps = routingPanel.querySelectorAll('.leaflet-routing-alt h3, .leaflet-routing-alt .leaflet-routing-alt-summary, .leaflet-routing-alt .leaflet-routing-alt-step');
+        
+        console.log('Found instruction steps:', instructionSteps.length);
+        
+        // Extended color palette for more schools
+        const colors = [
+            '#10B981', // Green
+            '#3B82F6', // Blue
+            '#8B5CF6', // Purple
+            '#F59E0B', // Amber
+            '#EF4444', // Red
+            '#06B6D4', // Cyan
+            '#84CC16', // Lime
+            '#F97316', // Orange
+            '#EC4899', // Pink
+            '#6366F1'  // Indigo
+        ];
+        
+        schools.forEach((school, schoolIndex) => {
+            console.log(`Looking for school: ${school.name}`);
+            
+            instructionSteps.forEach((step, stepIndex) => {
+                const stepText = step.textContent.toLowerCase();
+                const schoolName = school.name.toLowerCase();
+                
+                // Try different matching strategies
+                const isMatch = stepText.includes(schoolName) || 
+                               stepText.includes('destination') ||
+                               stepText.includes('arrived') ||
+                               stepText.includes('arrival');
+                
+                if (isMatch) {
+                    console.log(`Found match for ${school.name} in step:`, stepText);
+                    
+                    // Add arrival highlighting with different colors for each school
+                    const color = colors[schoolIndex % colors.length];
+                    
+                    step.style.backgroundColor = color;
+                    step.style.color = 'white';
+                    step.style.padding = '8px 12px';
+                    step.style.borderRadius = '6px';
+                    step.style.margin = '4px 0';
+                    step.style.fontWeight = 'bold';
+                    step.style.borderLeft = `4px solid ${color}`;
+                    
+                    // Add school number and arrival icon
+                    const arrivalIcon = document.createElement('span');
+                    arrivalIcon.innerHTML = `🏫 School ${schoolIndex + 1}: `;
+                    arrivalIcon.style.marginRight = '8px';
+                    step.insertBefore(arrivalIcon, step.firstChild);
+                    
+                    // Add arrival text with distance
+                    const arrivalText = document.createElement('div');
+                    arrivalText.textContent = `🎓 Arrived at ${school.name} (${school.distance.toFixed(1)}km from dorm)`;
+                    arrivalText.style.fontSize = '12px';
+                    arrivalText.style.marginTop = '4px';
+                    arrivalText.style.opacity = '0.9';
+                    step.appendChild(arrivalText);
+                    
+                    // Add distance category
+                    const distanceCategory = document.createElement('div');
+                    if (school.distance <= 2) {
+                        distanceCategory.textContent = '🚶 Walking distance';
+                        distanceCategory.style.color = '#10B981';
+                    } else if (school.distance <= 5) {
+                        distanceCategory.textContent = '🚌 Short commute';
+                        distanceCategory.style.color = '#F59E0B';
+                    } else if (school.distance <= 10) {
+                        distanceCategory.textContent = '🚇 Medium commute';
+                        distanceCategory.style.color = '#EF4444';
+                    } else {
+                        distanceCategory.textContent = '🚗 Long commute';
+                        distanceCategory.style.color = '#8B5CF6';
+                    }
+                    distanceCategory.style.fontSize = '11px';
+                    distanceCategory.style.marginTop = '2px';
+                    distanceCategory.style.fontWeight = 'bold';
+                    step.appendChild(distanceCategory);
+                }
+            });
+        });
+        
+        // If no matches found, try to highlight destination steps manually
+        if (schools.length > 0) {
+            const destinationSteps = routingPanel.querySelectorAll('.leaflet-routing-alt h3');
+            destinationSteps.forEach((step, index) => {
+                if (index < schools.length) {
+                    const school = schools[index];
+                    const color = colors[index % colors.length];
+                    
+                    step.style.backgroundColor = color;
+                    step.style.color = 'white';
+                    step.style.padding = '8px 12px';
+                    step.style.borderRadius = '6px';
+                    step.style.margin = '4px 0';
+                    step.style.fontWeight = 'bold';
+                    step.style.borderLeft = `4px solid ${color}`;
+                    
+                    // Add school info
+                    const schoolInfo = document.createElement('div');
+                    schoolInfo.innerHTML = `🏫 School ${index + 1}: ${school.name} (${school.distance.toFixed(1)}km)`;
+                    schoolInfo.style.fontSize = '12px';
+                    schoolInfo.style.marginTop = '4px';
+                    step.appendChild(schoolInfo);
+                }
+            });
+        }
+        
+    }, 2000); // Wait 2 seconds for routing panel to be fully rendered
+}
+
+// Helper function to calculate distance between two points
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// Message alerts
+document.addEventListener('DOMContentLoaded', function() {
+    const closeButtons = document.querySelectorAll('.close-message');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const messageAlert = this.closest('.message-alert');
+            if (messageAlert) {
+                messageAlert.style.transition = 'opacity 0.3s ease-out';
+                messageAlert.style.opacity = '0';
+                setTimeout(() => {
+                    messageAlert.remove();
+                }, 300);
+            }
+        });
+    });
+
+    // Auto-dismiss messages after 5 seconds
+    const messages = document.querySelectorAll('.message-alert');
+    messages.forEach(message => {
+        setTimeout(() => {
+            if (message) {
+                message.style.transition = 'opacity 0.3s ease-out';
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    message.remove();
+                }, 300);
+            }
+        }, 5000);
+    });
+});
+</script>
+
+{% endblock %} 

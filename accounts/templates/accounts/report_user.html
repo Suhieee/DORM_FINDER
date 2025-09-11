@@ -1,0 +1,46 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Report {{ reported_user.username }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-8">
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+        <!-- Close Button -->
+        <a href="{% url 'accounts:view_user_profile' reported_user.id %}" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold" title="Close">
+            &times;
+        </a>
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div>
+                <label for="{{ form.reason.id_for_label }}" class="block text-sm font-semibold text-blue-600 mb-1">What are you reporting about?</label>
+                {{ form.reason }}
+                {% if form.reason.errors %}
+                    <div class="text-red-600 text-xs mt-1">
+                        {% for error in form.reason.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-blue-600 mb-1">Tell us more</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="text-red-600 text-xs mt-1">
+                        {% for error in form.description.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <label for="{{ form.evidence.id_for_label }}" class="block text-sm font-semibold text-blue-600 mb-1">Additional Evidence (Optional)</label>
+                {{ form.evidence }}
+                {% if form.evidence.errors %}
+                    <div class="text-red-600 text-xs mt-1">
+                        {% for error in form.evidence.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg text-lg transition">Submit Report</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

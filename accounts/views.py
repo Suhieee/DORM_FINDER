@@ -4,14 +4,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, FormView, UpdateView ,ListView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import CustomUserCreationForm, AdminCreationForm
+from .forms import CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, ResolveReportForm
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
 from dormitory.models import Dorm, Review, Reservation
 from django.views import View
-from .models import Notification, CustomUser
-from user_profile.models import UserProfile
-from django.http import JsonResponse
+from .models import Notification, CustomUser, UserReport
+from user_profile.models import UserProfile, UserInteraction
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Avg, Count, F, Q, ExpressionWrapper, FloatField, Value
 from django.db.models.functions import Cast, Coalesce
 from datetime import datetime, timedelta
@@ -19,6 +19,18 @@ from math import radians, sin, cos, sqrt, atan2
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When
+from django.core.mail import send_mail
+from django.conf import settings
+import secrets
+from django.template.loader import render_to_string
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from django.core.paginator import Paginator
+import json
+from django.utils import timezone
+from django.db.models.functions import TruncMonth
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 class RegisterView(CreateView):
@@ -28,15 +40,38 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         """Log in user after successful registration, create profile, and redirect."""
         user = form.save()
-        # ✅ Create a UserProfile with default image
-        UserProfile.objects.create(user=user, profile_picture="profile_pictures/default.jpg")
+        # Create a UserProfile with default image and verification token
+        token = secrets.token_urlsafe(32)
+        profile = UserProfile.objects.create(user=user, profile_picture="profile_pictures/default.jpg", verification_token=token)
+
+        # Send verification email (HTML)
+        verification_url = self.request.build_absolute_uri(
+            reverse_lazy('accounts:verify_email', kwargs={'token': token})
+        )
+        html_message = render_to_string('email/verify_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+            'year': datetime.now().year,
+        })
+        send_mail(
+            'Verify your email address',
+            '',  # plain text fallback (optional)
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+            html_message=html_message,
+        )
 
         login(self.request, user)
-        messages.success(self.request, f"Registration successful! Welcome, {user.username}")
+        messages.success(self.request, f"Registration successful! Welcome, {user.username}. Please check your email to verify your account.")
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        """Redirect users based on their type."""
+        """Redirect to next parameter if provided, otherwise based on user type."""
+        next_url = self.request.GET.get('next')
+        if next_url and next_url.startswith('/'):
+            return next_url
+        
         user = self.request.user
         if user.user_type == "Student":
             return reverse_lazy("accounts:student_dashboard")
@@ -57,6 +92,13 @@ class LoginView(FormView):
     form_class = AuthenticationForm
     template_name = "accounts/login.html"
     success_url = reverse_lazy("accounts:dashboard")
+
+    def get_success_url(self):
+        """Redirect to next parameter if provided, otherwise to dashboard."""
+        next_url = self.request.GET.get('next')
+        if next_url and next_url.startswith('/'):
+            return next_url
+        return super().get_success_url()
 
     def form_valid(self, form):
         """Log in the user after successful authentication."""
@@ -124,43 +166,101 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Get active users (landlords and students)
             context["active_landlords"] = User.objects.filter(user_type="landlord", is_active=True)
             context["active_students"] = User.objects.filter(user_type="student", is_active=True)
+
+            # Dynamic chart data for analytics
+            # Monthly user registrations (last 12 months)
+            now = timezone.now()
+            months = [((now - timezone.timedelta(days=30*i)).strftime('%b %Y')) for i in reversed(range(12))]
+            user_months = User.objects.annotate(month=TruncMonth('date_joined')).values('month').annotate(count=Count('id')).order_by('month')
+            dorm_months = Dorm.objects.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
+            # Dorm approval rates
+            dorm_approved = Dorm.objects.filter(approval_status='approved').annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
+            dorm_rejected = Dorm.objects.filter(approval_status='rejected').annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
+            dorm_approved_dict = {d['month'].strftime('%b %Y'): d['count'] for d in dorm_approved}
+            dorm_rejected_dict = {d['month'].strftime('%b %Y'): d['count'] for d in dorm_rejected}
+            dorm_approved_counts = [dorm_approved_dict.get(m, 0) for m in months]
+            dorm_rejected_counts = [dorm_rejected_dict.get(m, 0) for m in months]
+            # Active vs Inactive users
+            active_users = User.objects.filter(is_active=True).count()
+            inactive_users = User.objects.filter(is_active=False).count()
+            # Build dicts for quick lookup
+            user_month_dict = {u['month'].strftime('%b %Y'): u['count'] for u in user_months}
+            dorm_month_dict = {d['month'].strftime('%b %Y'): d['count'] for d in dorm_months}
+            user_counts = [user_month_dict.get(m, 0) for m in months]
+            dorm_counts = [dorm_month_dict.get(m, 0) for m in months]
+            context['chart_labels'] = json.dumps(months)
+            context['chart_user_counts'] = json.dumps(user_counts)
+            context['chart_dorm_counts'] = json.dumps(dorm_counts)
+            context['dorm_approved_counts'] = json.dumps(dorm_approved_counts)
+            context['dorm_rejected_counts'] = json.dumps(dorm_rejected_counts)
+            context['active_users'] = active_users
+            context['inactive_users'] = inactive_users
             
         elif user.user_type == "student":
-            # Get current date for recent activity calculations
-            now = datetime.now()
-            recent_date = now - timedelta(days=30)  # Last 30 days activity
+            user_profile = UserProfile.objects.get(user=user)
+            favorite_dorms = user_profile.favorite_dorms.all()
+            recent_views = UserInteraction.objects.filter(user=user, interaction_type='view').order_by('-timestamp')[:10]
+            viewed_dorms = Dorm.objects.filter(id__in=recent_views.values_list('dorm_id', flat=True))
 
-            # Base queryset with enhanced annotations
-            base_queryset = Dorm.objects.filter(
-                approval_status="approved",
-                available=True
-            ).annotate(
+            # --- Prepare base queryset and dorm list ---
+            base_queryset = Dorm.objects.filter(approval_status="approved", available=True).annotate(
                 avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
-                avg_rating_rounded=Case(
-                    When(avg_rating__isnull=True, then=0),
-                    default=ExpressionWrapper(
-                        Cast('avg_rating', FloatField()),
-                        output_field=FloatField()
-                    ),
-                    output_field=FloatField()
-                ),
                 review_count=Count('reviews'),
-                recent_reviews=Count('reviews', filter=Q(reviews__created_at__gte=recent_date)),
-                recent_reservations=Count('reservations', filter=Q(reservations__created_at__gte=recent_date)),
                 amenity_count=Count('amenities'),
-                # Calculate popularity score
-                popularity_score=ExpressionWrapper(
-                    F('avg_rating') * 0.3 +  # 30% weight for rating
-                    (F('review_count') * 0.2) +  # 20% weight for total reviews
-                    (F('recent_reviews') * 0.25) +  # 25% weight for recent reviews
-                    (F('recent_reservations') * 0.25),  # 25% weight for recent reservations
-                    output_field=FloatField()
-                )
             )
+            dorms = list(base_queryset)
 
-            # Calculate distance score if student has a school
+            # --- Popular Dorms Logic ---
+            popular_dorms = Dorm.objects.filter(approval_status="approved", available=True)\
+                .annotate(num_views=Count('recent_views'), avg_rating=Coalesce(Avg('reviews__rating'), 0.0))\
+                .order_by('-num_views', '-avg_rating')[:6]
+            context['popular_dorms'] = popular_dorms
+
+            # --- Collaborative Filtering Logic ---
+            user_favorites = set(user_profile.favorite_dorms.values_list('id', flat=True))
+            similar_users = UserProfile.objects.filter(
+                favorite_dorms__in=user_favorites
+            ).exclude(user=user).distinct()
+            collab_dorms = Dorm.objects.filter(
+                favorited_by__in=similar_users
+            ).exclude(
+                id__in=user_favorites
+            ).annotate(
+                num_similar_favorites=Count('favorited_by')
+            ).order_by('-num_similar_favorites', '-reviews__rating')[:12]
+            collab_dorm_ids = set(collab_dorms.values_list('id', flat=True))
+
+            # --- Prepare dorm features for ML ---
+            dorm_features = []
+            for dorm in dorms:
+                dorm_features.append([
+                    float(dorm.price),
+                    float(getattr(dorm, 'avg_rating', dorm.get_average_rating())),
+                    dorm.amenity_count,
+                    float(dorm.latitude or 0),
+                    float(dorm.longitude or 0),
+                ])
+            dorm_features = np.array(dorm_features)
+
+            # --- ML: Find similar dorms to favorites/views ---
+            if favorite_dorms.exists():
+                user_pref_indices = [i for i, d in enumerate(dorms) if d in favorite_dorms]
+            else:
+                user_pref_indices = [i for i, d in enumerate(dorms) if d in viewed_dorms]
+            if user_pref_indices:
+                user_pref_features = dorm_features[user_pref_indices]
+                n_neighbors = min(6, len(dorms))
+                nn = NearestNeighbors(n_neighbors=n_neighbors, metric='euclidean')
+                nn.fit(dorm_features)
+                user_vector = np.mean(user_pref_features, axis=0).reshape(1, -1)
+                distances, indices = nn.kneighbors(user_vector)
+                ml_recommended_indices = indices[0]
+            else:
+                ml_recommended_indices = []
+
+            # --- Calculate distance score if student has a school ---
             if hasattr(user, 'school') and user.school and user.school.latitude and user.school.longitude:
-                for dorm in base_queryset:
+                for dorm in dorms:
                     distance = self.calculate_distance(
                         user.school.latitude, 
                         user.school.longitude,
@@ -169,33 +269,49 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     )
                     dorm.distance_score = max(0, 1 - (distance / 10))  # 10km as max ideal distance
             else:
-                for dorm in base_queryset:
+                for dorm in dorms:
                     dorm.distance_score = 0.5  # Neutral score if no school set
 
-            # Calculate final scores
+            # --- Rule-based + ML scoring and explanations ---
             scored_dorms = []
-            for dorm in base_queryset:
+            for i, dorm in enumerate(dorms):
                 final_score = (
-                    float(dorm.avg_rating) * 0.25 +  # 25% Rating
-                    dorm.distance_score * 0.25 +     # 25% Distance
-                    (dorm.amenity_count / 10) * 0.25 +  # 25% Amenities (assuming max 10 amenities)
-                    float(dorm.popularity_score) * 0.25  # 25% Popularity
+                    float(getattr(dorm, 'avg_rating', dorm.get_average_rating())) * 0.25 +
+                    dorm.distance_score * 0.25 +
+                    (dorm.amenity_count / 10) * 0.25 +
+                    float(getattr(dorm, 'review_count', 0)) * 0.05 +
+                    float(dorm.price) * -0.00001
                 )
-                scored_dorms.append((dorm, final_score))
+                ml_bonus = 0.2 if i in ml_recommended_indices else 0
+                collab_bonus = 0.2 if dorm.id in collab_dorm_ids else 0
+                total_score = final_score + ml_bonus + collab_bonus
 
-            # Sort and split into regular and bedspace recommendations
+                # --- Explanation logic ---
+                reasons = []
+                if i in ml_recommended_indices:
+                    reasons.append("Similar to your favorites/views (AI)")
+                if dorm.id in collab_dorm_ids:
+                    reasons.append("Liked by students with similar taste")
+                if getattr(dorm, 'avg_rating', dorm.get_average_rating()) >= 4.5:
+                    reasons.append("Highly rated by students")
+                if dorm.distance_score >= 0.8:
+                    reasons.append("Very close to your school")
+                if dorm.amenity_count >= 7:
+                    reasons.append("Has many amenities")
+                if getattr(dorm, 'review_count', 0) >= 10:
+                    reasons.append("Popular among students")
+                explanation = " and ".join(reasons[:2]) if reasons else "Recommended for you"
+
+                scored_dorms.append((dorm, total_score, explanation))
+
+            # --- Sort and split as before, but keep explanations ---
             scored_dorms.sort(key=lambda x: x[1], reverse=True)
-            
-            regular_dorms = [d for d, s in scored_dorms if d.accommodation_type == 'whole_unit'][:6]
-            bedspace_dorms = [d for d, s in scored_dorms if d.accommodation_type in ['bedspace', 'room_sharing']][:6]
-            
-            # Get popular dorms (based purely on popularity score)
-            popular_dorms = base_queryset.order_by('-popularity_score')[:6]
+            regular_dorms = [(d, e) for d, s, e in scored_dorms if d.accommodation_type == 'whole_unit'][:6]
+            bedspace_dorms = [(d, e) for d, s, e in scored_dorms if d.accommodation_type in ['bedspace', 'room_sharing']][:6]
 
             context.update({
                 "dorms": regular_dorms,
                 "bedspace_dorms": bedspace_dorms,
-                "popular_dorms": popular_dorms,  # New section for popular dorms
             })
             
         elif user.user_type == 'landlord':
@@ -346,8 +462,11 @@ class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['landlords'] = CustomUser.objects.filter(user_type='landlord')
-        context['students'] = CustomUser.objects.filter(user_type='student')
+        landlords = CustomUser.objects.filter(user_type='landlord')
+        students = CustomUser.objects.filter(user_type='student')
+        context['landlords'] = landlords
+        context['students'] = students
+        context['users'] = list(landlords) + list(students)
         return context
 
 class DeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -395,10 +514,324 @@ class ToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
-        user.is_active = not user.is_active
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        # Toggle status
+        if user.is_active:
+            # Banning: require reason
+            ban_reason = request.POST.get('ban_reason', '').strip()
+            if not ban_reason:
+                if is_ajax:
+                    return JsonResponse({'error': 'Ban reason is required.'}, status=400)
+                messages.error(request, 'Ban reason is required.')
+                return redirect('accounts:manage_users')
+            user.is_active = False
+            user.ban_reason = ban_reason
+        else:
+            # Unbanning: clear reason
+            user.is_active = True
+            user.ban_reason = ''
         user.save()
-        
         action = "activated" if user.is_active else "deactivated"
+        if is_ajax:
+            return JsonResponse({'success': True, 'action': action, 'ban_reason': user.ban_reason})
         messages.success(request, f"User {user.username} has been {action}.")
+        return redirect('accounts:manage_users')
+
+class VerifyEmailView(View):
+    def get(self, request, token):
+        try:
+            profile = UserProfile.objects.get(verification_token=token)
+            profile.is_verified = True
+            profile.verification_token = None
+            profile.save()
+            messages.success(request, 'Your email has been verified!')
+            return redirect('accounts:login')
+        except UserProfile.DoesNotExist:
+            return HttpResponse('Invalid or expired verification link.', status=400)
+
+class TransactionLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'accounts/transaction_log.html'
+
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        transactions = Reservation.objects.select_related('dorm', 'student').order_by('-created_at')
+        paginator = Paginator(transactions, 25)  # 25 per page
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context['page_obj'] = page_obj
+        return context
+
+class ViewUserProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/view_user_profile.html'
+    
+    def get_template_names(self):
+        user_id = self.kwargs.get('user_id')
+        profile_user = get_object_or_404(CustomUser, id=user_id)
+        if profile_user.user_type == 'landlord':
+            return ['accounts/view_landlord_profile.html']
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_id = self.kwargs.get('user_id')
+        profile_user = get_object_or_404(CustomUser, id=user_id)
+        
+        # Get user profile
+        try:
+            user_profile = UserProfile.objects.get(user=profile_user)
+        except UserProfile.DoesNotExist:
+            user_profile = None
+        
+        # Get user's dorms if landlord
+        user_dorms = []
+        if profile_user.user_type == 'landlord':
+            user_dorms = Dorm.objects.filter(landlord=profile_user, approval_status='approved')[:5]
+        
+        # Get user's reviews if student
+        user_reviews = []
+        if profile_user.user_type == 'student':
+            user_reviews = Review.objects.filter(user=profile_user)[:5]
+        
+        # Get user's reservations
+        user_reservations = Reservation.objects.filter(student=profile_user)[:5]
+        
+        # Add the report form for the modal
+        report_form = UserReportForm()
+        
+        context.update({
+            'profile_user': profile_user,
+            'user_profile': user_profile,
+            'user_dorms': user_dorms,
+            'user_reviews': user_reviews,
+            'user_reservations': user_reservations,
+            'can_report': self.request.user != profile_user and not profile_user.user_type == 'admin',
+            'report_form': report_form,
+        })
+        return context
+
+class ReportUserView(LoginRequiredMixin, CreateView):
+    model = UserReport
+    form_class = UserReportForm
+    template_name = 'accounts/report_user.html'
+    success_url = reverse_lazy('accounts:dashboard')
+    
+    def dispatch(self, request, *args, **kwargs):
+        reported_user_id = self.kwargs.get('user_id')
+        reported_user = get_object_or_404(CustomUser, id=reported_user_id)
+        # Prevent self-reporting
+        if request.user == reported_user:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'You cannot report yourself.'}, status=400)
+            messages.error(request, "You cannot report yourself.")
+            return redirect('accounts:dashboard')
+        # Prevent reporting admins
+        if reported_user.user_type == 'admin':
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'You cannot report admin users.'}, status=400)
+            messages.error(request, "You cannot report admin users.")
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        reported_user_id = self.kwargs.get('user_id')
+        reported_user = get_object_or_404(CustomUser, id=reported_user_id)
+        report = form.save(commit=False)
+        report.reporter = self.request.user
+        report.reported_user = reported_user
+        report.save()
+        # Notify admins about the report
+        admins = CustomUser.objects.filter(user_type='admin')
+        for admin in admins:
+            Notification.objects.create(
+                user=admin,
+                message=f"New report received: {self.request.user.username} reported {reported_user.username} for {report.get_reason_display()}",
+                related_object_id=report.id
+            )
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Report submitted successfully. Admins will review your report.'})
+        messages.success(self.request, f"Report submitted successfully. Admins will review your report.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            errors = {field: [str(e) for e in errs] for field, errs in form.errors.items()}
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+        return super().form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        reported_user_id = self.kwargs.get('user_id')
+        reported_user = get_object_or_404(CustomUser, id=reported_user_id)
+        context['reported_user'] = reported_user
+        return context
+
+class ManageReportsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = UserReport
+    template_name = 'accounts/manage_reports.html'
+    context_object_name = 'reports'
+    paginate_by = 20
+    
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+    
+    def get_queryset(self):
+        status_filter = self.request.GET.get('status', '')
+        queryset = UserReport.objects.select_related('reporter', 'reported_user', 'resolved_by').all()
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset
+
+class ReportDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'accounts/report_detail.html'
+    
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        report_id = self.kwargs.get('report_id')
+        report = get_object_or_404(UserReport, id=report_id)
+        
+        # Get additional context about the reported user
+        reported_user = report.reported_user
+        user_dorms = []
+        user_reviews = []
+        
+        if reported_user.user_type == 'landlord':
+            user_dorms = Dorm.objects.filter(landlord=reported_user)[:10]
+        elif reported_user.user_type == 'student':
+            user_reviews = Review.objects.filter(user=reported_user)[:10]
+        
+        context.update({
+            'report': report,
+            'user_dorms': user_dorms,
+            'user_reviews': user_reviews,
+            'resolve_form': ResolveReportForm(),
+        })
+        return context
+
+@method_decorator(login_required, name='dispatch')
+class ResolveReportView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+    
+    def post(self, request, report_id):
+        report = get_object_or_404(UserReport, id=report_id)
+        form = ResolveReportForm(request.POST)
+        
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            notes = form.cleaned_data['notes']
+            
+            if action == 'dismiss':
+                report.status = 'dismissed'
+                report.resolved_by = request.user
+                report.resolved_at = timezone.now()
+                report.admin_notes = f"Report dismissed.\nNotes: {notes}"
+                report.save()
+                messages.success(request, "Report dismissed successfully.")
+            
+            elif action.startswith('ban_'):
+                # Ban the reported user
+                reported_user = report.reported_user
+                ban_type = action.split('_')[1]
+                
+                if ban_type == 'minor':
+                    duration = timedelta(days=1)
+                    severity = 'minor'
+                elif ban_type == 'moderate':
+                    duration = timedelta(days=7)
+                    severity = 'moderate'
+                elif ban_type == 'major':
+                    duration = timedelta(days=30)
+                    severity = 'major'
+                elif ban_type == 'permanent':
+                    duration = None
+                    severity = 'permanent'
+                
+                reported_user.is_active = False
+                reported_user.ban_reason = f"Banned due to report: {report.get_reason_display()}. {notes}"
+                reported_user.ban_severity = severity
+                if duration:
+                    reported_user.ban_expires_at = timezone.now() + duration
+                else:
+                    reported_user.ban_expires_at = None
+                reported_user.save()
+                
+                # Resolve the report
+                report.resolve(request.user, f"User banned ({ban_type})", notes)
+                
+                messages.success(request, f"User {reported_user.username} has been banned ({ban_type}).")
+            
+            elif action == 'warn':
+                # Send warning notification to the reported user
+                Notification.objects.create(
+                    user=report.reported_user,
+                    message=f"Warning: You have been reported for {report.get_reason_display()}. Please review your behavior. {notes}"
+                )
+                
+                # Resolve the report
+                report.resolve(request.user, "User warned", notes)
+                
+                messages.success(request, f"Warning sent to {report.reported_user.username}.")
+        
+        return redirect('accounts:report_detail', report_id=report_id)
+
+class EnhancedToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
+        if user.is_active:
+            # Banning: use the new form
+            form = BanUserForm(request.POST)
+            if form.is_valid():
+                ban_duration = form.get_ban_duration()
+                ban_reason = form.cleaned_data['ban_reason']
+                ban_severity = form.cleaned_data['ban_severity']
+                
+                user.is_active = False
+                user.ban_reason = ban_reason
+                user.ban_severity = ban_severity
+                if ban_duration:
+                    user.ban_expires_at = timezone.now() + ban_duration
+                else:
+                    user.ban_expires_at = None  # Permanent ban
+                user.save()
+                
+                action = "banned"
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True, 
+                        'action': action, 
+                        'ban_reason': user.ban_reason,
+                        'ban_expires_at': user.ban_expires_at.isoformat() if user.ban_expires_at else None,
+                        'ban_severity': user.ban_severity
+                    })
+                messages.success(request, f"User {user.username} has been banned ({ban_severity}).")
+            else:
+                if is_ajax:
+                    return JsonResponse({'error': 'Invalid form data.'}, status=400)
+                messages.error(request, 'Please provide valid ban information.')
+        else:
+            # Unbanning: clear all ban-related fields
+            user.is_active = True
+            user.ban_reason = ''
+            user.ban_severity = None
+            user.ban_expires_at = None
+            user.save()
+            
+            action = "unbanned"
+            if is_ajax:
+                return JsonResponse({'success': True, 'action': action})
+            messages.success(request, f"User {user.username} has been unbanned.")
         
         return redirect('accounts:manage_users')

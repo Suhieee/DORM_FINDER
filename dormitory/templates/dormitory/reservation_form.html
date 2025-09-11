@@ -47,11 +47,25 @@
                                 <p class="text-gray-600">₱{{ dorm.price }}/month</p>
                             </div>
                             <div>
-                                <p class="text-gray-600">Landlord: {{ dorm.landlord.get_full_name }}</p>
+                                <p class="text-gray-600">Landlord: {{ dorm.landlord.get_full_name }}
+                                  {% if dorm.landlord.userprofile.is_verified %}
+                                    <span class="ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full align-middle font-semibold">Verified</span>
+                                  {% endif %}
+                                </p>
                                 <p class="text-gray-600">Contact: {{ dorm.landlord.contact_number }}</p>
                             </div>
                         </div>
                     </div>
+
+                    {% if dorm.accommodation_type != 'whole_unit' %}
+                    <!-- Room Selection -->
+                    <div>
+                        <label for="id_room" class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Room
+                        </label>
+                        {{ form.room }}
+                    </div>
+                    {% endif %}
 
                     <!-- Initial Message -->
                     <div>
@@ -113,7 +127,7 @@
                 <div id="messages-container" class="h-96 overflow-y-auto border rounded-lg mb-4 p-4">
                     {% for message in messages %}
                     <div class="mb-4 {% if message.sender == request.user %}ml-auto{% endif %}">
-                        <div class="{% if message.sender == request.user %}bg-blue-100 ml-12{% else %}bg-gray-100 mr-12{% endif %} rounded-lg p-3">
+                        <div class="bg-blue-100 ml-12 rounded-lg p-3">
                             <div class="flex items-center mb-1">
                                 <span class="font-semibold text-sm">{{ message.sender.username }}</span>
                                 <span class="text-xs text-gray-500 ml-2">{{ message.timestamp|date:"g:i A" }}</span>

@@ -58,9 +58,8 @@ class Dorm(models.Model):
     accommodation_type = models.CharField(max_length=20, choices=ACCOMMODATION_TYPE_CHOICES, default='whole_unit')
     total_beds = models.PositiveIntegerField(default=1, help_text="Total number of beds available (for bedspace/room sharing)")
     available_beds = models.PositiveIntegerField(default=1, help_text="Number of beds currently available")
-    is_aircon = models.BooleanField(default=False, help_text="Does the room have air conditioning?")
     max_occupants = models.PositiveIntegerField(default=1, help_text="Maximum number of occupants allowed")
-    utilities_included = models.BooleanField(default=False, help_text="Are utilities (electricity, water) included in the price?")
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def get_average_rating(self):
         average = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -289,6 +288,7 @@ class Reservation(models.Model):
 
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='reservations')
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'student'})
+    room = models.ForeignKey('Room', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     reservation_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -418,3 +418,20 @@ class RoommateChat(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} at {self.timestamp}"
+
+class Room(models.Model):
+    dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name="rooms")
+    name = models.CharField(max_length=100, help_text="Name or label for this room (e.g., Room 1, Bed A)")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monthly price for this room")
+    is_available = models.BooleanField(default=True, help_text="Is this room currently available?")
+    description = models.TextField(blank=True, null=True, help_text="Optional description for this room")
+
+    def __str__(self):
+        return f"{self.name} in {self.dorm.name}"
+
+class RoomImage(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to='room_images/')
+
+    def __str__(self):
+        return f"Image for {self.room.name} in {self.room.dorm.name}"

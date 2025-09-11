@@ -1,0 +1,119 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Manage Reports{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8 px-2">
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-flag text-orange-500"></i> Manage User Reports
+                </h2>
+                <a href="{% url 'accounts:dashboard' %}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+            <!-- Filter and Count -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+                <form method="get" class="flex items-center gap-2">
+                    <label for="status" class="text-gray-700 font-medium">Filter by Status:</label>
+                    <select name="status" id="status" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" onchange="this.form.submit()">
+                        <option value="">All Reports</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="investigating" {% if request.GET.status == 'investigating' %}selected{% endif %}>Investigating</option>
+                        <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="dismissed" {% if request.GET.status == 'dismissed' %}selected{% endif %}>Dismissed</option>
+                    </select>
+                </form>
+                <span class="inline-block bg-blue-100 text-blue-800 px-4 py-1 rounded-full font-semibold">{{ reports.count }} Total Reports</span>
+            </div>
+            <!-- Reports Table -->
+            {% if reports %}
+            <div class="overflow-x-auto rounded-lg shadow">
+                <table class="min-w-full bg-white rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 text-left">
+                            <th class="py-3 px-4 font-semibold">Date</th>
+                            <th class="py-3 px-4 font-semibold">Reporter</th>
+                            <th class="py-3 px-4 font-semibold">Reported User</th>
+                            <th class="py-3 px-4 font-semibold">Reason</th>
+                            <th class="py-3 px-4 font-semibold">Status</th>
+                            <th class="py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 whitespace-nowrap">{{ report.created_at|date:"M d, Y H:i" }}</td>
+                            <td class="py-3 px-4">
+                                <a href="{% url 'accounts:view_user_profile' report.reporter.id %}" class="text-blue-700 hover:underline font-semibold">{{ report.reporter.username }}</a>
+                                <div class="text-xs text-gray-500">{{ report.reporter.get_user_type_display }}</div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <a href="{% url 'accounts:view_user_profile' report.reported_user.id %}" class="text-blue-700 hover:underline font-semibold">{{ report.reported_user.username }}</a>
+                                <div class="text-xs text-gray-500">{{ report.reported_user.get_user_type_display }}</div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-semibold">{{ report.get_reason_display }}</span>
+                                <div class="text-xs text-gray-500">{{ report.description|truncatechars:50 }}</div>
+                            </td>
+                            <td class="py-3 px-4">
+                                {% if report.status == 'pending' %}
+                                    <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">Pending</span>
+                                {% elif report.status == 'investigating' %}
+                                    <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">Investigating</span>
+                                {% elif report.status == 'resolved' %}
+                                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Resolved</span>
+                                {% elif report.status == 'dismissed' %}
+                                    <span class="inline-block bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">Dismissed</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4">
+                                <a href="{% url 'accounts:report_detail' report.id %}" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold transition">
+                                    <i class="fas fa-eye mr-1"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav class="mt-6 flex justify-center" aria-label="Reports pagination">
+                <ul class="inline-flex items-center -space-x-px">
+                    {% if page_obj.has_previous %}
+                    <li>
+                        <a class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
+                    </li>
+                    <li>
+                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <span class="px-3 py-2 leading-tight text-gray-700 bg-gray-200 border border-gray-300">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                    <li>
+                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                    </li>
+                    <li>
+                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-flag fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-lg font-semibold">No reports found</h5>
+                <p class="text-gray-500">There are no reports matching your criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,225 @@
+{% extends 'accounts/base.html' %}
+{% block title %}{{ roommate.name }} - Roommate Profile{% endblock %}
+{% load static %}
+{% block content %}
+
+<!-- Public Access Notice -->
+{% if not user.is_authenticated %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center">
+        <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+        </svg>
+        <div>
+            <h3 class="text-sm font-medium text-blue-800">Want to connect with this roommate?</h3>
+            <p class="text-sm text-blue-700 mt-1">
+                <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="font-medium underline">Log in</a> or 
+                <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="font-medium underline">register</a> 
+                to send a connection request and start chatting.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'dormitory:public_roommate_list' %}" class="text-gray-700 hover:text-blue-600">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                    </svg>
+                    Find Roommates
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="ml-1 text-gray-500 md:ml-2">{{ roommate.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+            <!-- Profile Card -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                <!-- Profile Image -->
+                <div class="relative h-64 bg-gray-200">
+                    {% if roommate.profile_image %}
+                        <img src="{{ roommate.profile_image.url }}" alt="{{ roommate.name }}" 
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-500">
+                            <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Age Badge -->
+                    <div class="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {{ roommate.age }} years old
+                    </div>
+                </div>
+
+                <!-- Profile Info -->
+                <div class="p-6">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ roommate.name }}</h1>
+                    
+                    <!-- Location -->
+                    <div class="flex items-center mb-4">
+                        <svg class="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-600 text-lg">{{ roommate.preferred_location }}</span>
+                    </div>
+
+                    <!-- Personality -->
+                    <div class="mb-4">
+                        <span class="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full font-medium">
+                            {{ roommate.get_mood_display }}
+                        </span>
+                    </div>
+
+                    <!-- Description -->
+                    {% if roommate.description %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">About Me</h3>
+                        <p class="text-gray-700 leading-relaxed">{{ roommate.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hobbies -->
+                    {% if roommate.hobbies %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Hobbies & Interests</h3>
+                        <p class="text-gray-700">{{ roommate.hobbies }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Preferences -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Budget -->
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Budget Range</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">
+                                ₱{{ roommate.preferred_budget_min|floatformat:0 }} - ₱{{ roommate.preferred_budget_max|floatformat:0 }}
+                            </div>
+                            <div class="text-sm text-gray-600">per month</div>
+                        </div>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Preferred Amenities</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for amenity in roommate.amenities.all %}
+                            <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">{{ amenity.name }}</span>
+                            {% empty %}
+                            <span class="text-gray-500 text-sm">No specific amenities listed</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Action Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6 sticky top-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Connect with {{ roommate.name }}</h3>
+                
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    {% if user.is_authenticated %}
+                        {% if user != roommate.user %}
+                            <button onclick="initiateMatch({{ roommate.pk }})" 
+                                    class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                Send Connection Request
+                            </button>
+                        {% else %}
+                            <div class="text-center text-gray-500 py-3">
+                                This is your own profile
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+                           class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium text-center block">
+                            Login to Connect
+                        </a>
+                        <a href="{% url 'accounts:register' %}?next={{ request.path }}" 
+                           class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center block">
+                            Create Account
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Contact Info -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h4 class="font-semibold text-gray-900 mb-2">Contact Information</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                            <span class="text-sm text-gray-600">{{ roommate.user.email }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                            </svg>
+                            <span class="text-sm text-gray-600">{{ roommate.contact_number }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posted Date -->
+                <div class="mt-4 text-xs text-gray-500 text-center">
+                    Profile created {{ roommate.date_posted|timesince }} ago
+                </div>
+            </div>
+
+            <!-- Compatibility Info -->
+            {% if user.is_authenticated and user != roommate.user %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Compatibility</h3>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600 mb-2">
+                        {% if roommate.get_compatibility_score %}
+                            {{ roommate.get_compatibility_score }}%
+                        {% else %}
+                            --
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600">Compatibility Score</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function initiateMatch(roommateId) {
+    // This would be implemented with AJAX to initiate a match
+    // For now, show an alert
+    alert('Connection request sent! This feature will be implemented soon.');
+}
+</script>
+
+{% endblock %} 

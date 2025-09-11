@@ -80,20 +80,6 @@
         <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
         <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
     </div>
-
-    <!-- Additional Amenities -->
-    <div class="space-y-2">
-        <div class="flex items-center">
-            <input type="checkbox" name="is_aircon" id="is_aircon" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.is_aircon.value %}checked{% endif %}>
-            <label for="is_aircon" class="ml-2 text-sm text-gray-700">Air Conditioned</label>
-        </div>
-
-        <div class="flex items-center">
-            <input type="checkbox" name="utilities_included" id="utilities_included" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.utilities_included.value %}checked{% endif %}>
-            <label for="utilities_included" class="ml-2 text-sm text-gray-700">Utilities Included in Rent (Electricity, Water)</label>
-        </div>
-    </div>
-
     <!-- Description -->
     <div>
         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
@@ -200,7 +186,20 @@ document.addEventListener("DOMContentLoaded", function() {
     const defaultLng = longitudeInput.value ? parseFloat(longitudeInput.value) : 120.9842;
 
     // Initialize map
-    const map = L.map('map').setView([defaultLat, defaultLng], 15);
+    const manilaBounds = L.latLngBounds(
+        [14.47, 120.90], // Southwest corner
+        [14.70, 121.07]  // Northeast corner
+    );
+    const map = L.map('map', {
+        center: [defaultLat, defaultLng],
+        zoom: 15,
+        minZoom: 12,
+        maxZoom: 16,
+        maxBounds: manilaBounds
+    });
+    map.on('drag', function() {
+        map.panInsideBounds(manilaBounds, { animate: false });
+    });
     
     // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

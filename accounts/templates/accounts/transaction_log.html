@@ -1,0 +1,104 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Transaction Log{% endblock %}
+{% load static %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-0">
+        <div class="bg-blue-800 text-white text-center py-4 rounded-t-lg">
+            <h2 class="text-2xl font-bold tracking-wide">Transaction Log</h2>
+        </div>
+        <div class="p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full rounded-b-lg divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Dorm</th>
+                            <th class="px-4 py-2 text-left">Student</th>
+                            <th class="px-4 py-2 text-left">Status</th>
+                            <th class="px-4 py-2 text-left">Amount</th>
+                            <th class="px-4 py-2 text-left">Date</th>
+                            <th class="px-4 py-2 text-left">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for tx in page_obj %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-2 font-medium text-gray-900">{{ tx.dorm.name }}</td>
+                            <td class="px-4 py-2">{{ tx.student.username }}</td>
+                            <td class="px-4 py-2">
+                                {% if tx.status == 'completed' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                        Completed
+                                    </span>
+                                {% elif tx.status == 'confirmed' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" /></svg>
+                                        Confirmed
+                                    </span>
+                                {% elif tx.status == 'pending' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" /></svg>
+                                        Pending
+                                    </span>
+                                {% elif tx.status == 'declined' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        Declined
+                                    </span>
+                                {% elif tx.status == 'cancelled' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        Cancelled
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-2">{% if tx.payment_amount %}₱{{ tx.payment_amount }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-2">{{ tx.created_at|date:'Y-m-d H:i' }}</td>
+                            <td class="px-4 py-2">
+                                {% if tx.status == 'cancelled' or tx.status == 'declined' %}
+                                    {% if tx.cancellation_reason %}
+                                        <span class="inline-block bg-red-50 text-red-700 px-2 py-1 rounded cursor-pointer hover:bg-red-100 transition" title="Click to expand" onclick="toggleReason(this)">
+                                            Reason
+                                        </span>
+                                        <div class="hidden mt-2 text-sm text-gray-700 bg-gray-50 rounded p-2 shadow-inner">{{ tx.cancellation_reason }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            <div class="mt-6 flex justify-center">
+                <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function toggleReason(el) {
+    const reasonDiv = el.nextElementSibling;
+    if (reasonDiv.classList.contains('hidden')) {
+        reasonDiv.classList.remove('hidden');
+        el.textContent = 'Hide';
+    } else {
+        reasonDiv.classList.add('hidden');
+        el.textContent = 'Reason';
+    }
+}
+</script>
+{% endblock %} 

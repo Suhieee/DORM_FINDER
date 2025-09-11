@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, UserReport
+from django.utils import timezone
+from datetime import timedelta
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -14,13 +16,13 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2', 'user_type']
 
 
-class AdminCreationForm(forms.ModelForm):
+class AdminCreationForm(UserCreationForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name')
+        fields = UserCreationForm.Meta.fields + ('email', 'contact_number')
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -35,5 +37,85 @@ class AdminCreationForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class UserReportForm(forms.ModelForm):
+    class Meta:
+        model = UserReport
+        fields = ['reason', 'description', 'evidence']
+        widgets = {
+            'reason': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Type here the details of your report'
+            }),
+            'evidence': forms.Textarea(attrs={
+                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Any additional evidence or context (optional)',
+                'rows': 3
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['reason'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
+        self.fields['description'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:ring-blue-500 focus:border-blue-500'
+        self.fields['evidence'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
+
+
+class BanUserForm(forms.Form):
+    BAN_CHOICES = [
+        ('minor', 'Minor (1 day)'),
+        ('moderate', 'Moderate (7 days)'),
+        ('major', 'Major (30 days)'),
+        ('permanent', 'Permanent'),
+    ]
+    
+    ban_severity = forms.ChoiceField(
+        choices=BAN_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text='Select the severity of the ban'
+    )
+    ban_reason = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Reason for banning this user...'}),
+        help_text='Provide a detailed reason for the ban'
+    )
+    
+    def get_ban_duration(self):
+        """Get ban duration based on severity"""
+        severity = self.cleaned_data.get('ban_severity')
+        if severity == 'minor':
+            return timedelta(days=1)
+        elif severity == 'moderate':
+            return timedelta(days=7)
+        elif severity == 'major':
+            return timedelta(days=30)
+        elif severity == 'permanent':
+            return None
+        return timedelta(days=1)  # Default to 1 day
+
+
+class ResolveReportForm(forms.Form):
+    ACTION_CHOICES = [
+        ('warn', 'Warn User'),
+        ('ban_minor', 'Ban User (1 day)'),
+        ('ban_moderate', 'Ban User (7 days)'),
+        ('ban_major', 'Ban User (30 days)'),
+        ('ban_permanent', 'Ban User (Permanent)'),
+        ('dismiss', 'Dismiss Report'),
+    ]
+    
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text='Select the action to take'
+    )
+    notes = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Admin notes...'}),
+        required=False,
+        help_text='Additional notes about the resolution'
+    )
 
 
