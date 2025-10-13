@@ -3,53 +3,74 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">🏠 My Dorm Listings</h2>
+<div class="max-w-5xl mx-auto p-8 bg-white shadow-lg rounded-2xl">
+
+    <h2 class="text-3xl font-bold text-blue-700 mb-6 flex items-center justify-center gap-2 text-center">
+        🏠 My Dorm Listings
+    </h2>
+    
 
     {% if my_dorms %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for dorm in my_dorms %}
-                <div class="border rounded-lg p-4 shadow">
-                    <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
-                    <p class="text-gray-700">📍 Address: {{ dorm.address }}</p>
-                    <p class="text-gray-700">💰 Price: ₱{{ dorm.price }}</p>
+                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-md hover:shadow-xl transition-all duration-300">
+                    
+                    <!-- Dorm Name -->
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1">{{ dorm.name }}</h3>
+                    
+                    <!-- Address -->
+                    <p class="text-gray-600 text-sm">📍 {{ dorm.address }}</p>
+                    
+                    <!-- Price -->
+                    <p class="text-gray-800 font-medium mt-2">💰 ₱{{ dorm.price }}</p>
 
+                    <!-- Images Preview -->
                     {% if dorm.images.all %}
-                        <div class="flex gap-2 mt-2 overflow-x-auto">
+                        <div class="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
                             {% for image in dorm.images.all %}
-                                <img src="{{ image.image.url }}" class="w-40 h-40 object-cover rounded">
+                                <img src="{{ image.image.url }}" class="w-28 h-28 object-cover rounded-lg shadow">
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-gray-500">No images available</p>
+                        <p class="text-gray-400 mt-3 italic">No images available</p>
                     {% endif %}
-                    
-                    <p class="text-gray-700 mt-2">
-                        <strong>Status:</strong> 
-                        {% if dorm.approval_status == 'rejected' %}
-                            <span class="text-red-600">Rejected</span> <br>
-                            <strong>Reason:</strong> {{ dorm.rejection_reason }}
-                        {% elif dorm.approval_status == 'approved' %}
-                            <span class="text-green-600">Approved</span>
-                        {% else %}
-                            <span class="text-yellow-600">Pending</span>
-                        {% endif %}
-                    </p>
 
-                    <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="mt-2 inline-block bg-blue-600 text-white py-1 px-4 rounded hover:bg-blue-700">
-                        View Details
-                    </a>
-                    {% if dorm.approval_status == 'approved' %}
-                        <a href="{% url 'dormitory:manage_rooms' dorm.id %}" class="mt-2 inline-block bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 ml-2">
-                            Manage Rooms
+                    <!-- Status Badges -->
+                    <div class="mt-4">
+                        <span class="text-sm font-semibold">Status:</span>
+                        {% if dorm.approval_status == 'rejected' %}
+                            <span class="text-red-600 font-semibold bg-red-100 px-2 py-1 rounded-md">Rejected</span>
+                            <p class="text-gray-600 text-sm mt-1"><strong>Reason:</strong> {{ dorm.rejection_reason }}</p>
+                        {% elif dorm.approval_status == 'approved' %}
+                            <span class="text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-md">Approved</span>
+                        {% else %}
+                            <span class="text-yellow-600 font-semibold bg-yellow-100 px-2 py-1 rounded-md">Pending</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="mt-5 flex gap-3">
+                        <a href="{% url 'dormitory:dorm_detail' dorm.id %}"
+                           class="flex-1 text-center bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            View Details
                         </a>
-                    {% endif %}
+
+                        {% if dorm.approval_status == 'approved' and dorm.accommodation_type != 'whole_unit' %}
+                            <a href="{% url 'dormitory:manage_rooms' dorm.id %}"
+                               class="flex-1 text-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition">
+                                Manage Rooms
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-    <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
-        <p class="text-gray-500 text-center">You haven't added any dorms yet.</p>
+        <div class="text-center py-10">
+            <img src="{% static 'images/question.svg' %}" alt="No Dorms" class="mx-auto w-64 mb-6">
+            <p class="text-gray-500 text-lg">You haven't added any dorms yet.</p>
+        </div>
     {% endif %}
 </div>
+
 {% endblock %}

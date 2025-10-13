@@ -7,13 +7,13 @@ from django.contrib.auth.forms import AuthenticationForm
 from .forms import CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, ResolveReportForm
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
-from dormitory.models import Dorm, Review, Reservation
+from dormitory.models import Dorm, Review, Reservation, Message
 from django.views import View
 from .models import Notification, CustomUser, UserReport
 from user_profile.models import UserProfile, UserInteraction
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Avg, Count, F, Q, ExpressionWrapper, FloatField, Value
-from django.db.models.functions import Cast, Coalesce
+from django.db.models.functions import Cast, Coalesce, Round
 from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
 from django.contrib.auth.decorators import login_required
@@ -31,6 +31,7 @@ from django.utils import timezone
 from django.db.models.functions import TruncMonth
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum, Count, Q, DecimalField
 
 
 class RegisterView(CreateView):
@@ -207,13 +208,31 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
                 review_count=Count('reviews'),
                 amenity_count=Count('amenities'),
+            ).annotate(
+                avg_rating_rounded=Case(
+                    When(avg_rating__isnull=True, then=Value(0.0)),
+                    default=ExpressionWrapper(Round(F('avg_rating')), output_field=FloatField()),
+                    output_field=FloatField()
+                )
             )
             dorms = list(base_queryset)
 
             # --- Popular Dorms Logic ---
-            popular_dorms = Dorm.objects.filter(approval_status="approved", available=True)\
-                .annotate(num_views=Count('recent_views'), avg_rating=Coalesce(Avg('reviews__rating'), 0.0))\
-                .order_by('-num_views', '-avg_rating')[:6]
+            popular_dorms = (
+                Dorm.objects.filter(approval_status="approved", available=True)
+                .annotate(
+                    avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
+                    review_count=Count('reviews'),
+                )
+                .annotate(
+                    avg_rating_rounded=Case(
+                        When(avg_rating__isnull=True, then=Value(0.0)),
+                        default=ExpressionWrapper(Round(F('avg_rating')), output_field=FloatField()),
+                        output_field=FloatField()
+                    )
+                )
+                .order_by('-recent_views', '-avg_rating')[:6]
+            )
             context['popular_dorms'] = popular_dorms
 
             # --- Collaborative Filtering Logic ---
@@ -315,16 +334,65 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             })
             
         elif user.user_type == 'landlord':
-            # Get recent reservations for the landlord's dorms
+            # Recent reservations
             context['recent_reservations'] = Reservation.objects.select_related('dorm', 'student').filter(
                 dorm__landlord=user
-            ).order_by('-reservation_date')[:5]  # Show last 5 reservations
-            
-            # Get reservation statistics
-            reservations = Reservation.objects.filter(dorm__landlord=user)
+            ).order_by('-reservation_date')[:5]
+
+            # Core collections
+            landlord_dorms = Dorm.objects.filter(landlord=user)
+            reservations = Reservation.objects.select_related('dorm', 'student').filter(dorm__landlord=user)
+            messages_qs = Message.objects.select_related('sender', 'receiver', 'dorm', 'reservation').filter(dorm__landlord=user)
+
+            # Top-line stats
+            context['total_dorms'] = landlord_dorms.count()
+            context['total_inquiries'] = messages_qs.count()
+            context['total_reservations'] = reservations.count()
+            context['total_views'] = landlord_dorms.aggregate(total=Coalesce(Sum('recent_views'), 0))['total']
+
+            # Reservations breakdown
             context['pending_count'] = reservations.filter(status='pending').count()
             context['confirmed_count'] = reservations.filter(status='confirmed').count()
             context['declined_count'] = reservations.filter(status='declined').count()
+            context['completed_count'] = reservations.filter(status='completed').count()
+
+            # Unread messages for bell indicator
+            context['unread_messages_count'] = messages_qs.filter(receiver=user, is_read=False).count()
+
+            # Recent inquiries/messages
+            context['recent_inquiries'] = messages_qs.order_by('-timestamp')[:5]
+
+            # Sales metrics
+            now = timezone.now()
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            monthly_sales = reservations.filter(
+                created_at__gte=month_start,
+                has_paid_reservation=True
+            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total']
+            total_income = reservations.filter(
+                has_paid_reservation=True
+            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total']
+
+            context['monthly_sales'] = monthly_sales or 0
+            context['total_income'] = total_income or 0
+
+            # Popularity: most viewed dorm and top list
+            popular_dorm = landlord_dorms.order_by('-recent_views').first()
+            context['popular_dorm'] = popular_dorm
+            context['top_dorms_by_views'] = landlord_dorms.order_by('-recent_views').values(
+                'id', 'name', 'recent_views'
+            )[:5]
+
+            # Monthly reservations (last 6 months)
+            last_six_months = Reservation.objects.filter(dorm__landlord=user).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(count=Count('id')).order_by('month')
+
+            reservations_chart = []
+            for entry in last_six_months:
+                label = entry['month'].strftime('%b %Y') if entry['month'] else ''
+                reservations_chart.append({'label': label, 'value': entry['count']})
+            context['reservations_chart'] = reservations_chart
         
         return context
 

@@ -3,31 +3,32 @@
 {% load static %}
 {% block content %}
 
-<div class="flex justify-center items-center min-h-[90vh] px-4 bg-gray-100">
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-4xl flex flex-col md:flex-row">
+<br><br><br><br><br><br>
+<div class="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 px-4">
+    <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden w-full max-w-5xl flex flex-col md:flex-row">
 
-        <!-- Left Section (Logo/Branding) -->
-        <div class="w-full md:w-2/5 flex flex-col justify-center items-center bg-gray-100 p-8">
-            <h1 class="text-4xl font-bold leading-tight text-center">
-                <span class="block text-black">SMART</span>
-                <span class="block text-red-600 flex items-center">
+        <!-- Left Section (Logo / Branding) -->
+        <div class="w-full md:w-1/5 flex flex-col justify-center items-center p-10 top-6 bg-gradient-to-br">
+            <h1 class="text-5xl font-extrabold leading-tight text-center tracking-tight">
+                <span class="block text-gray-900">SMART</span>
+                <span class="block text-blue-600 flex items-center justify-center">
                     D
-                    <img src="{% static 'images/bg.png' %}" alt="Dorm Logo" class="h-8 w-8 object-cover inline-block mx-1">
+                    <img src="{% static 'images/bg.png' %}" alt="Dorm Logo" class="h-12 w-12 object-cover mx-2">
                     RMITORY
                 </span>
-                
-                <span class="block text-black">FINDER</span>
+                <span class="block text-gray-900">FINDER</span>
             </h1>
+            <p class="mt-6 text-gray-500 text-lg text-center">Find your perfect dorm with ease</p>
         </div>
 
-        <!-- Right Section (Login Form) with Slide-in Animation -->
-        <div class="w-full md:w-3/5 flex items-center justify-center bg-red-800 p-6 md:p-8">
-            <div class="w-full max-w-sm relative opacity-0 translate-y-[-50px] animate-slide-in">
+        <!-- Right Section (Login Form) -->
+        <div class="w-full md:w-3/5 flex items-center justify-center bg-gradient-to-br from-blue-700 to-blue-900 p-10">
+            <div class="w-full max-w-md relative opacity-0 translate-y-[-40px] animate-slide-in">
 
                 {% if messages %}
-                    <div class="mb-4 space-y-2">
+                    <div class="mb-6 space-y-2">
                         {% for message in messages %}
-                            <div class="p-3 text-white rounded-md 
+                            <div class="p-4 text-white rounded-md shadow-lg
                                         {% if message.tags == 'error' %}bg-red-600{% elif message.tags == 'success' %}bg-green-600{% endif %}">
                                 {{ message }}
                             </div>
@@ -35,14 +36,14 @@
                     </div>
                 {% endif %}
 
-                <h2 class="text-3xl font-bold text-center mb-6 text-white">SIGN IN</h2>
+                <h2 class="text-4xl font-bold text-center mb-8 text-blue-300">Sign In</h2>
 
-                <form method="post" class="space-y-4">
+                               <form method="post" class="space-y-4">
                     {% csrf_token %}
 
                     <!-- Username Field -->
                     <div class="relative">
-                        <label for="username" class="block mb-2 text-sm font-medium text-white">Username</label>
+                        <label for="username" class="block mb-2 text-sm font-bold">Username</label>
                         <div class="relative w-full">
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -65,11 +66,12 @@
                             </div>
                         {% endif %}
                     </div>
+            
                     
 
                     <!-- Password Field -->
                     <div class="relative">
-                        <label for="password" class="block mb-2 text-sm font-medium text-white">Password</label>
+                        <label for="password" class="block mb-2 text-sm font-bold">Password</label>
                         <div class="relative w-full">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
                             <!-- SVG Icon -->
@@ -77,7 +79,7 @@
                                     <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z"/>
                                 </svg>
-
+  <br>
                             </div>
                             <!-- Input Field -->
                             <input type="password" id="password" name="password" value="{{ form.password.value|default:'' }}"
@@ -96,21 +98,25 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+                    <br>
                     <!-- Submit Button -->
-                    <button type="submit"
-                            class="w-full h-12 rounded-lg bg-red-700 text-white font-medium text-sm 
-                                   hover:bg-blue-600 active:bg-blue-800 
-                                   transform hover:scale-[1.02] active:scale-[0.98]
-                                   transition-all duration-200 ease-in-out
-                                   focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
-                                   shadow-md hover:shadow-lg">
-                        SIGN IN
-                    </button>
+                    <button type="submit" id="loginBtn"
+                    class="w-full h-14 rounded-xl bg-blue-600 text-white font-semibold text-lg
+                           hover:from-blue-600 hover:to-blue-300
+                           transform hover:scale-105 active:scale-95
+                           transition-all duration-200 ease-in-out
+                           shadow-lg flex items-center justify-center gap-2">
+                    <span id="btnText">Sign In</span>
+                    <svg id="btnSpinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
+                    </svg>
+                </button>
+                
 
-                    <p class="mt-4 text-white text-center">
-                        Don't have an account?
-                        <a href="{% url 'accounts:register' %}" class="text-gray-300 hover:underline">Register</a>
+                    <p class="mt-6 text-center text-blue-200 text-lg">
+                        Don’t have an account?
+                        <a href="{% url 'accounts:register' %}" class="text-blue-200 font-medium hover:underline">Register</a>
                     </p>
                 </form>
             </div>
@@ -118,28 +124,13 @@
     </div>
 </div>
 
-<!-- Custom animation styling -->
 <style>
-    @keyframes slideInFromTop {
-        from {
-            opacity: 0;
-            transform: translateY(-50px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+@keyframes slideInFromTop {
+    from { opacity: 0; transform: translateY(-40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in { animation: slideInFromTop 0.8s ease-out forwards; }
 
-    .animate-slide-in {
-        animation: slideInFromTop 0.8s ease-out forwards;
-    }
-
-    /* Remove button hover color for form buttons */
-    button[type="submit"]:hover {
-        background-color: #ef4444 !important; /* Tailwind red-500, or use your base color */
-        color: #fff !important;
-    }
 </style>
 
 {% block extra_js %}
@@ -149,12 +140,24 @@ function togglePassword(fieldId, btn) {
     const icon = btn.querySelector('svg');
     if (input.type === 'password') {
         input.type = 'text';
-        icon.classList.add('text-blue-500');
+        icon.classList.add('text-blue-400');
     } else {
         input.type = 'password';
-        icon.classList.remove('text-blue-500');
+        icon.classList.remove('text-blue-400');
     }
 }
+
+document.querySelector("form").addEventListener("submit", function() {
+    const btn = document.getElementById("loginBtn");
+    const btnText = document.getElementById("btnText");
+    const btnSpinner = document.getElementById("btnSpinner");
+
+    btn.disabled = true;                   // Disable button
+    btn.classList.add("opacity-70");       // Slight fade
+    btnText.textContent = "Signing In..."; // Change text
+    btnSpinner.classList.remove("hidden"); // Show spinner
+});
+
 </script>
 {% endblock %}
 

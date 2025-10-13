@@ -110,6 +110,14 @@
                       placeholder="Enter description" required>{{ form.description.value }}</textarea>
         </div>
 
+        <!-- Key Features -->
+        <div>
+            <label for="id_key_features" class="block text-sm font-medium text-gray-700">Key Features</label>
+            <textarea name="key_features" id="id_key_features" rows="3"
+                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="One feature per line (optional)">{{ form.key_features.value }}</textarea>
+        </div>
+
         <!-- Amenities -->
         <div>
             <label class="block text-sm font-medium text-gray-700">Amenities</label>

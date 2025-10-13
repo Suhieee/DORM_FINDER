@@ -4,8 +4,9 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from .models import (
-    Dorm, DormImage, Amenity, RoommatePost, Review, School, 
-    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage
+    Dorm, DormImage, Amenity, RoommatePost, Review, School,
+    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage,
+    RoommateAmenity
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
 from django.db.models import Avg , Q
@@ -18,6 +19,7 @@ from accounts.models import CustomUser
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.conf import settings
 import os
 from django.views.generic import View
 from django.utils import timezone
@@ -1129,7 +1131,6 @@ class UpdateReservationStatusView(View):
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can complete transactions.")
                 return redirect('dormitory:student_reservations')
-                
             if reservation.status == 'confirmed':
                 reservation.status = 'completed'
                 messages.success(request, f"Transaction for {reservation.dorm.name} has been marked as complete.")
@@ -1143,6 +1144,27 @@ class UpdateReservationStatusView(View):
                 )
             else:
                 messages.error(request, "Only confirmed reservations can be marked as complete.")
+        elif action == 'make_available':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can manage room availability.")
+                return redirect('dormitory:student_reservations')
+            if reservation.room is not None:
+                reservation.room.is_available = True
+                reservation.room.save()
+                dorm = reservation.dorm
+                if hasattr(dorm, 'available_beds'):
+                    dorm.available_beds = (dorm.available_beds or 0) + 1
+                    dorm.save()
+                messages.success(request, f"Room set to available for {reservation.dorm.name}.")
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.student,
+                    content="The room you reserved has been marked available by the landlord.",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+            else:
+                messages.error(request, "No room is assigned to this reservation.")
         
         reservation.save()
         
@@ -1513,32 +1535,46 @@ class SendRoommateChatMessageView(View):
         if request.user not in [match.initiator.user, match.target.user]:
             return JsonResponse({'error': 'Not authorized'}, status=403)
             
-        content = request.POST.get('content')
-        if not content:
-            return JsonResponse({'error': 'Message content is required'}, status=400)
-            
+        content = (request.POST.get('content') or '').strip()
+        image_file = request.FILES.get('image')
+
+        # Allow sending either text or image (or both)
+        if not content and not image_file:
+            return JsonResponse({'error': 'Please enter a message or choose an image.'}, status=400)
+
+        # If an image is present, store it and encode the URL in content with a prefix marker
+        image_url = None
+        if image_file:
+            # Reuse media storage; keep folder consistent with other chats
+            saved_path = default_storage.save(f"chat_images/{image_file.name}", image_file)
+            image_url = settings.MEDIA_URL + saved_path
+            if not content:
+                content = f"[image]{image_url}"
+
         # Create the message
         message = RoommateChat.objects.create(
             match=match,
             sender=request.user,
             content=content
         )
-        
+
         return JsonResponse({
             'status': 'success',
             'message': {
                 'id': message.id,
                 'content': message.content,
                 'timestamp': message.timestamp.strftime('%I:%M %p'),
-                'sender_name': message.sender.get_full_name()
+                'sender_name': message.sender.get_full_name(),
+                'has_image': bool(image_url),
+                'image_url': image_url
             }
         })
 
 @method_decorator(login_required, name='dispatch')
-class ManageRoomsView(LoginRequiredMixin, View):
+class ManageRoomsView(View):
     def get(self, request, dorm_id):
         dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
-        rooms = dorm.rooms.all()
+        rooms = dorm.rooms.all().prefetch_related("images")  # optimize query
         room_form = RoomForm()
         return render(request, 'dormitory/manage_rooms.html', {
             'dorm': dorm,
@@ -1548,18 +1584,43 @@ class ManageRoomsView(LoginRequiredMixin, View):
 
     def post(self, request, dorm_id):
         dorm = get_object_or_404(Dorm, id=dorm_id, landlord=request.user)
-        room_form = RoomForm(request.POST)
+        action = request.POST.get('action')
+
+        # ✅ Toggle availability
+        if action == 'toggle_availability':
+            room_id = request.POST.get('room_id')
+            room = get_object_or_404(Room, id=room_id, dorm=dorm)
+            room.is_available = not room.is_available
+            room.save()
+
+            # ✅ Keep dorm’s available_beds updated if exists
+            if hasattr(dorm, 'available_beds') and hasattr(dorm, 'total_beds'):
+                dorm.available_beds = dorm.rooms.filter(is_available=True).count()
+                dorm.save()
+
+            messages.success(
+                request, 
+                f"Room '{room.name}' set to {'available' if room.is_available else 'unavailable'}."
+            )
+            return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+
+        # ✅ Add new room
+        room_form = RoomForm(request.POST, request.FILES)
         if room_form.is_valid():
             room = room_form.save(commit=False)
             room.dorm = dorm
             room.save()
-            # Handle images
+
+            # Handle multiple images
             images = request.FILES.getlist('images')
             for image in images:
                 RoomImage.objects.create(room=room, image=image)
-            messages.success(request, 'Room added successfully!')
+
+            messages.success(request, f"Room '{room.name}' added successfully!")
             return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
-        rooms = dorm.rooms.all()
+
+        # If form invalid → redisplay with errors
+        rooms = dorm.rooms.all().prefetch_related("images")
         return render(request, 'dormitory/manage_rooms.html', {
             'dorm': dorm,
             'rooms': rooms,

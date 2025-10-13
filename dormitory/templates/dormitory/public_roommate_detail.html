@@ -22,7 +22,7 @@
 </div>
 {% endif %}
 
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div class="w-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
     <!-- Breadcrumb -->
     <nav class="flex mb-6" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -45,13 +45,13 @@
         </ol>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content -->
-        <div class="lg:col-span-2">
+        <div class="md:col-span-2">
             <!-- Profile Card -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
                 <!-- Profile Image -->
-                <div class="relative h-64 bg-gray-200">
+                <div class="relative h-56 sm:h-64 md:h-72 lg:h-80 bg-gray-200">
                     {% if roommate.profile_image %}
                         <img src="{{ roommate.profile_image.url }}" alt="{{ roommate.name }}" 
                              class="w-full h-full object-cover">
@@ -138,7 +138,7 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="lg:col-span-1">
+        <div class="md:col-span-1">
             <!-- Action Card -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6 sticky top-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Connect with {{ roommate.name }}</h3>

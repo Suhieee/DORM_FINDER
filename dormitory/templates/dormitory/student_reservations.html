@@ -19,6 +19,12 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- New message toast -->
+<div id="newMessageToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white rounded-full px-3 py-1 shadow-lg transition-base opacity-0 translate-y-3 z-40">
+    <span id="newMessageCount" class="text-sm font-semibold">+1</span>
+    <span class="text-sm ml-1">new message</span>
+</div>
 {% endif %}
 
 <!-- Image Preview Modal -->
@@ -65,14 +71,14 @@
 </div>
 
 <div class="container-fluid h-screen bg-gray-100">
-    <div class="flex h-[calc(100vh-4rem)]">
+    <div id="main-layout" class="flex h-[calc(100vh-4rem)]" style="margin-right: 20rem;">
         <!-- Left Sidebar - Reservations List -->
         <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
             <!-- Search Bar -->
-            <div class="p-4 border-b flex-shrink-0">
+            <div class="p-4 border-b flex-shrink-0 bg-white sticky top-0 z-20">
                 <div class="relative">
                     <input type="text" id="reservation-search" placeholder="Search reservations" 
-                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -110,7 +116,7 @@
             <div class="flex-1 overflow-hidden">
                 <div class="h-full overflow-y-auto">
                     {% for reservation in reservations %}
-                <div class="reservation-item p-3 hover:bg-gray-50 cursor-pointer {% if selected_reservation.id == reservation.id %}bg-blue-50{% endif %}"
+                <div class="reservation-item p-3 cursor-pointer transition-colors border-b {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-600{% else %}hover:bg-gray-50 border-l-4 border-transparent{% endif %}"
                          data-reservation-id="{{ reservation.id }}">
                     <div class="flex items-center space-x-3">
                         <div class="relative">
@@ -146,7 +152,7 @@
                                     {{ reservation.get_status_display }}
                                 </span>
                                 {% if reservation.unread_messages_count %}
-                                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">
+                                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                                         {{ reservation.unread_messages_count }}
                                     </span>
                                 {% endif %}
@@ -164,7 +170,7 @@
         </div>
 
         <!-- Main Chat Area -->
-        <div class="flex-1 flex flex-col h-screen">
+        <div class="flex-1 flex flex-col h-screen bg-white border rounded-xl shadow-sm overflow-hidden">
             {% if selected_reservation %}
                 <!-- Chat Header -->
                 <div class="p-4 bg-white border-b flex items-center justify-between z-10 flex-shrink-0">
@@ -198,8 +204,8 @@
                 </div>
 
                 <!-- Chat Messages Container -->
-                <div class="flex-1 overflow-hidden">
-                    <div id="messages-container" class="h-full overflow-y-auto p-3 space-y-2 bg-gray-50">
+                <div class="flex-1 overflow-hidden bg-gray-50">
+                    <div id="messages-container" class="h-full overflow-y-auto p-5 space-y-3">
                         {% for message in selected_reservation.chat_messages.all %}
                         <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
                             {% if message.sender != request.user %}
@@ -212,7 +218,7 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            <div class="relative max-w-[70%] {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-1.5 shadow-sm">
+                            <div class="relative {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-1.5 shadow-sm" style="max-width: 75%;">
                                 <button onclick="deleteMessage({{ message.id }})" 
                                         class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
                                         {% if message.sender != request.user %}style="display: none;"{% endif %}>
@@ -228,7 +234,7 @@
                                 </div>
                                 {% elif message.attachment %}
                                 <div class="mt-2">
-                                    <a href="{{ message.attachment.url }}" target="_blank" class="{% if message.sender == request.user %}text-blue-100{% else %}text-blue-500{% endif %} hover:text-{% if message.sender == request.user %}white{% else %}blue-700{% endif %} flex items-center">
+                                    <a href="{{ message.attachment.url }}" target="_blank" class="flex items-center {% if message.sender == request.user %}text-blue-100 hover:text-white{% else %}text-blue-500 hover:text-blue-700{% endif %}">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                                         </svg>
@@ -312,8 +318,8 @@
         </div>
 
         <!-- Right Sidebar - Dorm Details -->
-        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 top-0 h-full overflow-y-auto z-30">
-            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-40">
+        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto z-30" style="top: 4rem; height: calc(100vh - 4rem);">
+            <div class="sticky top-2 bg-white p-4 mt-4 border-b flex justify-between items-center z-40">
                 <h3 class="font-semibold text-lg">Dorm Details</h3>
                 <button id="close-details" class="p-2 hover:bg-gray-100 rounded-full">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,12 +333,11 @@
                     <h4 class="font-semibold text-lg">Dorm Images</h4>
                     <div class="grid grid-cols-2 gap-2" id="dormImages">
                         {% for image in selected_reservation.dorm.images.all %}
-                        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                             onclick="openImageGallery({{ forloop.counter0 }})">
+                        <div class="rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" style="height: 140px;" onclick="openImageGallery({{ forloop.counter0 }})">
                             <img src="{{ image.image.url }}" alt="Dorm Image" class="w-full h-full object-cover gallery-image">
                         </div>
                         {% empty %}
-                        <div class="col-span-2 aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="col-span-2 bg-gray-100 rounded-lg flex items-center justify-center" style="height: 140px;">
                             <span class="text-gray-400">No images available</span>
                     </div>
                     {% endfor %}
@@ -513,7 +518,7 @@
                     {% if selected_reservation.qr_code %}
                     <div class="text-center mb-4">
                         <h5 class="font-medium mb-2">Scan QR Code to Pay</h5>
-                        <img src="{{ selected_reservation.qr_code.url }}" alt="GCash QR Code" class="mx-auto max-w-[200px] rounded-lg">
+                        <img src="{{ selected_reservation.qr_code.url }}" alt="GCash QR Code" class="mx-auto rounded-lg" style="max-width: 200px;">
                     </div>
                     {% endif %}
 
@@ -652,7 +657,7 @@
                     const messagesContainer = document.getElementById('messages-container');
                     let messageHtml = `
                         <div class="flex justify-end items-end space-x-2 group">
-                            <div class="relative max-w-[70%] bg-blue-500 text-white rounded-lg px-3 py-1.5 shadow-sm">
+                            <div class="relative bg-blue-500 text-white rounded-lg px-3 py-1.5 shadow-sm" style="max-width: 75%;">
                                 <p class="text-sm">${data.message.content}</p>`;
                     
                     // Add file/image preview if present
@@ -692,6 +697,25 @@
     }
 
     // Check for new messages periodically
+    let newMsgCount = 0;
+    let toastHideTimeout;
+
+    function showNewMessageToast(incrementBy) {
+        const toast = document.getElementById('newMessageToast');
+        const badge = document.getElementById('newMessageCount');
+        newMsgCount += incrementBy || 1;
+        badge.textContent = `+${newMsgCount}`;
+        toast.classList.remove('hidden', 'opacity-0', 'translate-y-3');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        clearTimeout(toastHideTimeout);
+        toastHideTimeout = setTimeout(() => {
+            newMsgCount = 0;
+            toast.classList.add('opacity-0', 'translate-y-3');
+            setTimeout(() => toast.classList.add('hidden'), 200);
+        }, 4000);
+    }
+
     function checkNewMessages() {
         const reservationId = new URLSearchParams(window.location.search).get('selected_reservation');
         if (!reservationId) return;
@@ -700,7 +724,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.hasNewMessages) {
-                    window.location.reload();
+                    const inc = data.newCount ? Number(data.newCount) : 1;
+                    showNewMessageToast(inc);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -743,13 +768,24 @@
     function openImageGallery(index) {
         const modal = document.getElementById('imagePreviewModal');
         const images = Array.from(document.querySelectorAll('.gallery-image'));
-        galleryImages = images.map(img => img.src);
-        currentImageIndex = index;
-        isProfileImage = false;
-        updateGalleryView();
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        createThumbnails();
+        // If index is a number, open the gallery list; if it's a URL/string, open single image
+        if (typeof index === 'number') {
+            galleryImages = images.map(img => img.src);
+            currentImageIndex = index;
+            isProfileImage = false;
+            updateGalleryView();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            createThumbnails();
+        } else {
+            galleryImages = [String(index)];
+            currentImageIndex = 0;
+            isProfileImage = true; // reuse flag to hide thumbs/nav
+            updateGalleryView();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            hideThumbnailsAndNavigation();
+        }
     }
 
     function previewImage(element) {
@@ -881,7 +917,7 @@
     const detailsPanel = document.getElementById('details-panel');
     const toggleDetailsBtn = document.getElementById('toggle-details-btn');
     const closeDetailsBtn = document.getElementById('close-details');
-    const mainContainer = document.querySelector('.flex.h-\\[calc\\(100vh-4rem\\)]');
+    const mainContainer = document.getElementById('main-layout');
     let detailsVisible = true;
 
     function toggleDetails() {
@@ -889,13 +925,11 @@
         if (detailsVisible) {
             detailsPanel.classList.remove('translate-x-full', 'shadow-none');
             detailsPanel.classList.add('shadow-lg');
-            mainContainer.classList.remove('pr-0');
-            mainContainer.classList.add('pr-80');
+            mainContainer.style.marginRight = '20rem';
         } else {
             detailsPanel.classList.add('translate-x-full', 'shadow-none');
             detailsPanel.classList.remove('shadow-lg');
-            mainContainer.classList.remove('pr-80');
-            mainContainer.classList.add('pr-0');
+            mainContainer.style.marginRight = '0';
         }
     }
 
@@ -904,17 +938,16 @@
 
     // Initialize panel state based on screen size
     function initializePanelState() {
-        if (window.innerWidth < 768) {
-            detailsVisible = false;
-            detailsPanel.classList.add('translate-x-full', 'shadow-none');
-            detailsPanel.classList.remove('shadow-lg');
-            mainContainer.classList.remove('pr-80');
-            mainContainer.classList.add('pr-0');
-        } else {
-            detailsVisible = true;
-            mainContainer.classList.add('pr-80');
+        const isMobile = window.innerWidth < 1024;
+        detailsVisible = !isMobile;
+        if (detailsVisible) {
+            mainContainer.style.marginRight = '20rem';
             detailsPanel.classList.add('shadow-lg');
             detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+        } else {
+            detailsPanel.classList.add('translate-x-full', 'shadow-none');
+            detailsPanel.classList.remove('shadow-lg');
+            mainContainer.style.marginRight = '0';
         }
     }
 
@@ -1003,6 +1036,15 @@
 
     #prevImage:hover, #nextImage:hover {
         opacity: 0.8;
+    }
+
+    /* New message toast */
+    .opacity-0 { opacity: 0; }
+    .opacity-100 { opacity: 1; }
+    .translate-y-3 { transform: translateY(0.75rem); }
+    .translate-y-0 { transform: translateY(0); }
+    .transition-base {
+        transition: opacity .2s ease, transform .2s ease;
     }
 </style>
 {% endblock %} 

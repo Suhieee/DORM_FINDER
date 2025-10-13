@@ -359,7 +359,7 @@
                     </span>
                 </div>
                 <div class="flex justify-between items-center mb-2">
-                    <p class="text-lg font-bold text-purple-600">₱{{ roommate.budget|default:"0" }}/month</p>
+                    <p class="text-lg font-bold text-purple-600">{{ roommate.preferred_budget_min|floatformat:0 }} - ₱{{ roommate.preferred_budget_max|floatformat:0 }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2 mb-4">
                     {% for amenity in roommate.amenities.all|slice:":2" %}

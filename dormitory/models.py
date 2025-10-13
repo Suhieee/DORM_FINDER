@@ -60,6 +60,7 @@ class Dorm(models.Model):
     available_beds = models.PositiveIntegerField(default=1, help_text="Number of beds currently available")
     max_occupants = models.PositiveIntegerField(default=1, help_text="Maximum number of occupants allowed")
     created_at = models.DateTimeField(auto_now_add=True)
+    key_features = models.TextField(null=True, blank=True, help_text="Short highlights, one per line")
 
     def get_average_rating(self):
         average = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -425,6 +426,16 @@ class Room(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monthly price for this room")
     is_available = models.BooleanField(default=True, help_text="Is this room currently available?")
     description = models.TextField(blank=True, null=True, help_text="Optional description for this room")
+
+    # 🔹 New optional fields to make it richer
+    room_type = models.CharField(
+        max_length=50,
+        choices=[('single', 'Single'), ('double', 'Double'), ('shared', 'Shared')],
+        default='single'
+    )
+    capacity = models.PositiveIntegerField(default=1, help_text="Number of people this room can accommodate")
+    size = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, help_text="Size in square meters")
+    floor_number = models.PositiveIntegerField(blank=True, null=True, help_text="Floor where the room is located")
 
     def __str__(self):
         return f"{self.name} in {self.dorm.name}"

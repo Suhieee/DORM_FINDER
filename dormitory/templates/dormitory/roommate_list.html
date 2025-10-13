@@ -20,21 +20,22 @@
 
 <!-- Main Container REMOVED -->
 <!-- Header Section -->
-<div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+<div class="w-full bg-white from-blue-600 to-purple-600 rounded-xl text-white p-6 md:p-8 mb-8 shadow-md">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Find Your Perfect Roommate</h1>
-        <p class="mt-1 text-sm text-gray-500">Connect with potential roommates who share your preferences.</p>
+            <h1 class="text-2xl md:text-3xl text-blue-800  font-bold">Find Your Perfect Roommate</h1>
+            <p class="mt-1 text-md md:text-base text-gray-800">Connect with people who match your budget, location, and vibe.</p>
     </div>
-    <div class="flex gap-4 mt-4 md:mt-0">
+        <div class="flex flex-wrap items-center gap-3">
         <a href="{% url 'dormitory:roommate_matches' %}" 
-           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 shadow">
             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
             </svg>
             View Matches
         </a>
         <a href="{% url 'dormitory:add_roommate' %}" 
-           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-green-500 hover:bg-green-600 text-white shadow">
             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
             </svg>
@@ -42,56 +43,77 @@
         </a>
     </div>
 </div>
+</div>
 
-<div id="gallery" class="relative w-full" data-carousel="slide">
-    <!-- Carousel wrapper -->
-    <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
-        <!-- Item 1 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
+<!-- Search Hero (Collapsible) -->
+<div class="bg-white rounded-xl shadow-md mb-8 border border-gray-100 overflow-hidden">
+    <!-- Header / Toggle -->
+    <button type="button" id="filtersToggle" class="w-full flex items-center justify-between px-4 md:px-6 py-4 hover:bg-gray-50">
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/></svg>
+            </span>
+            <div class="text-left">
+                <div class="text-sm font-semibold text-gray-900">Search & Filters</div>
+                <div class="text-xs text-gray-500">Refine by location, budget, and mood</div>
+            </div>
         </div>
-        <!-- Item 2 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item="active">
-            <img src="{% static 'images/2.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
+        <div class="flex items-center gap-3">
+            <span id="activeFilterBadge" class="hidden text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700"></span>
+            <svg id="filtersChevron" class="w-5 h-5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <!-- Item 3 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/3.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
+    </button>
+
+    <!-- Panel -->
+    <div id="filtersPanel" class="px-4 md:px-6 pb-4 md:pb-6 hidden">
+        <form id="roommateSearchForm" class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Location</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 111.314 0z"/></svg>
+                    </span>
+                    <input type="text" id="filterLocationInput" placeholder="e.g., España, UST"
+                           class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Budget Min (₱)</label>
+                    <input type="number" id="filterBudgetMin" min="0" step="500" placeholder="3000"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Budget Max (₱)</label>
+                    <input type="number" id="filterBudgetMax" min="0" step="500" placeholder="10000"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
         </div>
-        <!-- Item 4 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
         </div>
-        <!-- Item 5 -->
-        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-            <img src="{% static 'images/1.jpg' %}" class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Mood</label>
+                <select id="filterMood" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Any</option>
+                    <option value="quiet">Quiet and Reserved</option>
+                    <option value="friendly">Friendly and Social</option>
+                    <option value="adventurous">Adventurous and Outgoing</option>
+                    <option value="studious">Studious and Focused</option>
+                </select>
+        </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Find Roommates</button>
+                <button type="button" id="filterClear" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Clear</button>
+        </div>
+        </form>
         </div>
     </div>
-  
-    <!-- Slider controls -->
-    <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-            <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-            </svg>
-            <span class="sr-only">Previous</span>
-        </span>
-    </button>
-    <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-            <svg class="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-            </svg>
-            <span class="sr-only">Next</span>
-        </span>
-    </button>
-</div>
-<br>
 
 <!-- Roommate Cards Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+<div id="roommate-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {% for roommate in roommates %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 relative z-10">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 relative z-10"
+             data-location="{{ roommate.preferred_location|default_if_none:''|lower }}"
+             data-budget="{{ roommate.preferred_budget|default:0 }}"
+             data-mood="{{ roommate.mood }}">
             <!-- Image Section -->
             <div class="relative h-48 bg-blue-200">
                 <!-- 3-dot Dropdown Top Left -->
@@ -113,7 +135,9 @@
                 {% if roommate.profile_image %}
                     <img src="{{ roommate.profile_image.url }}" 
                          alt="{{ roommate.name }}'s profile" 
-                         class="w-full h-full object-cover">
+                         class="w-full h-full object-cover cursor-zoom-in"
+                         onclick="openImageModal('{{ roommate.profile_image.url }}', '{{ roommate.name|escapejs }}')">
+                    <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors cursor-zoom-in" onclick="openImageModal('{{ roommate.profile_image.url }}', '{{ roommate.name|escapejs }}')"></div>
                 {% else %}
                     <div class="w-full h-full bg-gray-300 flex items-center justify-center">
                         <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
@@ -264,6 +288,22 @@
     </div>
 </div>
 
+<!-- Image Preview Modal -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/70" onclick="closeImageModal()"></div>
+    <div class="relative w-full h-full flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full overflow-hidden" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between px-4 py-3 border-b">
+                <h3 id="imageModalTitle" class="text-sm font-semibold text-gray-800 truncate">Preview</h3>
+                <button class="text-gray-500 hover:text-gray-700" onclick="closeImageModal()" aria-label="Close preview">✕</button>
+            </div>
+            <div class="bg-gray-900 flex items-center justify-center">
+                <img id="imageModalImg" src="" alt="Preview" class="max-h-[80vh] w-auto object-contain cursor-zoom-out" />
+            </div>
+        </div>
+    </div>
+}</div>
+
 <!-- Toast Notification -->
 <div id="ajax-toast" class="fixed top-6 right-6 z-50 hidden"></div>
 
@@ -310,7 +350,113 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fallback: Hide loader after 10 seconds
         setTimeout(hideLoader, 10000);
     }
+
+    // Client-side filtering for Search Hero
+    const form = document.getElementById('roommateSearchForm');
+    const clearBtn = document.getElementById('filterClear');
+    const cards = Array.from(document.querySelectorAll('#roommate-grid > div[data-location]'));
+
+    function applyFilters(e) {
+        if (e) e.preventDefault();
+        const loc = (document.getElementById('filterLocationInput').value || '').trim().toLowerCase();
+        const min = parseInt(document.getElementById('filterBudgetMin').value || '0', 10);
+        const max = parseInt(document.getElementById('filterBudgetMax').value || '0', 10);
+        const mood = (document.getElementById('filterMood').value || '').trim();
+
+        cards.forEach(card => {
+            const cLoc = (card.getAttribute('data-location') || '').toLowerCase();
+            const cBudget = parseInt(card.getAttribute('data-budget') || '0', 10);
+            const cMood = (card.getAttribute('data-mood') || '').trim();
+
+            let visible = true;
+            if (loc && !cLoc.includes(loc)) visible = false;
+            if (min && cBudget && cBudget < min) visible = false;
+            if (max && cBudget && cBudget > max) visible = false;
+            if (mood && cMood !== mood) visible = false;
+
+            card.style.display = visible ? '' : 'none';
+        });
+    }
+
+    if (form) form.addEventListener('submit', applyFilters);
+    if (clearBtn) clearBtn.addEventListener('click', function() {
+        document.getElementById('filterLocationInput').value = '';
+        document.getElementById('filterBudgetMin').value = '';
+        document.getElementById('filterBudgetMax').value = '';
+        document.getElementById('filterMood').value = '';
+        applyFilters();
+    });
+
+    // Collapsible panel logic + active filter badge
+    const toggleBtn = document.getElementById('filtersToggle');
+    const panel = document.getElementById('filtersPanel');
+    const chevron = document.getElementById('filtersChevron');
+    const badge = document.getElementById('activeFilterBadge');
+
+    function updateBadge() {
+        const loc = (document.getElementById('filterLocationInput').value || '').trim();
+        const min = document.getElementById('filterBudgetMin').value;
+        const max = document.getElementById('filterBudgetMax').value;
+        const mood = document.getElementById('filterMood').value;
+        const parts = [];
+        if (loc) parts.push(loc);
+        if (min) parts.push(`₱${min}+`);
+        if (max) parts.push(`≤ ₱${max}`);
+        if (mood) parts.push(mood.replace('_', ' '));
+        if (parts.length) {
+            badge.textContent = parts.join(' • ');
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', function() {
+            const isHidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180', isHidden);
+        });
+    }
+
+    ['filterLocationInput','filterBudgetMin','filterBudgetMax','filterMood'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateBadge);
+        if (el) el.addEventListener('change', updateBadge);
+    });
+    updateBadge();
 });
+
+// Image modal controls
+let _escListener = null;
+function openImageModal(src, title) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalImg');
+    const ttl = document.getElementById('imageModalTitle');
+    img.src = src;
+    ttl.textContent = title || 'Preview';
+    modal.classList.remove('hidden');
+    // Prevent background scroll
+    document.body.style.overflow = 'hidden';
+    // Close on image click
+    img.onclick = closeImageModal;
+    // Close on ESC
+    _escListener = function(e){ if (e.key === 'Escape') closeImageModal(); };
+    document.addEventListener('keydown', _escListener);
+}
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalImg');
+    img.src = '';
+    modal.classList.add('hidden');
+    // Restore scroll
+    document.body.style.overflow = '';
+    // Remove ESC listener
+    if (_escListener) {
+        document.removeEventListener('keydown', _escListener);
+        _escListener = null;
+    }
+}
 
 // Get CSRF token from cookie
 function getCookie(name) {

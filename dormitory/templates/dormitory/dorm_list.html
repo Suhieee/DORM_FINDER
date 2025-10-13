@@ -52,7 +52,7 @@
                 <div class="text-2xl font-bold">{{ amenities.count|default:"0" }}</div>
                 <div class="text-sm opacity-90">Amenities Available</div>
             </div>
-            <div class="bg-white text-red-500 bg-opacity-20 rounded-lg p-4">
+            <div class="bg-white text-blue-500 bg-opacity-20 rounded-lg p-4">
                 <div class="text-2xl font-bold">100%</div>
                 <div class="text-sm opacity-90">Verified Listings</div>
             </div>
@@ -202,7 +202,7 @@
                                     </svg>
                                     Accommodation Type
                                 </h3>
-                                <select name="accommodation_type" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <select name="accommodation_type" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent>
                                     <option value="all">All Types</option>
                                     <option value="whole_unit" {% if request.GET.accommodation_type == 'whole_unit' %}selected{% endif %}>Whole Unit</option>
                                     <option value="bedspace" {% if request.GET.accommodation_type == 'bedspace' %}selected{% endif %}>Bed Space</option>
@@ -1390,5 +1390,46 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     transition: opacity 0.3s ease-in-out;
 }
 </style>
+
+<script>
+// Favorite toggle handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
+
+    document.querySelectorAll('.favorite-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dormId = this.getAttribute('data-dorm-id');
+            if (!dormId) return;
+
+            fetch(`/profile/favorite/toggle/${dormId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const icon = button.querySelector('svg');
+                    if (icon) {
+                        if (data.is_favorite) {
+                            icon.classList.remove('text-gray-400');
+                            icon.classList.add('text-red-500');
+                        } else {
+                            icon.classList.remove('text-red-500');
+                            icon.classList.add('text-gray-400');
+                        }
+                    }
+                }
+            })
+            .catch(() => {});
+        });
+    });
+});
+</script>
 
 {% endblock %} 

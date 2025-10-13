@@ -28,11 +28,12 @@ class DormForm(forms.ModelForm):
         fields = [
             'name', 'address', 'latitude', 'longitude', 'price', 'description',
             'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
-            'total_beds', 'available_beds','max_occupants',
+            'total_beds', 'available_beds','max_occupants', 'key_features',
 
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
+            'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
             'address': forms.Textarea(attrs={'rows': 3}),
             'price': forms.NumberInput(attrs={'step': '0.01'}),
             'permit': forms.FileInput(attrs={'accept': 'image/*'}),
@@ -162,15 +163,39 @@ class ReservationForm(forms.ModelForm):
 class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
-        fields = [
-            'name', 'price', 'is_available', 'description'
-        ]
+        fields = ['name', 'price', 'is_available', 'description', 'room_type', 'capacity', 'size', 'floor_number']
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 2}),
-            'price': forms.NumberInput(attrs={'step': '0.01'}),
-        }
-        help_texts = {
-            'price': 'Enter the price per month for this room',
+            'name': forms.TextInput(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter room name (e.g., Room 1, Bed A)',
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'e.g. 4500',
+            }),
+            'is_available': forms.CheckboxInput(attrs={
+                'class': 'rounded text-blue-600 focus:ring-blue-500',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'rows': 3,
+                'placeholder': 'Optional description...',
+            }),
+            'room_type': forms.Select(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+            }),
+            'capacity': forms.NumberInput(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Number of people',
+            }),
+            'size': forms.NumberInput(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Square meters',
+            }),
+            'floor_number': forms.NumberInput(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Floor number',
+            }),
         }
 
 class RoomImageForm(forms.ModelForm):

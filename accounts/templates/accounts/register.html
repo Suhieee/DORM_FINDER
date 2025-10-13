@@ -1,19 +1,21 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
-{% block title %} Register {% endblock %}
-{% block content %}
 
+{% block title %} Register {% endblock %}
+
+{% block content %}
 <div class="flex items-center justify-start mt-4 min-h-screen bg-gray-100">
-    
     <!-- Registration Form Container -->
-    <div class="w-full max-w-xl bg-red-800 p-8 rounded-lg shadow-lg mx-auto">
-        <h2 class="text-4xl font-bold  text-white mb-6 text-left">SIGN UP</h2>
+    <div class="w-full max-w-xl p-8 rounded-lg mx-auto">
+        <h2 class="text-4xl font-bold text-black mb-6 text-center mt-16">SIGN UP</h2>
+        <br>
 
         <!-- Messages for success/error feedback -->
         {% if messages %}
         <div class="mb-4">
             {% for message in messages %}
-            <div class="p-3 rounded-lg {% if message.tags == 'error' %} bg-red-500 text-white {% else %} bg-green-500 text-white {% endif %}">
+            <div
+                class="p-3 rounded-lg {% if message.tags == 'error' %} bg-blue-500 text-white {% else %} bg-green-500 text-white {% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
@@ -25,177 +27,194 @@
 
             <!-- Grid Layout -->
             <div class="grid grid-cols-2 gap-x-4 gap-y-4">
-                
                 <!-- Left Column -->
                 <div class="space-y-4">
                     <div>
-                        <label for="first_name" class="block mb-2 text-sm font-medium text-white">First Name</label>
+                        <label for="first_name" class="block mb-2 text-sm font-medium text-black">First Name</label>
                         <div class="relative w-full">
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" />
                                 </svg>
                             </div>
                             <!-- Input Field -->
-                            <input type="text" id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="text" id="first_name" name="first_name"
+                                value="{{ form.first_name.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="First Name" required>
                         </div>
-                        <p class="text-red-200 text-sm">{{ form.first_name.errors }}</p>
+                        <p class="text-blue-200 text-sm">{{ form.first_name.errors }}</p>
                     </div>
 
-                    <div>  <label for="username" class="block mb-2 text-sm font-medium text-white">Username</label>
+                    <div>
+                        <label for="username" class="block mb-2 text-sm font-medium text-black">Username</label>
                         <div class="relative w-full">
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" />
                                 </svg>
                             </div>
                             <!-- Input Field -->
-                            <input type="text" id="username" name="username" value="{{ form.username.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="text" id="username" name="username" value="{{ form.username.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Username" required>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.username.errors }}</p>
                     </div>
 
                     <div>
-                        <label for="contact_number" class="block mb-2 text-sm font-medium text-white">Contact Number</label>
+                        <label for="contact_number" class="block mb-2 text-sm font-medium text-black">Contact
+                            Number</label>
                         <div class="relative w-full">
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M7 2a2 2 0 0 0-2 2v1a1 1 0 0 0 0 2v1a1 1 0 0 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7Zm3 8a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm-1 7a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3 1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M7 2a2 2 0 0 0-2 2v1a1 1 0 0 0 0 2v1a1 1 0 0 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7Zm3 8a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm-1 7a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3 1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1Z" />
                                 </svg>
-                                  
                             </div>
                             <!-- Input Field -->
-                            <input type="text" id="contact_number" name="contact_number" value="{{ form.contact_number.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="text" id="contact_number" name="contact_number"
+                                value="{{ form.contact_number.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Contact Number" required>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.contact_number.errors }}</p>
                     </div>
 
                     <div>
-                        <label for="password2" class="block mb-2 text-sm font-medium text-white">Confirm Password</label>
+                        <label for="password2" class="block mb-2 text-sm font-medium text-black">Confirm
+                            Password</label>
                         <div class="relative w-full">
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z"/>
-                                </svg>                                  
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z" />
+                                </svg>
                             </div>
                             <!-- Input Field -->
-                            <input type="password" id="password2" name="password2" value="{{ form.password2.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="password" id="password2" name="password2"
+                                value="{{ form.password2.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Confirm Password" required>
-                            <button type="button" onclick="togglePassword('password2', this)" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none">
-                                <svg id="icon-password2" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <button type="button" onclick="togglePassword('password2', this)"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none">
+                                <svg id="icon-password2" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                             </button>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.password2.errors }}</p>
                     </div>
-
                 </div>
 
                 <!-- Right Column -->
                 <div class="space-y-4">
                     <div>
-                        <label for="last_name" class="block mb-2 text-sm font-medium text-white">Last Name</label>
+                        <label for="last_name" class="block mb-2 text-sm font-medium text-black">Last Name</label>
                         <div class="relative w-full">
-
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" />
                                 </svg>
                             </div>
-
                             <!-- Input Field -->
-                            <input type="text" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="text" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Last Name" required>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.last_name.errors }}</p>
                     </div>
 
                     <div>
-                        <label for="email" class="block mb-2 text-sm font-medium text-white">Email Address</label>
+                        <label for="email" class="block mb-2 text-sm font-medium text-black">Email Address</label>
                         <div class="relative w-full">
-
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 6h-2V5h1a1 1 0 1 0 0-2h-2a1 1 0 0 0-1 1v2h-.541A5.965 5.965 0 0 1 14 10v4a1 1 0 1 1-2 0v-4c0-2.206-1.794-4-4-4-.075 0-.148.012-.22.028C7.686 6.022 7.596 6 7.5 6A4.505 4.505 0 0 0 3 10.5V16a1 1 0 0 0 1 1h7v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3h5a1 1 0 0 0 1-1v-6c0-2.206-1.794-4-4-4Zm-9 8.5H7a1 1 0 1 1 0-2h1a1 1 0 1 1 0 2Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M17 6h-2V5h1a1 1 0 1 0 0-2h-2a1 1 0 0 0-1 1v2h-.541A5.965 5.965 0 0 1 14 10v4a1 1 0 1 1-2 0v-4c0-2.206-1.794-4-4-4-.075 0-.148.012-.22.028C7.686 6.022 7.596 6 7.5 6A4.505 4.505 0 0 0 3 10.5V16a1 1 0 0 0 1 1h7v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3h5a1 1 0 0 0 1-1v-6c0-2.206-1.794-4-4-4Zm-9 8.5H7a1 1 0 1 1 0-2h1a1 1 0 1 1 0 2Z" />
                                 </svg>
-                                  
                             </div>
-
                             <!-- Input Field -->
-                            <input type="email" id="email" name="email" value="{{ form.email.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="email" id="email" name="email" value="{{ form.email.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Email Address" required>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.email.errors }}</p>
                     </div>
 
                     <div>
-                        <label for="password" class="block mb-2 text-sm font-medium text-white">Password</label>
+                        <label for="password" class="block mb-2 text-sm font-medium text-black">Password</label>
                         <div class="relative w-full">
-                            
                             <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z"/>
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z" />
                                 </svg>
                             </div>
-
                             <!-- Input Field -->
-                            <input type="password" id="password1" name="password1" value="{{ form.password1.value|default:'' }}" 
-                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                       focus:ring-blue-500 focus:border-blue-500" 
+                            <input type="password" id="password1" name="password1"
+                                value="{{ form.password1.value|default:'' }}"
+                                class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Password" required>
-                            <button type="button" onclick="togglePassword('password1', this)" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none">
-                                <svg id="icon-password1" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <button type="button" onclick="togglePassword('password1', this)"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none">
+                                <svg id="icon-password1" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                             </button>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.password1.errors }}</p>
                     </div>
 
-
                     <div>
-                        <label for="user_type" class="block mb-2 text-sm font-medium text-white">User Type</label>
-                            <div class="relative w-full">
-                                <!-- SVG Icon (Dropdown Arrow) -->
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                            d="M5 10l7 7m0 0l7-7"/>
-                                    </svg>
-                                </div>
-                                <!-- Select Field -->
-                                <select id="user_type" name="user_type"
-                                    class="w-full p-2.5 pl-10 pr-4 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                        focus:ring-blue-500 focus:border-blue-500 appearance-none">
-                                    <option value="student">Student</option>
-                                    <option value="landlord">Landlord</option>
-                                </select>
+                        <label for="user_type" class="block mb-2 text-sm font-medium text-black">User Type</label>
+                        <div class="relative w-full">
+                            <!-- SVG Icon (Dropdown Arrow) -->
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2" d="M5 10l7 7m0 0l7-7" />
+                                </svg>
+                            </div>
+                            <!-- Select Field -->
+                            <select id="user_type" name="user_type"
+                                class="w-full p-2.5 pl-10 pr-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                                <option value="student">Student</option>
+                                <option value="landlord">Landlord</option>
+                            </select>
                         </div>
                         <p class="text-red-200 text-sm">{{ form.user_type.errors }}</p>
                     </div>
@@ -203,40 +222,42 @@
             </div>
 
             <div class="pt-4 mt-4">
-                <button type="submit" class="w-full text-white bg-red-500 hover:bg-white-700 focus:ring-2 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                <button type="submit"
+                    class="w-full text-white bg-blue-500 hover:bg-white-700 focus:ring-2 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
                     Sign up
                 </button>
         </form>
 
         <div class="flex justify-center items-center mt-4 text-center">
-            <p class="text-white">Already have an account? <a href="{% url 'accounts:login' %}" class="text-gray-300 hover:underline">Login</a></p>
+            <p class="text-gray-800">Already have an account?
+                <a href="{% url 'accounts:login' %}" class="text-blue-800 hover:underline">Login</a>
+            </p>
         </div>
-
     </div>
 </div>
 
 {% block extra_js %}
 <script>
-function togglePassword(fieldId, btn) {
-    const input = document.getElementById(fieldId);
-    const icon = btn.querySelector('svg');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.add('text-blue-500');
-    } else {
-        input.type = 'password';
-        icon.classList.remove('text-blue-500');
+    function togglePassword(fieldId, btn) {
+        const input = document.getElementById(fieldId);
+        const icon = btn.querySelector('svg');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.add('text-blue-500');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('text-blue-500');
+        }
     }
-}
 </script>
 {% endblock %}
-
 {% endblock %}
 
 <style>
-/* Remove button hover color for form buttons */
-button[type="submit"]:hover {
-    background-color: #ef4444 !important; /* Tailwind red-500, or use your base color */
-    color: #fff !important;
-}
+    /* Remove button hover color for form buttons */
+    button[type="submit"]:hover {
+        background-color: #ef4444 !important;
+        /* Tailwind red-500, or use your base color */
+        color: #fff !important;
+    }
 </style>

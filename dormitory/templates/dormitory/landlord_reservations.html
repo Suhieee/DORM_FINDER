@@ -47,6 +47,12 @@
             </div>
         </div>
 
+<!-- New message toast -->
+<div id="newMessageToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white rounded-full px-3 py-1 shadow-lg transition-base opacity-0 translate-y-3 z-40">
+    <span id="newMessageCount" class="text-sm font-semibold">+1</span>
+    <span class="text-sm ml-1">new message</span>
+    </div>
+
         <!-- Close Button -->
         <button onclick="closeImagePreview()" class="absolute top-4 right-4 p-2 text-white hover:text-gray-300">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,14 +70,14 @@
 </div>
 
 <div class="container-fluid h-screen bg-gray-100">
-    <div class="flex h-[calc(100vh-4rem)]">
+    <div id="main-layout" class="flex h-[calc(100vh-4rem)]" style="margin-right: 20rem;">
         <!-- Left Sidebar - Reservations List -->
         <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
             <!-- Search Bar -->
-            <div class="p-4 border-b flex-shrink-0">
+            <div class="p-4 border-b flex-shrink-0 bg-white sticky top-0 z-20">
                 <div class="relative">
                     <input type="text" id="reservation-search" placeholder="Search reservations" 
-                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -105,7 +111,7 @@
             <div class="flex-1 overflow-hidden">
                 <div class="h-full overflow-y-auto">
                     {% for reservation in reservations %}
-                    <div class="reservation-item p-3 hover:bg-gray-50 cursor-pointer {% if selected_reservation.id == reservation.id %}bg-blue-50{% endif %}"
+                    <div class="reservation-item p-3 cursor-pointer transition-colors border-b {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-600{% else %}hover:bg-gray-50 border-l-4 border-transparent{% endif %}"
                          data-reservation-id="{{ reservation.id }}">
                         <div class="flex items-center space-x-3">
                             <div class="relative">
@@ -139,7 +145,7 @@
                                         {{ reservation.status|title }}
                                     </span>
                                     {% if reservation.unread_messages_count %}
-                                        <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">
+                                        <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                                             {{ reservation.unread_messages_count }}
                                         </span>
                                     {% endif %}
@@ -206,6 +212,15 @@
                             </div>
                         </div>
                         {% endif %}
+                        {% if selected_reservation.status == 'confirmed' and selected_reservation.room %}
+                        <form id="makeAvailableForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="make_available">
+                            <button type="submit" class="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-yellow-600 transition-colors">
+                                Make Room Available
+                            </button>
+                        </form>
+                        {% endif %}
                         <button id="toggle-details-btn" class="p-2 hover:bg-gray-100 rounded-full">
                             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
@@ -215,8 +230,8 @@
                 </div>
 
                 <!-- Chat Messages Container -->
-                <div class="flex-1 overflow-hidden">
-                    <div id="messages-container" class="h-full overflow-y-auto p-3 space-y-2 bg-gray-50">
+                <div class="flex-1 overflow-hidden bg-gray-50">
+                    <div id="messages-container" class="h-full overflow-y-auto p-5 space-y-3">
                         {% for message in selected_reservation.chat_messages.all %}
                         <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
                             {% if message.sender != request.user %}
@@ -229,7 +244,7 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            <div class="relative max-w-[70%] {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-1.5 shadow-sm">
+                            <div class="relative px-3 py-2 shadow-sm {% if message.sender == request.user %}bg-blue-600 text-white rounded-2xl rounded-br-none{% else %}bg-white rounded-2xl rounded-bl-none{% endif %}" style="max-width: 72%;">
                                 <button onclick="deleteMessage({{ message.id }})" 
                                         class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
                                         {% if message.sender != request.user %}style="display: none;"{% endif %}>
@@ -254,7 +269,7 @@
                                 </div>
                                 {% endif %}
                                 
-                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-100{% else %}text-gray-500{% endif %} block mt-0.5">
+                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-200{% else %}text-gray-500{% endif %} block mt-1 text-right">
                                     {{ message.timestamp|date:"g:i A" }}
                                 </span>
                             </div>
@@ -329,7 +344,7 @@
         </div>
 
         <!-- Right Sidebar - Dorm Details -->
-        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 top-0 h-full overflow-y-auto z-30">
+        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto z-30" style="top: 4rem; height: calc(100vh - 4rem);">
             <div class="sticky top-0 bg-white border-b z-10">
                 <div class="p-4 flex justify-between items-center">
                     <h3 class="font-semibold text-lg">Dorm Details</h3>
@@ -721,6 +736,27 @@
         document.getElementById('image-preview').classList.add('hidden');
     }
 
+    // New message toast helpers
+    let newMsgCount = 0;
+    let toastHideTimeout;
+
+    function showNewMessageToast(incrementBy) {
+        const toast = document.getElementById('newMessageToast');
+        const badge = document.getElementById('newMessageCount');
+        newMsgCount += incrementBy || 1;
+        if (badge) badge.textContent = `+${newMsgCount}`;
+        if (toast) {
+            toast.classList.remove('hidden', 'opacity-0', 'translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastHideTimeout);
+            toastHideTimeout = setTimeout(() => {
+                newMsgCount = 0;
+                toast.classList.add('opacity-0', 'translate-y-3');
+                setTimeout(() => toast.classList.add('hidden'), 200);
+            }, 4000);
+        }
+    }
+
     // Check for new messages periodically
     function checkNewMessages() {
         const reservationId = new URLSearchParams(window.location.search).get('selected_reservation');
@@ -730,7 +766,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.hasNewMessages) {
-                    window.location.reload();
+                    const inc = data.newCount ? Number(data.newCount) : 1;
+                    showNewMessageToast(inc);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -909,9 +946,9 @@
 
     // Handle details panel toggle
     const detailsPanel = document.getElementById('details-panel');
-    const toggleDetailsBtn = document.getElementById('toggle-details');
+    const toggleDetailsBtn = document.getElementById('toggle-details-btn');
     const closeDetailsBtn = document.getElementById('close-details');
-    const mainContainer = document.querySelector('.flex.h-[calc(100vh-4rem)]');
+    const mainContainer = document.getElementById('main-layout');
     let detailsVisible = true;
 
     function toggleDetails() {
@@ -919,13 +956,11 @@
         if (detailsVisible) {
             detailsPanel.classList.remove('translate-x-full', 'shadow-none');
             detailsPanel.classList.add('shadow-lg');
-            mainContainer.classList.remove('pr-0');
-            mainContainer.classList.add('pr-80');
+            mainContainer.style.marginRight = '20rem';
         } else {
             detailsPanel.classList.add('translate-x-full', 'shadow-none');
             detailsPanel.classList.remove('shadow-lg');
-            mainContainer.classList.remove('pr-80');
-            mainContainer.classList.add('pr-0');
+            mainContainer.style.marginRight = '0';
         }
     }
 
@@ -934,17 +969,16 @@
 
     // Initialize panel state based on screen size
     function initializePanelState() {
-        if (window.innerWidth < 768) {
-            detailsVisible = false;
-            detailsPanel.classList.add('translate-x-full', 'shadow-none');
-            detailsPanel.classList.remove('shadow-lg');
-            mainContainer.classList.remove('pr-80');
-            mainContainer.classList.add('pr-0');
-        } else {
-            detailsVisible = true;
-            mainContainer.classList.add('pr-80');
+        const isMobile = window.innerWidth < 1024;
+        detailsVisible = !isMobile;
+        if (detailsVisible) {
+            mainContainer.style.marginRight = '20rem';
             detailsPanel.classList.add('shadow-lg');
             detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+        } else {
+            detailsPanel.classList.add('translate-x-full', 'shadow-none');
+            detailsPanel.classList.remove('shadow-lg');
+            mainContainer.style.marginRight = '0';
         }
     }
 
@@ -968,7 +1002,7 @@
                     
                     const formData = new FormData(form);
                     
-                    fetch(form.action, {
+                    fetch(form.getAttribute('action'), {
                         method: 'POST',
                         body: formData,
                         headers: {

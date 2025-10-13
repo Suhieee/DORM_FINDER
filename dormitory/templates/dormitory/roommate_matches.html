@@ -4,326 +4,390 @@
 {% block content %}
 
 <!-- Loader -->
+
 <div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
 </div>
 
 <style>
-/* Hide placeholder on focus and when input has content */
-input:focus::placeholder,
-textarea:focus::placeholder {
-    color: transparent;
-}
+/* Placeholder handling */
+input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
+input:not(:placeholder-shown)::placeholder, textarea:not(:placeholder-shown)::placeholder { color: transparent; }
+input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
-input:not(:placeholder-shown)::placeholder,
-textarea:not(:placeholder-shown)::placeholder {
-    color: transparent;
-}
+/* Loader */
+.loader { border-top-color: #6D28D9; -webkit-animation: spinner 1.2s linear infinite; animation: spinner 1.2s linear infinite; }
+@-webkit-keyframes spinner { 0% {-webkit-transform:rotate(0deg);} 100% {-webkit-transform:rotate(360deg);} }
+@keyframes spinner { 0% {transform:rotate(0deg);} 100% {transform:rotate(360deg);} }
 
-/* Ensure placeholder text is visible initially */
-input::placeholder,
-textarea::placeholder {
-    color: #9CA3AF;
-    opacity: 1;
-}
+/* Dropdown animation */
+.dropdown-menu { transform-origin: top right; transition: transform .12s ease, opacity .12s ease; }
 
-.loader {
-    border-top-color: #2724e7;
-    -webkit-animation: spinner 1.5s linear infinite;
-    animation: spinner 1.5s linear infinite;
-}
+/* Message bubble tail adjustments (subtle) */
+.msg-left::after, .msg-right::after { content: ""; display:block; width:10px; height:10px; transform:rotate(45deg); position:relative; }
+.msg-left::after { background: #f3f4f6; margin-left:-6px; margin-top:6px; }
+.msg-right::after { background: linear-gradient(90deg,#7c3aed,#2563eb); margin-left:6px; margin-top:6px; }
 
-@-webkit-keyframes spinner {
-    0% { -webkit-transform: rotate(0deg); }
-    100% { -webkit-transform: rotate(360deg); }
-}
+/* Scrollbar thin */
+.scrollbar-thin::-webkit-scrollbar { height:8px; width:8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.12); border-radius:999px; }
 
-@keyframes spinner {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* Floating preview thumbnail */
+.file-preview {
+  width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid rgba(0,0,0,0.06);
 }
-
-/* Added styles for connection status */
-.connection-status {
-    display: none;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    border-radius: 0.375rem;
-    background-color: #FEF3C7;
-    color: #92400E;
-    text-align: center;
+.remove-preview {
+  background: rgba(0,0,0,0.6); color: white; width:18px; height:18px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:11px;
 }
 </style>
 
 <div class="container mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Matches List -->
-        <div class="lg:col-span-1 bg-white rounded-lg shadow">
-            <div class="p-4 border-b">
-                <h2 class="text-xl font-semibold">Your Matches</h2>
+    <!-- Header -->
+    <div class="mb-6 rounded-2xl p-6 flex items-center justify-between border"
+         style="background: linear-gradient(90deg, rgba(109,40,217,0.06), rgba(37,99,235,0.04));">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-900">Roommate Matches</h1>
+            <p class="text-sm text-gray-600 mt-1">Smart matches, friendly chat — find a roommate who fits.</p>
+        </div>
+        <div class="hidden md:flex items-center gap-4">
+            {% if user_post %}
+            <div class="flex items-center gap-3 bg-white/70 backdrop-blur px-3 py-2 rounded-xl border shadow-sm">
+                <img src="{{ user_post.profile_image.url|default:'' }}" onerror="this.style.display='none'"
+                     class="w-9 h-9 rounded-full object-cover border" alt="me">
+                <div class="text-sm">
+                    <div class="text-xs text-gray-500">Your compatibility</div>
+                    <div class="text-sm font-semibold text-gray-800">Personalized</div>
+                </div>
             </div>
-            
-            <!-- Existing Matches -->
-            <div class="divide-y">
-                {% for match in matches %}
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer {% if selected_match.id == match.id %}bg-blue-50{% endif %}"
-                         onclick="window.location.href='{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}'">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="font-medium flex items-center gap-2">
+            {% endif %}
+            <button class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg shadow hover:scale-[1.01] transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l-4 4m0 0l4-4m-4 4V8a4 4 0 014-4h8a4 4 0 014 4v8a4 4 0 01-4 4H8z"/></svg>
+                <span class="text-sm">Smart Match Me</span>
+            </button>
+        </div>
+    </div>
+
+```
+<!-- Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- LEFT: Matches (scrollable, no wasted blank space) -->
+    <aside class="lg:col-span-1 bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
+        <div class="p-4 border-b flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-800">Your Matches</h2>
+            <span class="text-xs text-gray-500">{{ matches|length }} total</span>
+        </div>
+
+        <!-- scrollable list (max height fits viewport) -->
+        <div class="divide-y divide-gray-100 overflow-y-auto scrollbar-thin px-2" style="max-height: calc(80vh);">
+            {% for match in matches %}
+            <div class="p-3">
+                <div class="flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match.id == match.id %}bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600{% endif %}">
+                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none">
+                        <img src="{% if match.initiator.user == request.user %}{{ match.target.profile_image.url|default:'' }}{% else %}{{ match.initiator.profile_image.url|default:'' }}{% endif %}"
+                             onerror="this.style.display='none'"
+                             class="w-12 h-12 rounded-full object-cover border shadow-sm" alt="avatar">
+                    </a>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <h3 class="font-medium text-gray-800 truncate">
                                     {% if match.initiator.user == request.user %}
-                                        <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="hover:text-blue-600 transition-colors">{{ match.target.name }}</a>
-                                        <!-- Dropdown trigger -->
-                                        <div class="relative inline-block text-left">
-                                            <button type="button" onclick="toggleDropdown('dropdown-match-{{ match.id }}')" class="p-1 rounded-full hover:bg-gray-200 focus:outline-none" aria-haspopup="true" aria-expanded="false">
-                                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
-                                            </button>
-                                            <div id="dropdown-match-{{ match.id }}" class="hidden origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                                                <div class="py-1">
-                                                    <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="hover:text-purple-700 transition-colors">{{ match.target.name }}</a>
                                     {% else %}
-                                        <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="hover:text-blue-600 transition-colors">{{ match.initiator.name }}</a>
-                                        <!-- Dropdown trigger -->
-                                        <div class="relative inline-block text-left">
-                                            <button type="button" onclick="toggleDropdown('dropdown-match-{{ match.id }}')" class="p-1 rounded-full hover:bg-gray-200 focus:outline-none" aria-haspopup="true" aria-expanded="false">
-                                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
-                                            </button>
-                                            <div id="dropdown-match-{{ match.id }}" class="hidden origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                                                <div class="py-1">
-                                                    <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="hover:text-purple-700 transition-colors">{{ match.initiator.name }}</a>
                                     {% endif %}
                                 </h3>
-                                <p class="text-sm text-gray-500">Compatibility: {{ match.compatibility_score }}%</p>
-                                
-                                <!-- Match Status -->
-                                <div class="mt-2">
-                                    <span class="px-2 py-1 text-xs rounded-full 
+                                <div class="text-xs text-gray-400">Updated {{ match.created_at|timesince }} ago</div>
+                            </div>
+
+                            <!-- 3-dot dropdown -->
+                            <div class="relative inline-block text-left">
+                                <button type="button" onclick="toggleDropdown('dropdown-match-{{ match.id }}')" aria-haspopup="true" aria-expanded="false"
+                                    class="p-1 rounded-full hover:bg-gray-100 focus:outline-none">
+                                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+                                </button>
+
+                                <div id="dropdown-match-{{ match.id }}" class="hidden dropdown-menu absolute right-0 mt-2 w-44 rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-50">
+                                    <div class="py-1">
+                                        {% if match.initiator.user == request.user %}
+                                            <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
+                                            {% if match.target.user.user_type != 'admin' %}
+                                            <a href="{% url 'accounts:report_user' match.target.user.id %}" class="block px-4 py-2 text-sm text-orange-600 hover:bg-gray-100">Report</a>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
+                                            {% if match.initiator.user.user_type != 'admin' %}
+                                            <a href="{% url 'accounts:report_user' match.initiator.user.id %}" class="block px-4 py-2 text-sm text-orange-600 hover:bg-gray-100">Report</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- compatibility bar -->
+                        <div class="mt-3">
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-2 rounded-full" style="width: {{ match.compatibility_score|floatformat:0 }}%; background: linear-gradient(90deg,#7c3aed,#2563eb);"></div>
+                            </div>
+                            <div class="mt-1 flex items-center justify-between">
+                                <span class="text-xs text-gray-600">{{ match.compatibility_score }}% match</span>
+                                <span class="text-xs">
+                                    <span class="px-2 py-0.5 rounded-full text-[11px]
                                         {% if match.status == 'pending' %}bg-yellow-100 text-yellow-800
                                         {% elif match.status == 'accepted' %}bg-green-100 text-green-800
                                         {% else %}bg-red-100 text-red-800{% endif %}">
                                         {{ match.get_status_display }}
                                     </span>
-                                </div>
+                                </span>
+                            </div>
+                        </div>
 
-                                <!-- Action Buttons -->
-                                <div class="mt-3 flex gap-2">
-                                    {% if match.initiator.user == request.user %}
-                                        {% if match.target.user.user_type != 'admin' %}
-                                            <a href="{% url 'accounts:report_user' match.target.user.id %}" 
-                                               class="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded hover:bg-orange-200">
-                                                Report
-                                            </a>
-                                        {% endif %}
-                                    {% else %}
-                                        {% if match.initiator.user.user_type != 'admin' %}
-                                            <a href="{% url 'accounts:report_user' match.initiator.user.id %}" 
-                                               class="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded hover:bg-orange-200">
-                                                Report
-                                            </a>
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
+                        <!-- accept/reject (only when relevant) -->
+                        {% if match.target.user == request.user and match.status == 'pending' %}
+                        <div class="mt-3 flex gap-2">
+                            <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="accepted">
+                                <button type="submit" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">Accept</button>
+                            </form>
+                            <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">Reject</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-4 text-gray-500">No matches found.</div>
+            {% endfor %}
+        </div>
+    </aside>
 
-                                <!-- Accept/Reject Buttons (Only show for received pending matches) -->
-                                {% if match.target.user == request.user and match.status == 'pending' %}
-                                    <div class="mt-3 flex gap-2">
-                                        <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="status" value="accepted">
-                                            <button type="submit" 
-                                                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
-                                                Accept
-                                            </button>
-                                        </form>
-                                        <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="status" value="rejected">
-                                            <button type="submit" 
-                                                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
-                                                Reject
-                                            </button>
-                                        </form>
-                                    </div>
+    <!-- MIDDLE: Discover -->
+    <div class="lg:col-span-1 bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
+        <div class="p-4 border-b flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-4.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <h2 class="text-base font-semibold text-gray-800">Discover</h2>
+        </div>
+
+        <div class="p-4 space-y-3 overflow-y-auto" style="max-height: calc(80vh);">
+            {% for post, score in potential_matches %}
+            <div class="p-3 rounded-2xl border hover:shadow-md transition flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3 min-w-0">
+                    <img src="{{ post.profile_image.url|default:'' }}" onerror="this.style.display='none'" class="w-12 h-12 rounded-lg object-cover border" alt="avatar">
+                    <div class="min-w-0">
+                        <h3 class="font-medium text-gray-800 truncate"><a href="{% url 'accounts:view_user_profile' post.user.id %}" class="hover:text-blue-600">{{ post.name }}</a></h3>
+                        <p class="text-xs text-gray-500 mt-1 truncate">{{ post.preferred_location }}</p>
+                        <div class="mt-2 w-full">
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-2 rounded-full" style="width: {{ score|floatformat:0 }}%; background: linear-gradient(90deg,#7c3aed,#2563eb);"></div>
+                            </div>
+                            <div class="mt-1 text-xs text-blue-700 font-medium">{{ score }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-2">
+                    <div class="flex gap-2">
+                        <a href="{% url 'accounts:view_user_profile' post.user.id %}" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs hover:bg-blue-100 transition">Profile</a>
+                        {% if request.user != post.user and post.user.user_type != 'admin' %}
+                        <a href="{% url 'accounts:report_user' post.user.id %}" class="px-3 py-1 bg-orange-50 text-orange-700 rounded-md text-xs hover:bg-orange-100 transition">Report</a>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="initiate-match-form">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md text-sm hover:scale-[1.01] transition">Connect</button>
+                    </form>
+
+                    <div class="connection-status text-sm text-center hidden">Connection request sent</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-4 text-gray-500">No potential matches found.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT: Details + Chat (chat is fixed height + scrollable) -->
+    <main class="lg:col-span-2 bg-white rounded-2xl shadow border flex flex-col overflow-hidden">
+        <!-- Tabs -->
+        <div class="p-4 border-b flex items-center gap-3">
+            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700" data-tab="details">Details</button>
+            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50" data-tab="overlaps">Overlaps</button>
+            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50" data-tab="chat">Chat</button>
+        </div>
+
+        {% if selected_match %}
+        <div class="flex-1 relative flex flex-col min-h-0">
+            <!-- DETAILS -->
+            <section id="tab-details" class="p-6 overflow-y-auto">
+                <div class="flex items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            {% if selected_match.initiator.user == request.user %}{{ selected_match.target.name }}{% else %}{{ selected_match.initiator.name }}{% endif %}
+                        </h3>
+                        <div class="text-sm text-gray-500 mt-1">Match updated {{ selected_match.created_at|timesince }} ago</div>
+                    </div>
+
+                    <div class="ml-auto text-right">
+                        <div class="text-xs text-gray-500">Compatibility</div>
+                        <div class="text-2xl font-bold" style="color: #4f46e5;">{{ selected_match.compatibility_score }}%</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-lg border">
+                        <div class="text-xs text-gray-500">Name</div>
+                        <div class="font-medium mt-1">{% if selected_match.initiator.user == request.user %}{{ selected_match.target.name }}{% else %}{{ selected_match.initiator.name }}{% endif %}</div>
+                    </div>
+                    <div class="p-4 rounded-lg border">
+                        <div class="text-xs text-gray-500">Status</div>
+                        <div class="font-medium mt-1">{{ selected_match.get_status_display }}</div>
+                    </div>
+                    <div class="p-4 rounded-lg border">
+                        <div class="text-xs text-gray-500">Joined</div>
+                        <div class="font-medium mt-1">{{ selected_match.created_at|date:"M d, Y" }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OVERLAPS -->
+            <section id="tab-overlaps" class="p-6 overflow-y-auto hidden">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Key overlaps</h4>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-green-50 text-green-700">Budget fit</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-indigo-50 text-indigo-700">Preferred location</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-yellow-50 text-yellow-700">Lifestyle</span>
+                </div>
+            </section>
+
+            <!-- CHAT -->
+            <section id="tab-chat" class="flex-1 flex flex-col overflow-hidden hidden">
+                <div class="p-4 border-b flex items-center gap-3">
+                    <h3 class="text-base font-semibold text-gray-800">Chat with
+                        {% if selected_match.initiator.user == request.user %} {{ selected_match.target.name }} {% else %} {{ selected_match.initiator.name }} {% endif %}
+                    </h3>
+                    <div class="ml-auto text-xs text-gray-500" id="typing-indicator" style="opacity:0;">Typing…</div>
+                </div>
+
+                <!-- messages area: fixed height via flex-1 and min-h, scrollable -->
+                <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-b from-white to-gray-50 scrollbar-thin" style="min-height: 260px; max-height: calc(70vh);">
+                    {% for message in chat_messages %}
+                    <div class="{% if message.sender == request.user %}flex justify-end{% else %}flex justify-start{% endif %}">
+                        <div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm {% if message.sender == request.user %}bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
+                            {% if message.content|slice:":7" == "[image]" %}
+                                <img src="{{ message.content|cut:'[image]' }}" alt="image" class="max-h-60 rounded-lg mb-2 object-cover" />
+                            {% else %}
+                                <p class="text-sm leading-relaxed">{{ message.content }}</p>
+                            {% endif %}
+                            <div class="flex items-center gap-2 mt-2 justify-end">
+                                <span class="text-xs {% if message.sender == request.user %}text-blue-200{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
+                                {% if message.sender == request.user %}
+                                    <span class="text-[10px] {% if message.is_read %}text-blue-200{% else %}text-blue-300{% endif %}">✓{% if message.is_read %}✓{% endif %}</span>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                {% empty %}
-                    <div class="p-4 text-gray-500">No matches found.</div>
-                {% endfor %}
-            </div>
-        </div>
+                    {% endfor %}
+                </div>
 
-        <!-- Middle Column: Potential Matches -->
-        <div class="lg:col-span-1 bg-white rounded-lg shadow">
-            <div class="p-4 border-b">
-                <h2 class="text-xl font-semibold">Potential Matches</h2>
-            </div>
-            
-            <div class="divide-y">
-                {% for post, score in potential_matches %}
-                    <div class="p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="font-medium">
-                                    <a href="{% url 'accounts:view_user_profile' post.user.id %}" class="hover:text-blue-600 transition-colors">{{ post.name }}</a>
-                                </h3>
-                                <p class="text-sm text-gray-500">Compatibility: {{ score }}%</p>
-                                <p class="text-sm text-gray-500">{{ post.preferred_location }}</p>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <div class="flex gap-2">
-                                    <a href="{% url 'accounts:view_user_profile' post.user.id %}" 
-                                       class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm">
-                                        View Profile
-                                    </a>
-                                    {% if request.user != post.user and post.user.user_type != 'admin' %}
-                                        <a href="{% url 'accounts:report_user' post.user.id %}" 
-                                           class="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm">
-                                            Report
-                                        </a>
-                                    {% endif %}
-                                </div>
-                                <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="initiate-match-form">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm connect-btn">
-                                        Connect
-                                    </button>
-                                </form>
-                                <div class="connection-status">
-                                    Connection request sent
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="p-4 text-gray-500">No potential matches found.</div>
-                {% endfor %}
-            </div>
-        </div>
+                <!-- send bar (sticky-like at bottom) with file upload + floating preview -->
+                {% if selected_match.status == 'accepted' %}
+                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="p-3 border-t bg-white flex items-center gap-3 relative" id="chat-form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg border bg-gray-50 text-gray-600 hover:bg-gray-100 cursor-pointer">
+                        <input type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="chat-image-input" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m18 0H3"/></svg>
+                    </label>
 
-        <!-- Right Column: Chat Interface -->
-        <div class="lg:col-span-2 bg-white rounded-lg shadow">
-            <div class="p-4 border-b">
-                <h2 class="text-xl font-semibold">Chat</h2>
-            </div>
-            
-            {% if selected_match %}
-                <div class="flex flex-col h-[600px]">
-                    <!-- Chat Messages -->
-                    <div class="flex-1 p-4 overflow-y-auto" id="chat-messages">
-                        {% for message in chat_messages %}
-                            <div class="mb-4 {% if message.sender == request.user %}text-right{% endif %}">
-                                <div class="inline-block rounded-lg px-4 py-2 max-w-[80%] 
-                                    {% if message.sender == request.user %}
-                                        bg-blue-600 text-white
-                                    {% else %}
-                                        bg-gray-100
-                                    {% endif %}">
-                                    <p class="text-sm">{{ message.content }}</p>
-                                    <span class="text-xs {% if message.sender == request.user %}text-blue-200{% else %}text-gray-500{% endif %}">
-                                        {{ message.timestamp|date:"g:i A" }}
-                                    </span>
-                                </div>
-                            </div>
-                        {% endfor %}
+                    <input type="text" name="content" id="chat-input" class="flex-1 rounded-2xl border border-gray-200 px-4 py-2 focus:ring-1 focus:ring-purple-400" placeholder="Type a message..." autocomplete="off">
+
+                    <!-- floating preview thumbnail (hidden until file selected) -->
+                    <div id="file-preview-wrapper" class="hidden items-center gap-2 absolute right-28 bottom-4">
+                        <img id="file-preview-thumb" src="" alt="preview" class="file-preview">
+                        <button type="button" id="remove-preview-btn" class="remove-preview -ml-3" title="Remove">×</button>
                     </div>
 
-                    <!-- Chat Input -->
-                    {% if selected_match.status == 'accepted' %}
-                        <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" 
-                              class="p-4 border-t" id="chat-form">
-                            {% csrf_token %}
-                            <div class="flex gap-2">
-                                <input type="text" name="content" 
-                                       class="flex-1 rounded-lg border border-gray-300 px-4 py-2"
-                                       placeholder="Type your message...">
-                                <button type="submit" 
-                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    Send
-                                </button>
-                            </div>
-                        </form>
-                    {% else %}
-                        <div class="p-4 text-center text-gray-500 border-t">
-                            {% if selected_match.status == 'pending' %}
-                                Waiting for match acceptance to start chatting.
-                            {% else %}
-                                This match has been {{ selected_match.status }}.
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            {% else %}
-                <div class="p-4 text-center text-gray-500">
-                    Select a match to start chatting.
-                </div>
-            {% endif %}
+                    <button type="submit" class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-2xl shadow">Send</button>
+                </form>
+                {% else %}
+                <div class="p-4 border-t text-center text-gray-500"> {% if selected_match.status == 'pending' %} Waiting for match acceptance to start chatting. {% else %} This match has been {{ selected_match.status }}. {% endif %} </div>
+                {% endif %}
+            </section>
         </div>
-    </div>
+        {% else %}
+        <div class="flex-1 p-8 flex items-center justify-center text-gray-500">Select a match to view details and chat.</div>
+        {% endif %}
+    </main>
+</div>
+```
+
 </div>
 
 {% block extra_js %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-let imagesLoaded = 0;
-let totalImages = 0;
-
-function hideLoader() {
+    // Loader
     const loader = document.getElementById('page-loader');
-    if (loader) {
-        loader.style.opacity = '0';
-            setTimeout(function() {
-            loader.style.display = 'none';
-        }, 300);
-    }
-}
+    function hideLoader(){ if(!loader) return; loader.style.opacity = '0'; setTimeout(()=> loader.style.display='none',300); }
 
-function checkAllImagesLoaded() {
-    imagesLoaded++;
-    if (imagesLoaded >= totalImages) {
-        hideLoader();
-    }
-}
-
-    // Loader functionality
-    const images = document.getElementsByTagName('img');
-    totalImages = images.length;
-
-    if (totalImages === 0) {
-        setTimeout(hideLoader, 3000);
-    } else {
-        Array.from(images).forEach(function(img) {
-            if (img.complete) {
-                setTimeout(checkAllImagesLoaded, 1000);
-            } else {
-                img.addEventListener('load', function() {
-                    setTimeout(checkAllImagesLoaded, 1000);
-                });
-                img.addEventListener('error', checkAllImagesLoaded);
+    const imgs = Array.from(document.getElementsByTagName('img'));
+    if (imgs.length === 0) { setTimeout(hideLoader, 600); }
+    else {
+        let loaded=0;
+        imgs.forEach(img=>{
+            if (img.complete) loaded++;
+            else {
+                img.addEventListener('load', ()=> { loaded++; if(loaded>=imgs.length) hideLoader(); });
+                img.addEventListener('error', ()=> { loaded++; if(loaded>=imgs.length) hideLoader(); });
             }
         });
-
-        setTimeout(hideLoader, 10000);
+        if (loaded>=imgs.length) hideLoader();
+        setTimeout(hideLoader, 8000);
     }
 
-    // Handle initiate match forms
+    // dropdown toggles (per-match)
+    window.toggleDropdown = function(id) {
+        document.querySelectorAll('[id^="dropdown-match-"]').forEach(el => {
+            if (el.id !== id) el.classList.add('hidden');
+        });
+        const dd = document.getElementById(id);
+        if (!dd) return;
+        if (dd.classList.contains('hidden')) {
+            dd.classList.remove('hidden');
+            dd.style.opacity = 0;
+            dd.style.transform = 'scale(.98)';
+            requestAnimationFrame(()=> { dd.style.transition = 'transform .12s ease, opacity .12s ease'; dd.style.opacity = 1; dd.style.transform = 'scale(1)'; });
+        } else {
+            dd.style.opacity = 0;
+            dd.style.transform = 'scale(.98)';
+            setTimeout(()=> { dd.classList.add('hidden'); dd.style.transition=''; dd.style.opacity=''; dd.style.transform=''; }, 120);
+        }
+    };
+
+    // close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[id^="dropdown-match-"]') && !e.target.closest('[onclick^="toggleDropdown"]')) {
+            document.querySelectorAll('[id^="dropdown-match-"]').forEach(el => el.classList.add('hidden'));
+        }
+    });
+
+    // Initiate match form (AJAX)
     document.querySelectorAll('.initiate-match-form').forEach(function(form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const button = form.querySelector('button');
+            const btn = form.querySelector('button');
             const statusDiv = form.parentElement.querySelector('.connection-status');
-            
             try {
-                button.disabled = true;
-                const response = await fetch(form.action, {
+                btn.disabled = true;
+                const res = await fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -331,37 +395,30 @@ function checkAllImagesLoaded() {
                     },
                     body: new FormData(form)
                 });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    // Hide the connect button
+                const data = await res.json();
+                if (res.ok) {
                     form.style.display = 'none';
-                    // Show the status message
-                    statusDiv.style.display = 'block';
-                    // Optional: Reload after a delay
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 2000);
+                    if (statusDiv) statusDiv.classList.remove('hidden');
+                    setTimeout(()=> window.location.reload(), 1200);
                 } else {
                     alert(data.error || 'An error occurred');
-                    button.disabled = false;
+                    btn.disabled = false;
                 }
-            } catch (error) {
+            } catch (err) {
                 alert('An error occurred');
-                button.disabled = false;
+                btn.disabled = false;
             }
         });
     });
 
-    // Handle match status update forms
-    document.querySelectorAll('.update-match-form').forEach(function(form) {
+    // Update match forms (AJAX)
+    document.querySelectorAll('.update-match-form').forEach(form => {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const button = form.querySelector('button');
-            button.disabled = true;
-            
+            const btn = form.querySelector('button');
+            btn.disabled = true;
             try {
-                const response = await fetch(form.action, {
+                const res = await fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -369,33 +426,77 @@ function checkAllImagesLoaded() {
                     },
                     body: new FormData(form)
                 });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert(data.error || 'An error occurred');
-                    button.disabled = false;
-                }
-            } catch (error) {
-                alert('An error occurred');
-                button.disabled = false;
-            }
+                const data = await res.json();
+                if (res.ok) window.location.reload();
+                else { alert(data.error || 'An error occurred'); btn.disabled = false; }
+            } catch (err) { alert('An error occurred'); btn.disabled = false; }
         });
     });
 
-    // Handle chat form submission
+    // Chat: auto-scroll & submit + file preview
+    const chatMessages = document.getElementById('chat-messages');
+    function scrollChatToBottom(smooth = false) {
+        if (!chatMessages) return;
+        if (smooth) chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        else chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    // initial auto-scroll on load
+    setTimeout(()=> scrollChatToBottom(false), 200);
+
     const chatForm = document.getElementById('chat-form');
+    const imageInput = document.getElementById('chat-image-input');
+    const previewWrapper = document.getElementById('file-preview-wrapper');
+    const previewThumb = document.getElementById('file-preview-thumb');
+    const removePreviewBtn = document.getElementById('remove-preview-btn');
+
+    // file selection -> show thumbnail preview
+    if (imageInput) {
+        imageInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) {
+                if (previewWrapper) previewWrapper.classList.add('hidden');
+                return;
+            }
+            // Only images - show thumbnail
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewThumb.src = e.target.result;
+                    previewWrapper.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // For non-image files show generic icon (optional). We'll still attempt to show name as thumbnail fallback.
+                previewThumb.src = '';
+                previewThumb.alt = 'file';
+                previewWrapper.classList.remove('hidden');
+            }
+        });
+    }
+
+    // remove preview button: clears file input
+    if (removePreviewBtn) {
+        removePreviewBtn.addEventListener('click', function() {
+            if (imageInput) imageInput.value = '';
+            if (previewThumb) previewThumb.src = '';
+            if (previewWrapper) previewWrapper.classList.add('hidden');
+        });
+    }
+
     if (chatForm) {
         chatForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const input = this.querySelector('input[name=content]');
-            const content = input.value.trim();
-            
-            if (!content) return;
-            
+            const content = input ? input.value.trim() : '';
+            const btn = this.querySelector('button[type="submit"]') || null;
+
+            // allow sending image-only messages as well
+            const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+            if (!content && !hasImage) return;
+
+            if (btn) btn.disabled = true;
             try {
-                const response = await fetch(this.action, {
+                const res = await fetch(this.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -403,56 +504,49 @@ function checkAllImagesLoaded() {
                     },
                     body: new FormData(this)
                 });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    input.value = '';
-                    const messagesDiv = document.getElementById('chat-messages');
-                    const messageHtml = `
-                        <div class="mb-4 text-right">
-                            <div class="inline-block rounded-lg px-4 py-2 max-w-[80%] bg-blue-600 text-white">
-                                <p class="text-sm">${data.message.content}</p>
-                                <span class="text-xs text-blue-200">${data.message.timestamp}</span>
-                            </div>
-                        </div>
-                    `;
-                    messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                const data = await res.json();
+                if (res.ok) {
+                    // append message locally
+                    let bodyHtml = '';
+                    if (data.image_url) {
+                        bodyHtml = `<img src="${data.image_url}" alt="image" class="max-h-60 rounded-lg mb-2 object-cover" />`;
+                    } else if (data.message && data.message.content) {
+                        bodyHtml = `<p class="text-sm leading-relaxed">${data.message.content}</p>`;
+                    } else {
+                        bodyHtml = `<p class="text-sm leading-relaxed">${content}</p>`;
+                    }
+
+                    const msgHtml = `<div class="flex justify-end"><div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white">${bodyHtml}<div class="flex items-center gap-2 mt-2 justify-end"><span class="text-xs text-blue-200">${(data.message && data.message.timestamp) || ''}</span><span class="text-[10px] text-blue-300">✓</span></div></div></div>`;
+                    if (chatMessages) chatMessages.insertAdjacentHTML('beforeend', msgHtml);
+                    scrollChatToBottom(true);
+
+                    // clear inputs & preview
+                    if (input) input.value = '';
+                    if (imageInput) imageInput.value = '';
+                    if (previewWrapper) previewWrapper.classList.add('hidden');
+                    if (previewThumb) previewThumb.src = '';
                 } else {
                     alert(data.error || 'An error occurred');
                 }
-            } catch (error) {
+            } catch (err) {
                 alert('An error occurred');
-            }
+            } finally { if (btn) btn.disabled = false; }
         });
     }
 
-    // Auto-scroll chat to bottom
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-});
-</script>
-
-<!-- Dropdown JS for all three-dots menus -->
-<script>
-function toggleDropdown(id) {
-    document.querySelectorAll('[id^="dropdown-"]').forEach(function(el) {
-        if (el.id !== id) el.classList.add('hidden');
-    });
-    var dropdown = document.getElementById(id);
-    if (dropdown) dropdown.classList.toggle('hidden');
-}
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.relative.inline-block')) {
-        document.querySelectorAll('[id^="dropdown-"]').forEach(function(el) {
-            el.classList.add('hidden');
-        });
-    }
+    // Tabs
+    const tabs = document.querySelectorAll('.rm-tab');
+    const sections = { details: document.getElementById('tab-details'), overlaps: document.getElementById('tab-overlaps'), chat: document.getElementById('tab-chat') };
+    tabs.forEach(btn => btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('bg-gradient-to-r','from-purple-50','to-blue-50','text-purple-700'));
+        btn.classList.add('bg-gradient-to-r','from-purple-50','to-blue-50','text-purple-700');
+        Object.values(sections).forEach(sec => sec && sec.classList.add('hidden'));
+        const key = btn.getAttribute('data-tab');
+        if (sections[key]) sections[key].classList.remove('hidden');
+        if (key === 'chat') setTimeout(()=> scrollChatToBottom(false), 120);
+    }));
 });
 </script>
 
 {% endblock %}
-
-{% endblock %} 
+{% endblock %}

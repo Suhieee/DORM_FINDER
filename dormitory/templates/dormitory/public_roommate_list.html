@@ -22,31 +22,89 @@
 </div>
 {% endif %}
 
-<div class="max-w-6xl mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Find Your Perfect Roommate</h1>
-        {% if user.is_authenticated %}
-            <a href="{% url 'dormitory:add_roommate' %}" 
-               class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                Create Your Profile
-            </a>
-        {% else %}
-            <a href="{% url 'accounts:register' %}?next={{ request.path }}" 
-               class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                Join to Create Profile
-            </a>
-        {% endif %}
+<div class="w-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div class="w-full bg-white rounded-xl p-6 md:p-8 mb-8 shadow-md">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl text-blue-800 font-bold">Find Your Perfect Roommate</h1>
+                <p class="mt-1 text-md md:text-base text-gray-800">Browse public profiles. Login to connect and view matches.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Search Hero (client-side) -->
+    <div class="bg-white rounded-xl shadow-md mb-8 border border-gray-100 overflow-hidden">
+        <button type="button" id="pubFiltersToggle" class="w-full flex items-center justify-between px-4 md:px-6 py-4 hover:bg-gray-50">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/></svg>
+                </span>
+                <div class="text-left">
+                    <div class="text-sm font-semibold text-gray-900">Search & Filters</div>
+                    <div class="text-xs text-gray-500">Refine by location, budget, and mood</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="pubActiveFilterBadge" class="hidden text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700"></span>
+                <svg id="pubFiltersChevron" class="w-5 h-5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+        </button>
+        <div id="pubFiltersPanel" class="px-4 md:px-6 pb-4 md:pb-6 hidden">
+            <form id="publicSearchForm" class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Location</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 111.314 0z"/></svg>
+                        </span>
+                        <input type="text" id="pubFilterLocation" placeholder="e.g., España, UST" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Budget Min (₱)</label>
+                        <input type="number" id="pubFilterMin" min="0" step="500" placeholder="3000" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Budget Max (₱)</label>
+                        <input type="number" id="pubFilterMax" min="0" step="500" placeholder="10000" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Mood</label>
+                    <select id="pubFilterMood" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Any</option>
+                        <option value="quiet">Quiet and Reserved</option>
+                        <option value="friendly">Friendly and Social</option>
+                        <option value="adventurous">Adventurous and Outgoing</option>
+                        <option value="studious">Studious and Focused</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</button>
+                    <button type="button" id="pubFilterClear" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Clear</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Roommate Listings -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div id="pub-roommate-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
         {% for roommate in roommates %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <!-- Profile Image -->
-            <div class="relative h-48 bg-gray-200">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+             data-location="{{ roommate.preferred_location|default_if_none:''|lower }}"
+             data-budget="{{ roommate.preferred_budget|default:0 }}"
+             data-mood="{{ roommate.mood }}">
+            <!-- Image Section (match private look, no dropdown/report in public) -->
+            <div class="relative h-48 bg-blue-200">
                 {% if roommate.profile_image %}
                     <img src="{{ roommate.profile_image.url }}" alt="{{ roommate.name }}" 
-                         class="w-full h-full object-cover">
+                         class="w-full h-full object-cover cursor-zoom-in"
+                         onclick="openPubImageModal('{{ roommate.profile_image.url }}', '{{ roommate.name|escapejs }}')">
+                    <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors cursor-zoom-in" onclick="openPubImageModal('{{ roommate.profile_image.url }}', '{{ roommate.name|escapejs }}')"></div>
                 {% else %}
                     <div class="w-full h-full flex items-center justify-center text-gray-500">
                         <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
@@ -144,10 +202,86 @@
 </div>
 
 <script>
-function initiateMatch(roommateId) {
-    // This would be implemented with AJAX to initiate a match
-    // For now, redirect to the roommate detail page
-    window.location.href = '/dormitory/roommate/' + roommateId + '/';
+// Collapsible and filter (client-side) for public list
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('publicSearchForm');
+    const clearBtn = document.getElementById('pubFilterClear');
+    const cards = Array.from(document.querySelectorAll('#pub-roommate-grid > div[data-location]'));
+    const toggleBtn = document.getElementById('pubFiltersToggle');
+    const panel = document.getElementById('pubFiltersPanel');
+    const chevron = document.getElementById('pubFiltersChevron');
+    const badge = document.getElementById('pubActiveFilterBadge');
+
+    function applyFilters(e){
+        if (e) e.preventDefault();
+        const loc = (document.getElementById('pubFilterLocation').value || '').trim().toLowerCase();
+        const min = parseInt(document.getElementById('pubFilterMin').value || '0', 10);
+        const max = parseInt(document.getElementById('pubFilterMax').value || '0', 10);
+        const mood = (document.getElementById('pubFilterMood').value || '').trim();
+        cards.forEach(card => {
+            const cLoc = (card.getAttribute('data-location') || '').toLowerCase();
+            const cBudget = parseInt(card.getAttribute('data-budget') || '0', 10);
+            const cMood = (card.getAttribute('data-mood') || '').trim();
+            let visible = true;
+            if (loc && !cLoc.includes(loc)) visible = false;
+            if (min && cBudget && cBudget < min) visible = false;
+            if (max && cBudget && cBudget > max) visible = false;
+            if (mood && cMood !== mood) visible = false;
+            card.style.display = visible ? '' : 'none';
+        });
+        updateBadge();
+    }
+    function updateBadge(){
+        const loc = (document.getElementById('pubFilterLocation').value || '').trim();
+        const min = document.getElementById('pubFilterMin').value;
+        theMax = document.getElementById('pubFilterMax').value;
+        const mood = document.getElementById('pubFilterMood').value;
+        const parts = [];
+        if (loc) parts.push(loc);
+        if (min) parts.push(`₱${min}+`);
+        if (theMax) parts.push(`≤ ₱${theMax}`);
+        if (mood) parts.push(mood.replace('_',' '));
+        if (parts.length) { badge.textContent = parts.join(' • '); badge.classList.remove('hidden'); }
+        else { badge.classList.add('hidden'); }
+    }
+    if (form) form.addEventListener('submit', applyFilters);
+    if (clearBtn) clearBtn.addEventListener('click', function(){
+        document.getElementById('pubFilterLocation').value = '';
+        document.getElementById('pubFilterMin').value = '';
+        document.getElementById('pubFilterMax').value = '';
+        document.getElementById('pubFilterMood').value = '';
+        applyFilters();
+    });
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', function(){
+            const isHidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180', isHidden);
+        });
+    }
+});
+
+// Public image modal controls
+let _pubEscListener = null;
+function openPubImageModal(src, title){
+    const modal = document.getElementById('pubImageModal');
+    const img = document.getElementById('pubImageModalImg');
+    const ttl = document.getElementById('pubImageModalTitle');
+    if (ttl) ttl.textContent = title || 'Preview';
+    img.src = src;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    img.onclick = closePubImageModal;
+    _pubEscListener = function(e){ if(e.key==='Escape') closePubImageModal(); };
+    document.addEventListener('keydown', _pubEscListener);
+}
+function closePubImageModal(){
+    const modal = document.getElementById('pubImageModal');
+    const img = document.getElementById('pubImageModalImg');
+    img.src = '';
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (_pubEscListener) { document.removeEventListener('keydown', _pubEscListener); _pubEscListener = null; }
 }
 </script>
 
