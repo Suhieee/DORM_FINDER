@@ -438,6 +438,7 @@ class DormListView(LoginRequiredMixin, ListView):
                 'price': float(dorm.price),  # Convert Decimal to float
                 'latitude': float(dorm.latitude) if dorm.latitude else None,  # Convert Decimal to float
                 'longitude': float(dorm.longitude) if dorm.longitude else None,  # Convert Decimal to float
+                'thumbnail': (dorm.images.first().image.url if dorm.images.first() else ''),
             })
         context['dorms_json'] = json.dumps(dorms_data)
         

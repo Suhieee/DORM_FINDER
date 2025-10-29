@@ -24,8 +24,10 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Ensure a profile exists; avoid RelatedObjectDoesNotExist
+        user_profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         context['favorite_dorms'] = FavoriteDorm.objects.filter(
-            user_profile=self.request.user.userprofile
+            user_profile=user_profile
         ).select_related('dorm')
         return context
     
@@ -36,7 +38,9 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy("user_profile:profile")
 
     def get_object(self, queryset=None):
-        return self.request.user.userprofile
+        # Ensure profile exists when accessing edit
+        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
 
     def form_valid(self, form):
         messages.success(self.request, 'Your profile has been updated successfully!')

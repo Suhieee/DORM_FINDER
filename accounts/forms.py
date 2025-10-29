@@ -15,6 +15,15 @@ class CustomUserCreationForm(UserCreationForm):
         model = CustomUser
         fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2', 'user_type']
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            return email
+        # Enforce case-insensitive uniqueness
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
 
 class AdminCreationForm(UserCreationForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
@@ -23,6 +32,14 @@ class AdminCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = UserCreationForm.Meta.fields + ('email', 'contact_number')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            return email
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")

@@ -195,14 +195,14 @@
                             </div>
 
                             <!-- Accommodation Type -->
-                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 z-10>
                                 <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                                     <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                     </svg>
                                     Accommodation Type
                                 </h3>
-                                <select name="accommodation_type" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent>
+                                <select name="accommodation_type" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent z-30>
                                     <option value="all">All Types</option>
                                     <option value="whole_unit" {% if request.GET.accommodation_type == 'whole_unit' %}selected{% endif %}>Whole Unit</option>
                                     <option value="bedspace" {% if request.GET.accommodation_type == 'bedspace' %}selected{% endif %}>Bed Space</option>
@@ -273,7 +273,7 @@
     </div>
 
     <!-- Map View (Hidden by default) -->
-    <div id="mapContainer" class="hidden mb-8">
+    <div id="mapContainer" class="hidden mb-8 relative z-10">
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 flex items-center">
@@ -283,7 +283,7 @@
                     Dorm Locations
                 </h3>
             </div>
-            <div id="map" class="w-full h-[600px] bg-gray-100">
+            <div id="map" class="w-full h-[600px] bg-gray-100 relative z-[1]">
                 <!-- Map will be loaded here -->
                 <div class="absolute inset-0 flex items-center justify-center">
                     <div class="text-center">
@@ -345,7 +345,7 @@
                 {% endif %}
 
                 <!-- Accommodation Type Badge -->
-                <div class="absolute top-3 left-5 right-5 z-30">
+                <div class="absolute top-3 left-5 right-5 z-50">
                     <span class="px-2 py-1 text-xs font-medium rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-600 text-white{% else %}bg-green-600 text-white{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
@@ -592,23 +592,28 @@ function initializeMap() {
             // Create popup content with route button
             const popupContent = `
                 <div class="p-3 max-w-xs">
-                    <h3 class="font-semibold text-gray-900 mb-2">${dorm.name}</h3>
-                    <p class="text-sm text-gray-600 mb-2">${dorm.address}</p>
-                    <p class="text-lg font-bold text-blue-600 mb-3">₱${dorm.price}/month</p>
-                    <div class="flex space-x-2">
-                        <a href="/dormitory/dorm/${dorm.id}/" 
-                           class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
-                            View Details
+                    <div class="flex items-start space-x-3">
+                        ${dorm.thumbnail ? `<img src="${dorm.thumbnail}" alt="${dorm.name}" class="w-16 h-16 object-cover rounded-md shadow"/>` : ''}
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-1">${dorm.name}</h3>
+                            <p class="text-xs text-gray-600 mb-1">${dorm.address}</p>
+                            <p class="text-sm font-bold text-blue-600">₱${dorm.price}/month</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex space-x-2">
+                        <a href="{% url 'dormitory:dorm_detail' 0 %}" data-dorm-id="${dorm.id}" 
+                           class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow hover:from-blue-700 hover:to-indigo-700 transition">
+                            View details
                         </a>
                         <button onclick="showRouteToDorm(${dorm.latitude}, ${dorm.longitude}, '${dorm.name.replace(/'/g, "\\'")}')" 
-                                class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
-                            Get Route
+                                class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-green-600 shadow hover:bg-green-700 transition">
+                            Get route
                         </button>
                     </div>
                     <div class="mt-2">
                         <button onclick="showRouteFromDormToSchools(${dorm.latitude}, ${dorm.longitude}, '${dorm.name.replace(/'/g, "\\'")}')" 
-                                class="w-full bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors">
-                            Route to Schools
+                                class="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-purple-600 shadow hover:bg-purple-700 transition">
+                            Route to schools
                         </button>
                     </div>
                 </div>
@@ -616,6 +621,14 @@ function initializeMap() {
             
             // Add popup to marker
             marker.bindPopup(popupContent);
+            // Fix the placeholder URL inside the popup after it opens
+            marker.on('popupopen', function(e) {
+                const link = e.popup.getElement().querySelector('a[data-dorm-id]');
+                if (link) {
+                    const id = link.getAttribute('data-dorm-id');
+                    link.href = `/dormitory/dormitory/${id}/`;
+                }
+            });
             
             markers.push(marker);
         }

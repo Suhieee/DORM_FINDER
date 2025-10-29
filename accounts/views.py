@@ -41,9 +41,15 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         """Log in user after successful registration, create profile, and redirect."""
         user = form.save()
-        # Create a UserProfile with default image and verification token
+        # Ensure a UserProfile exists (signals also handle this; this is idempotent)
         token = secrets.token_urlsafe(32)
-        profile = UserProfile.objects.create(user=user, profile_picture="profile_pictures/default.jpg", verification_token=token)
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "profile_picture": "profile_pictures/default.jpg",
+                "verification_token": token,
+            },
+        )
 
         # Send verification email (HTML)
         verification_url = self.request.build_absolute_uri(
@@ -513,10 +519,10 @@ class CreateAdminView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         user.is_superuser = True
         user.save()
 
-        # Create UserProfile for the new admin
-        UserProfile.objects.create(
+        # Ensure UserProfile exists for the new admin (idempotent with signals)
+        UserProfile.objects.get_or_create(
             user=user,
-            profile_picture="profile_pictures/default.jpg"
+            defaults={"profile_picture": "profile_pictures/default.jpg"}
         )
         
         messages.success(self.request, 'New admin user created successfully!')

@@ -14,4 +14,11 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ('user_type',)}),
     )
 
+    def save_model(self, request, obj, form, change):
+        # If user is marked as admin by type, ensure proper flags
+        if obj.user_type == 'admin':
+            obj.is_staff = True
+            obj.is_superuser = True
+        super().save_model(request, obj, form, change)
+
 admin.site.register(CustomUser, CustomUserAdmin)

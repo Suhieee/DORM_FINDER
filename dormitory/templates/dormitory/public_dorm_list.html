@@ -203,7 +203,7 @@
                                     </svg>
                                     Location Filter
                                 </h3>
-                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3">
+                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3 z-10">
                                     <!-- Map will be loaded here -->
                                     <div class="w-full h-full flex items-center justify-center">
                                         <div class="text-center">
@@ -319,7 +319,7 @@
                     Dorm Locations
                 </h3>
             </div>
-            <div id="map" class="w-full h-[600px] bg-gray-100">
+            <div id="map" class="w-full h-[600px] bg-gray-100 z-10">
                 <!-- Map will be loaded here -->
                 <div class="absolute inset-0 flex items-center justify-center">
                     <div class="text-center">
@@ -370,11 +370,6 @@
                      src="{% static 'images/default_dorm.svg' %}" alt="No Image" />
                 {% endif %}
                 
-                <!-- Price Badge -->
-                <div class="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                    ₱{{ dorm.price|floatformat:0 }}
-                </div>
-                
                 <!-- Rating Badge -->
                 {% if dorm.avg_rating %}
                 <div class="absolute bottom-3 left-3 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-sm font-medium flex items-center shadow-lg">
@@ -386,8 +381,8 @@
                 {% endif %}
 
                 <!-- Accommodation Type Badge -->
-                <div class="absolute top-3 left-3">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
+              <div class="absolute top-3 left-5 right-5 z-50">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-600 text-white{% else %}bg-green-600 text-white{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
                 </div>

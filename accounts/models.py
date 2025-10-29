@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta 
 
 class CustomUser(AbstractUser):
     USER_TYPES = (
@@ -27,7 +27,7 @@ class CustomUser(AbstractUser):
         null=True, 
         blank=True
     )
-    
+
     def __str__(self):
         return self.username
     
@@ -50,6 +50,14 @@ class CustomUser(AbstractUser):
         if timezone.now() >= self.ban_expires_at:
             return "Ban Expired"
         return f"Banned until {self.ban_expires_at.strftime('%Y-%m-%d %H:%M')}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                models.functions.Lower('email'),
+                name='unique_email_ci'
+            )
+        ]
     
 User = get_user_model()
 
