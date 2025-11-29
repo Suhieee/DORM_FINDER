@@ -55,6 +55,7 @@
             </svg>
             Transaction Log
         </a>
+
     </div>
 
 <!-- Unified Dashboard Overview Card -->
@@ -119,12 +120,12 @@
     </div>
     <div class="mb-8">
         <h3 class="text-xl font-semibold mb-4 text-gray-700">User & Dorm Registrations</h3>
-        <canvas id="dashboardChart" height="80"></canvas>
+        <canvas id="dashboardChart" height="100"></canvas>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
             <h3 class="text-lg font-semibold mb-4 text-gray-700">Dorm Approval Rates</h3>
-            <canvas id="dormApprovalBarChart" height="80"></canvas>
+            <canvas id="dormApprovalBarChart" height="100"></canvas>
         </div>
         <div>
             <h3 class="text-lg font-semibold mb-4 text-gray-700 text-center">Active vs. Inactive Users</h3>
@@ -137,37 +138,101 @@
 <!-- End Unified Dashboard Overview Card -->
 
     <!-- Pending Dorm Listings Section -->
-    <div class="mb-8">
-        <div class="bg-blue-700 text-white text-center py-3 rounded-lg mb-6">
-            <h2 class="text-xl font-bold">Pending Dorm Listings</h2>
+    <div class="mb-12">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-black text-center py-4 rounded-2xl mb-8 shadow-lg">
+            <div class="flex items-center justify-center space-x-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h2 class="text-2xl font-bold text-blue-500 tracking-tight">Pending Dorm Listings</h2>
+            </div>
+            <p class="text-blue-500 mt-2 text-sm">Awaiting administrator review and approval</p>
         </div>
-
+    
+        <!-- Dorm Listings Grid -->
         {% if pending_dorms %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {% for dorm in pending_dorms %}
-            <div class="bg-gray-200 p-6 shadow-md rounded-lg h-full flex flex-col justify-between">
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group hover:border-blue-200">
+                <!-- Content Section -->
                 <div class="flex-grow">
-                    <h3 class="text-lg font-semibold">{{ dorm.name }}</h3>
-                    <p class="text-gray-600 mt-2">Location: {{ dorm.address }}</p>
-                    <p class="text-gray-600 mt-2">Price: ₱{{ dorm.price }}</p>
-                    <p class="text-gray-600 mt-2">Landlord: {{ dorm.landlord.username }}
-                      {% if dorm.landlord.userprofile.is_verified %}
-                        <span class="ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full align-middle font-semibold">Verified</span>
-                      {% endif %}
-                    </p>
+                    <!-- Header with name and status -->
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ dorm.name }}</h3>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            Pending Review
+                        </span>
+                    </div>
+                    
+                    <!-- Details Grid -->
+                    <div class="space-y-3">
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span class="text-sm">{{ dorm.address }}</span>
+                        </div>
+                        
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                            <span class="text-sm font-medium">₱{{ dorm.price }}/month</span>
+                        </div>
+                        
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <div class="flex items-center">
+                                <span class="text-sm">{{ dorm.landlord.username }}</span>
+                                {% if dorm.landlord.userprofile.is_verified %}
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Verified
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <a href="{% url 'accounts:review_dorm' dorm.id %}" 
-                   class="block text-center bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-800 w-full mt-6">
-                    Review Dorm
-                </a>
+                
+                <!-- Action Button -->
+                <div class="mt-6 pt-4 border-t border-gray-100">
+                    <a href="{% url 'accounts:review_dorm' dorm.id %}" 
+                       class="flex items-center justify-center w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform group-hover:scale-[1.02] shadow-sm hover:shadow-md">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Review Dorm
+                    </a>
+                </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="text-center mt-10">
-            <img src="{% static 'images/question.svg' %}" alt="No Dorms to Review" class="mx-auto w-96">
-            <h2 class="text-lg font-bold mt-4">No Dorms Pending Review</h2>
-            <p class="text-gray-500">Check back later for new dorm submissions.</p>
+        <!-- Empty State -->
+        <div class="text-center py-12 px-4">
+            <div class="max-w-md mx-auto">
+                <div class="w-48 h-48 mx-auto mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center">
+                    <svg class="w-24 h-24 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">No Dorms Pending Review</h2>
+                <p class="text-gray-500 mb-6">All dormitory submissions have been processed. Check back later for new submissions.</p>
+                <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Last checked just now
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>

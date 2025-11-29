@@ -167,7 +167,7 @@
                                     </svg>
                                     Location Filter
                                 </h3>
-                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3">
+                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3 z-30">
                                     <!-- Map will be loaded here -->
                                     <div class="w-full h-full flex items-center justify-center">
                                         <div class="text-center">
@@ -426,7 +426,7 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center py-16">
+        <div class="col-span-6 text-center py-16">
             <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
             </svg>
@@ -683,6 +683,10 @@ function initializeMap() {
     }
 }
 
+function createWaypoint(lat, lng, name) {
+    return L.Routing.waypoint(L.latLng(lat, lng), name || '');
+}
+
 // Route functions
 function showRouteToDorm(lat, lng, dormName) {
     if (!map || !map.routingControl) return;
@@ -696,15 +700,15 @@ function showRouteToDorm(lat, lng, dormName) {
             // Check if user is within Manila bounds
             if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
                 map.routingControl.setWaypoints([
-                    L.latLng(userLat, userLng),
-                    L.latLng(lat, lng)
+                    createWaypoint(userLat, userLng, 'Your location'),
+                    createWaypoint(lat, lng, dormName)
                 ]);
                 map.routingControl.show();
             } else {
                 // Use Manila center as starting point
                 map.routingControl.setWaypoints([
-                    L.latLng(14.5995, 120.9842), // Manila center
-                    L.latLng(lat, lng)
+                    createWaypoint(14.5995, 120.9842, 'Manila Center'),
+                    createWaypoint(lat, lng, dormName)
                 ]);
                 map.routingControl.show();
                 alert('Using Manila center as starting point. Enable location access for personalized routes.');
@@ -712,16 +716,16 @@ function showRouteToDorm(lat, lng, dormName) {
         }, function() {
             // Use Manila center as starting point if geolocation fails
             map.routingControl.setWaypoints([
-                L.latLng(14.5995, 120.9842), // Manila center
-                L.latLng(lat, lng)
+                createWaypoint(14.5995, 120.9842, 'Manila Center'),
+                createWaypoint(lat, lng, dormName)
             ]);
             map.routingControl.show();
         });
     } else {
         // Use Manila center as starting point if geolocation not supported
         map.routingControl.setWaypoints([
-            L.latLng(14.5995, 120.9842), // Manila center
-            L.latLng(lat, lng)
+            createWaypoint(14.5995, 120.9842, 'Manila Center'),
+            createWaypoint(lat, lng, dormName)
         ]);
         map.routingControl.show();
     }
@@ -738,29 +742,29 @@ function showRouteToSchool(lat, lng, schoolName) {
             
             if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
                 map.routingControl.setWaypoints([
-                    L.latLng(userLat, userLng),
-                    L.latLng(lat, lng)
+                    createWaypoint(userLat, userLng, 'Your location'),
+                    createWaypoint(lat, lng, schoolName)
                 ]);
                 map.routingControl.show();
             } else {
                 map.routingControl.setWaypoints([
-                    L.latLng(14.5995, 120.9842),
-                    L.latLng(lat, lng)
+                    createWaypoint(14.5995, 120.9842, 'Manila Center'),
+                    createWaypoint(lat, lng, schoolName)
                 ]);
                 map.routingControl.show();
                 alert('Using Manila center as starting point. Enable location access for personalized routes.');
             }
         }, function() {
             map.routingControl.setWaypoints([
-                L.latLng(14.5995, 120.9842),
-                L.latLng(lat, lng)
+                createWaypoint(14.5995, 120.9842, 'Manila Center'),
+                createWaypoint(lat, lng, schoolName)
             ]);
             map.routingControl.show();
         });
     } else {
         map.routingControl.setWaypoints([
-            L.latLng(14.5995, 120.9842),
-            L.latLng(lat, lng)
+            createWaypoint(14.5995, 120.9842, 'Manila Center'),
+            createWaypoint(lat, lng, schoolName)
         ]);
         map.routingControl.show();
     }
@@ -815,11 +819,11 @@ function showRouteFromDormToSchools(dormLat, dormLng, dormName) {
     
     // Show all schools in the route (up to 10 schools to avoid too many waypoints)
     const maxSchools = Math.min(10, allSchools.length);
-    const waypoints = [L.latLng(dormLat, dormLng)]; // Start from dorm
+    const waypoints = [createWaypoint(dormLat, dormLng, dormName)]; // Start from dorm
     
     for (let i = 0; i < maxSchools; i++) {
         const school = allSchools[i];
-        waypoints.push(L.latLng(school.latitude, school.longitude));
+        waypoints.push(createWaypoint(school.latitude, school.longitude, school.name));
     }
     
     map.routingControl.setWaypoints(waypoints);

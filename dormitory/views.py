@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
-    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage,
+    Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
     RoommateAmenity
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
@@ -14,7 +14,7 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, ListView
-from accounts.models import CustomUser
+from accounts.models import CustomUser, Notification
 
 from io import BytesIO
 from django.core.files.base import ContentFile
@@ -38,7 +38,18 @@ from django.views.generic import TemplateView
 import json
 
 
-# Add this mixin after the imports and before the views
+
+
+def notify_user(user, message, related_object_id=None):
+    """Create a notification for a user (fails silently if user missing)."""
+    if not user:
+        return
+    Notification.objects.create(
+        user=user,
+        message=message,
+        related_object_id=related_object_id
+    )
+
 
 class LoginRequiredActionMixin:
     """Mixin to handle login required actions with proper redirect"""
@@ -52,7 +63,6 @@ class LoginRequiredActionMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-# Add these new public views at the top of the file, after the imports
 
 class PublicDormListView(ListView):
     """Public view for browsing dorms without login requirement"""
@@ -297,7 +307,16 @@ class AddDormView(LoginRequiredMixin, CreateView):
         for image in images:
             DormImage.objects.create(dorm=self.object, image=image)
 
-        messages.success(self.request, "Dorm successfully created!")
+        # Notify all admins that a new dorm is awaiting review
+        admins = CustomUser.objects.filter(user_type="admin")
+        for admin in admins:
+            Notification.objects.create(
+                user=admin,
+                message=f"New dorm '{self.object.name}' submitted by {self.request.user.username} is awaiting review.",
+                related_object_id=self.object.id,
+            )
+
+        messages.success(self.request, "Dorm successfully created and sent for admin review!")
         return response
 
     def form_invalid(self, form):
@@ -846,6 +865,11 @@ class ReservationCreateView(CreateView):
             dorm=self.dorm,
             reservation=self.object
         )
+        notify_user(
+            user=self.dorm.landlord,
+            message=f"{self.request.user.get_full_name() or self.request.user.username} requested a reservation for {self.dorm.name}.",
+            related_object_id=self.object.id
+        )
         
         messages.success(self.request, "Your reservation inquiry has been sent! Please wait for the landlord's confirmation.")
         
@@ -913,7 +937,12 @@ class ChatView(ListView):
 
 
         receiver = get_object_or_404(CustomUser, id=receiver_id)
-        Message.objects.create(sender=sender, receiver=receiver, content=content)
+        message = Message.objects.create(sender=sender, receiver=receiver, content=content)
+        notify_user(
+            user=receiver,
+            message=f"New message from {sender.get_full_name() or sender.username}: {content[:60]}",
+            related_object_id=message.id
+        )
         return redirect('dormitory:chat')
 
 @method_decorator(login_required, name='dispatch')
@@ -1023,6 +1052,11 @@ class UpdateReservationStatusView(View):
                 dorm=reservation.dorm,
                 reservation=reservation
             )
+            notify_user(
+                user=reservation.student,
+                message=f"Your reservation for {reservation.dorm.name} was confirmed.",
+                related_object_id=reservation.id
+            )
         elif action == 'verify_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can verify payments.")
@@ -1038,6 +1072,11 @@ class UpdateReservationStatusView(View):
                     content="Your payment has been verified. Your slot is now secured!",
                     dorm=reservation.dorm,
                     reservation=reservation
+                )
+                notify_user(
+                    user=reservation.student,
+                    message=f"Payment for {reservation.dorm.name} was verified.",
+                    related_object_id=reservation.id
                 )
             else:
                 messages.error(request, "No payment proof found for this reservation.")
@@ -1061,6 +1100,11 @@ class UpdateReservationStatusView(View):
                     content="Your payment proof has been rejected. Please submit a new payment proof.",
                     dorm=reservation.dorm,
                     reservation=reservation
+                )
+                notify_user(
+                    user=reservation.student,
+                    message=f"Payment proof for {reservation.dorm.name} was rejected. Please upload a new copy.",
+                    related_object_id=reservation.id
                 )
             else:
                 messages.error(request, "No payment proof found for this reservation.")
@@ -1087,6 +1131,11 @@ class UpdateReservationStatusView(View):
                 content=f"Your reservation has been declined. Reason: {decline_reason}",
                 dorm=reservation.dorm,
                 reservation=reservation
+            )
+            notify_user(
+                user=reservation.student,
+                message=f"Reservation for {reservation.dorm.name} was declined. Reason: {decline_reason}",
+                related_object_id=reservation.id
             )
         elif action == 'cancel':
             if request.user.user_type != 'student':
@@ -1128,6 +1177,11 @@ class UpdateReservationStatusView(View):
                 dorm=reservation.dorm,
                 reservation=reservation
             )
+            notify_user(
+                user=reservation.dorm.landlord,
+                message=f"{reservation.student.get_full_name() or reservation.student.username} cancelled their reservation for {reservation.dorm.name}.",
+                related_object_id=reservation.id
+            )
         elif action == 'complete':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can complete transactions.")
@@ -1142,6 +1196,11 @@ class UpdateReservationStatusView(View):
                     content="Transaction has been marked as complete. Thank you for using our service!",
                     dorm=reservation.dorm,
                     reservation=reservation
+                )
+                notify_user(
+                    user=reservation.student,
+                    message=f"Transaction for {reservation.dorm.name} has been marked complete.",
+                    related_object_id=reservation.id
                 )
             else:
                 messages.error(request, "Only confirmed reservations can be marked as complete.")
@@ -1163,6 +1222,11 @@ class UpdateReservationStatusView(View):
                     content="The room you reserved has been marked available by the landlord.",
                     dorm=reservation.dorm,
                     reservation=reservation
+                )
+                notify_user(
+                    user=reservation.student,
+                    message=f"The room for {reservation.dorm.name} is available again.",
+                    related_object_id=reservation.id
                 )
             else:
                 messages.error(request, "No room is assigned to this reservation.")
@@ -1361,6 +1425,12 @@ class SendMessageView(View):
                 attachment=attachment if attachment else None,
                 image=image if image else None
             )
+            snippet = content or ("[Attachment]" if attachment else "[Image]")
+            notify_user(
+                user=receiver,
+                message=f"New reservation chat message about {reservation.dorm.name}: {snippet[:60]}",
+                related_object_id=reservation.id
+            )
             
             # Prepare response data
             response_data = {
@@ -1422,7 +1492,7 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
             
         return RoommateMatch.objects.filter(
             models.Q(initiator=user_post) | models.Q(target=user_post)
-        ).select_related('initiator', 'target')
+        ).select_related('initiator', 'target').prefetch_related('messages')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1440,8 +1510,12 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
                 try:
                     selected_match = self.get_queryset().get(id=selected_match_id)
                     context['selected_match'] = selected_match
-                    # Get chat messages
-                    context['chat_messages'] = selected_match.messages.all()
+                    # Get chat messages with reactions
+                    context['chat_messages'] = selected_match.messages.all().prefetch_related('reactions')
+                    if selected_match.initiator.user == self.request.user:
+                        context['chat_partner'] = selected_match.target
+                    else:
+                        context['chat_partner'] = selected_match.initiator
                     # Mark messages as read
                     RoommateChat.objects.filter(
                         match=selected_match,
@@ -1450,6 +1524,12 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
                     ).update(is_read=True)
                 except RoommateMatch.DoesNotExist:
                     messages.error(self.request, "Selected match not found.")
+        
+        context['unread_message_count'] = RoommateChat.objects.filter(
+            match__in=context.get('matches', []),
+            receiver=self.request.user,
+            is_read=False
+        ).count()
         
         return context
 
@@ -1558,6 +1638,11 @@ class SendRoommateChatMessageView(View):
             sender=request.user,
             content=content
         )
+        notify_user(
+            user=message.receiver,
+            message=f"New roommate chat from {request.user.get_full_name() or request.user.username}: {content[:60]}",
+            related_object_id=match.id
+        )
 
         return JsonResponse({
             'status': 'success',
@@ -1570,6 +1655,43 @@ class SendRoommateChatMessageView(View):
                 'image_url': image_url
             }
         })
+
+@method_decorator([csrf_exempt, login_required], name='dispatch')
+class ToggleMessageReactionView(View):
+    def post(self, request, message_id):
+        try:
+            message = get_object_or_404(RoommateChat, id=message_id)
+            emoji = request.POST.get('emoji')
+            
+            # Check if user is part of this conversation
+            if request.user not in [message.match.initiator.user, message.match.target.user]:
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+            
+            # Check if reaction already exists
+            reaction, created = RoommateChatReaction.objects.get_or_create(
+                message=message,
+                user=request.user,
+                emoji=emoji
+            )
+            
+            if not created:
+                # Remove reaction if it already exists
+                reaction.delete()
+                action = 'removed'
+            else:
+                action = 'added'
+            
+            # Get updated reaction summary
+            reactions_summary = message.get_reactions_summary()
+            
+            return JsonResponse({
+                'status': 'success',
+                'action': action,
+                'reactions': reactions_summary
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @method_decorator(login_required, name='dispatch')
 class ManageRoomsView(View):
@@ -1605,6 +1727,29 @@ class ManageRoomsView(View):
             )
             return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
 
+        if action == 'edit_room':
+            room_id = request.POST.get('room_id')
+            room = get_object_or_404(Room, id=room_id, dorm=dorm)
+            edit_form = RoomForm(request.POST, request.FILES, instance=room)
+            if edit_form.is_valid():
+                edit_form.save()
+                new_images = request.FILES.getlist('images')
+                for image in new_images:
+                    RoomImage.objects.create(room=room, image=image)
+                messages.success(request, f"Room '{room.name}' updated successfully!")
+                return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+
+            messages.error(request, "Unable to update room. Please check the form for errors.")
+            return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+
+        if action == 'delete_room':
+            room_id = request.POST.get('room_id')
+            room = get_object_or_404(Room, id=room_id, dorm=dorm)
+            room_name = room.name
+            room.delete()
+            messages.success(request, f"Room '{room_name}' has been deleted.")
+            return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+
         # ✅ Add new room
         room_form = RoomForm(request.POST, request.FILES)
         if room_form.is_valid():
@@ -1618,6 +1763,10 @@ class ManageRoomsView(View):
                 RoomImage.objects.create(room=room, image=image)
 
             messages.success(request, f"Room '{room.name}' added successfully!")
+            return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
+
+        if action != 'add_room':
+            messages.error(request, "Invalid action.")
             return redirect('dormitory:manage_rooms', dorm_id=dorm.id)
 
         # If form invalid → redisplay with errors

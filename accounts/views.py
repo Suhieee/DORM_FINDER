@@ -43,13 +43,20 @@ class RegisterView(CreateView):
         user = form.save()
         # Ensure a UserProfile exists (signals also handle this; this is idempotent)
         token = secrets.token_urlsafe(32)
+        now = timezone.now()
         profile, _ = UserProfile.objects.get_or_create(
             user=user,
             defaults={
                 "profile_picture": "profile_pictures/default.jpg",
                 "verification_token": token,
+                "verification_token_created_at": now,
             },
         )
+        # Update token and timestamp if profile already exists
+        if not _:
+            profile.verification_token = token
+            profile.verification_token_created_at = now
+            profile.save()
 
         # Send verification email (HTML)
         verification_url = self.request.build_absolute_uri(
@@ -156,6 +163,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        
+        # Add verification status for all dashboards
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            context['is_verified'] = user_profile.is_verified
+        except UserProfile.DoesNotExist:
+            context['is_verified'] = False
 
         if user.user_type == "admin":
             # Get pending dorms
@@ -314,7 +328,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 # --- Explanation logic ---
                 reasons = []
                 if i in ml_recommended_indices:
-                    reasons.append("Similar to your favorites/views (AI)")
+                    reasons.append("Similar to your favorites/views")
                 if dorm.id in collab_dorm_ids:
                     reasons.append("Liked by students with similar taste")
                 if getattr(dorm, 'avg_rating', dorm.get_average_rating()) >= 4.5:
@@ -536,11 +550,8 @@ class ManageUsersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        landlords = CustomUser.objects.filter(user_type='landlord')
-        students = CustomUser.objects.filter(user_type='student')
-        context['landlords'] = landlords
-        context['students'] = students
-        context['users'] = list(landlords) + list(students)
+        context['users'] = CustomUser.objects.all().order_by('user_type', 'username')
+        context['user_roles'] = CustomUser.USER_TYPES
         return context
 
 class DeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -553,11 +564,6 @@ class DeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
         # Don't allow deleting yourself
         if user == request.user:
             messages.error(request, "You cannot delete your own account.")
-            return redirect('accounts:manage_users')
-        
-        # Don't allow deleting other admins
-        if user.user_type == 'admin':
-            messages.error(request, "You cannot delete admin accounts.")
             return redirect('accounts:manage_users')
         
         # Delete associated data
@@ -611,17 +617,159 @@ class ToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
         messages.success(request, f"User {user.username} has been {action}.")
         return redirect('accounts:manage_users')
 
+class UpdateUserRoleView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'admin'
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        new_role = request.POST.get('new_role')
+        valid_roles = [choice[0] for choice in CustomUser.USER_TYPES]
+
+        if new_role not in valid_roles:
+            messages.error(request, "Invalid role selected.")
+            return redirect('accounts:manage_users')
+
+        if user == request.user and new_role != 'admin':
+            messages.error(request, "You cannot change your own role.")
+            return redirect('accounts:manage_users')
+
+        # Update role and privilege flags
+        user.user_type = new_role
+        if new_role == 'admin':
+            user.is_staff = True
+            user.is_superuser = True
+        else:
+            user.is_staff = False
+            user.is_superuser = False
+
+        user.save()
+        messages.success(request, f"{user.username}'s role has been updated to {user.get_user_type_display()}.")
+        return redirect('accounts:manage_users')
+
 class VerifyEmailView(View):
     def get(self, request, token):
         try:
             profile = UserProfile.objects.get(verification_token=token)
+            
+            # Check if already verified
+            if profile.is_verified:
+                messages.info(request, 'Your email is already verified!')
+                return redirect('accounts:login')
+            
+            # Check if token has expired (48 hours)
+            if profile.verification_token_created_at:
+                expiration_time = profile.verification_token_created_at + timedelta(hours=48)
+                if timezone.now() > expiration_time:
+                    # Token expired
+                    profile.verification_token = None
+                    profile.verification_token_created_at = None
+                    profile.save()
+                    messages.error(request, 'This verification link has expired. Please request a new verification email.')
+                    return redirect('accounts:resend_verification')
+            
+            # Token is valid, verify the email
             profile.is_verified = True
             profile.verification_token = None
+            profile.verification_token_created_at = None
             profile.save()
             messages.success(request, 'Your email has been verified!')
             return redirect('accounts:login')
         except UserProfile.DoesNotExist:
-            return HttpResponse('Invalid or expired verification link.', status=400)
+            messages.error(request, 'Invalid verification link. The link may have already been used or expired.')
+            return redirect('accounts:resend_verification')
+
+def send_verification_email(request, user):
+    """Helper function to send verification email to a user."""
+    try:
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        
+        # Check if already verified
+        if profile.is_verified:
+            return False, 'Your email is already verified!'
+        
+        # Generate new token
+        token = secrets.token_urlsafe(32)
+        now = timezone.now()
+        profile.verification_token = token
+        profile.verification_token_created_at = now
+        profile.save()
+        
+        # Send verification email
+        verification_url = request.build_absolute_uri(
+            reverse_lazy('accounts:verify_email', kwargs={'token': token})
+        )
+        html_message = render_to_string('email/verify_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+            'year': datetime.now().year,
+        })
+        send_mail(
+            'Verify your email address',
+            '',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+            html_message=html_message,
+        )
+        
+        return True, 'A new verification email has been sent to your email address. Please check your inbox.'
+        
+    except Exception as e:
+        return False, f'An error occurred: {str(e)}'
+
+class ResendVerificationEmailLoggedInView(LoginRequiredMixin, View):
+    """Simple view for logged-in users to resend verification email."""
+    
+    def post(self, request):
+        """Resend verification email for logged-in user."""
+        success, message = send_verification_email(request, request.user)
+        
+        if success:
+            messages.success(request, message)
+        else:
+            messages.info(request, message)
+        
+        # Redirect back to profile or dashboard
+        next_url = request.GET.get('next', 'user_profile:profile')
+        return redirect(next_url)
+    
+    def get(self, request):
+        """Handle GET request by redirecting to POST."""
+        return self.post(request)
+
+class ResendVerificationEmailView(FormView):
+    """View to resend verification email to users (for logged-out users)."""
+    template_name = 'accounts/resend_verification.html'
+    form_class = AuthenticationForm
+    
+    def dispatch(self, request, *args, **kwargs):
+        # If user is already logged in, redirect to the logged-in version
+        if request.user.is_authenticated:
+            success, message = send_verification_email(request, request.user)
+            if success:
+                messages.success(request, message)
+            else:
+                messages.info(request, message)
+            return redirect('user_profile:profile')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        """Resend verification email if user is not verified."""
+        user = form.get_user()
+        success, message = send_verification_email(self.request, user)
+        
+        if success:
+            messages.success(self.request, message)
+            return redirect('accounts:login')
+        else:
+            messages.info(self.request, message)
+            return redirect('accounts:login')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Resend Verification Email'
+        return context
 
 class TransactionLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'accounts/transaction_log.html'

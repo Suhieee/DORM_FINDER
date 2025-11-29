@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-05gc*o_f_4$62!kmpj!d+ddrz=!pxy7%!8)j(=ln2li4el7+b3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Update ALLOWED_HOSTS for better security
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -120,15 +120,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
-# Uncomment and update STATIC_ROOT
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
+
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -143,4 +142,3 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jhonloydluzares55@gmail.com'  # <-- Replace with your Gmail address
 EMAIL_HOST_PASSWORD = 'jzdm xugp pvwe xpyj'   # <-- Replace with your Gmail App Password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-

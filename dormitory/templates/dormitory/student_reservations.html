@@ -72,8 +72,18 @@
 
 <div class="container-fluid h-screen bg-gray-100">
     <div id="main-layout" class="flex h-[calc(100vh-4rem)]" style="margin-right: 20rem;">
+        <!-- Mobile Details Toggle Button -->
+        <button id="mobile-details-toggle" class="fixed top-20 right-4 z-40 bg-white p-2 rounded-lg shadow-lg hidden">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+            </svg>
+        </button>
         <!-- Left Sidebar - Reservations List -->
         <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
+            <!-- Mobile Header for Reservations -->
+            <div class="p-4 border-b bg-white sticky top-0 z-20 block md:hidden">
+                <h2 class="text-lg font-semibold text-gray-800">My Reservations</h2>
+            </div>
             <!-- Search Bar -->
             <div class="p-4 border-b flex-shrink-0 bg-white sticky top-0 z-20">
                 <div class="relative">
@@ -191,8 +201,9 @@
 
                     <div class="flex items-center space-x-2">
                         {% if selected_reservation.status == 'pending_payment' %}
-                            <span class="bg-yellow-100 text-yellow-800 px-4 py-1.5 rounded-full text-sm font-medium">
-                                Payment Required
+                            <span class="bg-yellow-100 text-yellow-800 px-2 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium">
+                                <span class="hidden sm:inline">Payment Required</span>
+                                <span class="sm:hidden">Pay</span>
                             </span>
                         {% endif %}
                         <button id="toggle-details-btn" class="p-2 hover:bg-gray-100 rounded-full">
@@ -205,7 +216,7 @@
 
                 <!-- Chat Messages Container -->
                 <div class="flex-1 overflow-hidden bg-gray-50">
-                    <div id="messages-container" class="h-full overflow-y-auto p-5 space-y-3">
+                    <div id="messages-container" class="h-full overflow-y-auto p-3 md:p-5 space-y-3">
                         {% for message in selected_reservation.chat_messages.all %}
                         <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
                             {% if message.sender != request.user %}
@@ -218,7 +229,7 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            <div class="relative {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-1.5 shadow-sm" style="max-width: 75%;">
+                            <div class="relative {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-2 shadow-sm max-w-[85%] md:max-w-[75%]">
                                 <button onclick="deleteMessage({{ message.id }})" 
                                         class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
                                         {% if message.sender != request.user %}style="display: none;"{% endif %}>
@@ -226,11 +237,11 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
-                                <p class="text-sm">{{ message.content }}</p>
+                                <p class="text-sm break-words">{{ message.content }}</p>
                                 
                                 {% if message.image %}
                                 <div class="mt-2">
-                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
+                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-[200px] md:max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
                                 </div>
                                 {% elif message.attachment %}
                                 <div class="mt-2">
@@ -254,12 +265,12 @@
 
                 <!-- Chat Input Area -->
                 <div class="border-t bg-white flex-shrink-0">
-                    <form id="chat-form" class="p-4" enctype="multipart/form-data" data-reservation-id="{{ selected_reservation.id }}">
+                    <form id="chat-form" class="p-3 md:p-4" enctype="multipart/form-data" data-reservation-id="{{ selected_reservation.id }}">
                         {% csrf_token %}
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-end space-x-2">
                             <div class="flex-1">
                                 <textarea id="message-input" name="content" rows="1" 
-                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    class="w-full px-3 md:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm md:text-base"
                                     placeholder="Type your message..."></textarea>
                             </div>
                             
@@ -285,8 +296,11 @@
                                 </button>
                             </div>
 
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                Send
+                            <button type="submit" class="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base">
+                                <span class="hidden sm:inline">Send</span>
+                                <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
                             </button>
                         </div>
 
@@ -918,38 +932,66 @@
     const toggleDetailsBtn = document.getElementById('toggle-details-btn');
     const closeDetailsBtn = document.getElementById('close-details');
     const mainContainer = document.getElementById('main-layout');
+    const mobileDetailsToggle = document.getElementById('mobile-details-toggle');
     let detailsVisible = true;
 
     function toggleDetails() {
-        detailsVisible = !detailsVisible;
-        if (detailsVisible) {
-            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
-            detailsPanel.classList.add('shadow-lg');
-            mainContainer.style.marginRight = '20rem';
+        const isMobile = window.innerWidth < 768; // md breakpoint
+        
+        if (isMobile) {
+            // On mobile, toggle the panel visibility
+            detailsVisible = !detailsVisible;
+            if (detailsVisible) {
+                detailsPanel.classList.remove('translate-x-full');
+                detailsPanel.classList.add('shadow-lg');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            } else {
+                detailsPanel.classList.add('translate-x-full');
+                detailsPanel.classList.remove('shadow-lg');
+                document.body.style.overflow = '';
+            }
         } else {
-            detailsPanel.classList.add('translate-x-full', 'shadow-none');
-            detailsPanel.classList.remove('shadow-lg');
-            mainContainer.style.marginRight = '0';
+            // On desktop, toggle normally
+            detailsVisible = !detailsVisible;
+            if (detailsVisible) {
+                detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+                detailsPanel.classList.add('shadow-lg');
+                mainContainer.style.marginRight = '20rem';
+            } else {
+                detailsPanel.classList.add('translate-x-full', 'shadow-none');
+                detailsPanel.classList.remove('shadow-lg');
+                mainContainer.style.marginRight = '0';
+            }
         }
     }
-
-    toggleDetailsBtn.addEventListener('click', toggleDetails);
-    closeDetailsBtn.addEventListener('click', toggleDetails);
 
     // Initialize panel state based on screen size
     function initializePanelState() {
-        const isMobile = window.innerWidth < 1024;
-        detailsVisible = !isMobile;
-        if (detailsVisible) {
-            mainContainer.style.marginRight = '20rem';
-            detailsPanel.classList.add('shadow-lg');
-            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
-        } else {
+        const isMobile = window.innerWidth < 768; // md breakpoint
+        
+        if (isMobile) {
+            // On mobile: hide panel by default, show toggle button
+            detailsVisible = false;
             detailsPanel.classList.add('translate-x-full', 'shadow-none');
             detailsPanel.classList.remove('shadow-lg');
             mainContainer.style.marginRight = '0';
+            mobileDetailsToggle.classList.remove('hidden');
+            document.body.style.overflow = '';
+        } else {
+            // On desktop: show panel, hide toggle button
+            detailsVisible = true;
+            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+            detailsPanel.classList.add('shadow-lg');
+            mainContainer.style.marginRight = '20rem';
+            mobileDetailsToggle.classList.add('hidden');
+            document.body.style.overflow = '';
         }
     }
+
+    // Event listeners
+    if (toggleDetailsBtn) toggleDetailsBtn.addEventListener('click', toggleDetails);
+    if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', toggleDetails);
+    if (mobileDetailsToggle) mobileDetailsToggle.addEventListener('click', toggleDetails);
 
     // Initialize on load
     initializePanelState();
@@ -1045,6 +1087,36 @@
     .translate-y-0 { transform: translateY(0); }
     .transition-base {
         transition: opacity .2s ease, transform .2s ease;
+    }
+
+    /* Mobile responsive improvements */
+    @media (max-width: 767px) {
+        #details-panel {
+            width: 100vw !important;
+            top: 0 !important;
+            height: 100vh !important;
+            z-index: 50;
+        }
+        
+        .reservation-item {
+            padding: 0.75rem;
+        }
+        
+        /* Better touch targets on mobile */
+        button, .cursor-pointer {
+            min-height: 44px;
+        }
+        
+        /* Improve text readability */
+        .text-xs {
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (min-width: 768px) {
+        #mobile-details-toggle {
+            display: none !important;
+        }
     }
 </style>
 {% endblock %} 

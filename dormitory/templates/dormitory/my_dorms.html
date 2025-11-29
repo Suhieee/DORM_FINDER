@@ -3,74 +3,259 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto p-8 bg-white shadow-lg rounded-2xl">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <h2 class="text-3xl font-bold text-blue-700 mb-6 flex items-center justify-center gap-2 text-center">
-        🏠 My Dorm Listings
-    </h2>
-    
+    <!-- Header Section -->
+    <div class="text-center mb-12 animate-fade-in-down">
+
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text mb-3">
+            My Dorm Listings
+        </h1>
+        <p class="text-gray-600 text-lg mx-auto mb-8">
+            Manage your dormitory properties and track their approval status
+        </p>
+    </div>
+
+    <!-- Stats Overview -->
+    {% if my_dorms %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 animate-fade-in-up">
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+            <div class="text-2xl font-bold text-blue-600">{{ my_dorms|length }}</div>
+            <div class="text-sm text-gray-600">Total Listings</div>
+        </div>
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-100">
+            <div class="text-2xl font-bold text-green-600">
+                {{ my_dorms|length|default:0 }}
+            </div>
+            <div class="text-sm text-gray-600">Approved</div>
+        </div>
+        <div class="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-4 border border-yellow-100">
+            <div class="text-2xl font-bold text-yellow-600">0</div>
+            <div class="text-sm text-gray-600">Pending</div>
+        </div>
+        <div class="bg-gradient-to-r from-red-50 to-rose-50 rounded-2xl p-4 border border-red-100">
+            <div class="text-2xl font-bold text-red-600">0</div>
+            <div class="text-sm text-gray-600">Rejected</div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if my_dorms %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Dorm Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {% for dorm in my_dorms %}
-                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-md hover:shadow-xl transition-all duration-300">
+                <div class="group bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 overflow-hidden animate-card-enter"
+                     style="animation-delay: {{ forloop.counter0|add:1|divisibleby:2|yesno:'0.1s,0.2s' }};">
                     
-                    <!-- Dorm Name -->
-                    <h3 class="text-xl font-semibold text-gray-800 mb-1">{{ dorm.name }}</h3>
-                    
-                    <!-- Address -->
-                    <p class="text-gray-600 text-sm">📍 {{ dorm.address }}</p>
-                    
-                    <!-- Price -->
-                    <p class="text-gray-800 font-medium mt-2">💰 ₱{{ dorm.price }}</p>
-
-                    <!-- Images Preview -->
-                    {% if dorm.images.all %}
-                        <div class="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
-                            {% for image in dorm.images.all %}
-                                <img src="{{ image.image.url }}" class="w-28 h-28 object-cover rounded-lg shadow">
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-gray-400 mt-3 italic">No images available</p>
-                    {% endif %}
-
-                    <!-- Status Badges -->
-                    <div class="mt-4">
-                        <span class="text-sm font-semibold">Status:</span>
-                        {% if dorm.approval_status == 'rejected' %}
-                            <span class="text-red-600 font-semibold bg-red-100 px-2 py-1 rounded-md">Rejected</span>
-                            <p class="text-gray-600 text-sm mt-1"><strong>Reason:</strong> {{ dorm.rejection_reason }}</p>
-                        {% elif dorm.approval_status == 'approved' %}
-                            <span class="text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-md">Approved</span>
+                    <!-- Image Gallery -->
+                    <div class="relative h-48 overflow-hidden">
+                        {% if dorm.images.all %}
+                            <div class="flex h-full transition-transform duration-700 group-hover:scale-105">
+                                {% for image in dorm.images.all|slice:":3" %}
+                                    <img src="{{ image.image.url }}" 
+                                         class="w-1/3 h-full object-cover transition-all duration-300 hover:flex-1"
+                                         alt="Dorm image {{ forloop.counter }}">
+                                {% endfor %}
+                            </div>
                         {% else %}
-                            <span class="text-yellow-600 font-semibold bg-yellow-100 px-2 py-1 rounded-md">Pending</span>
+                            <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                <span class="text-4xl text-gray-400">🏠</span>
+                            </div>
                         {% endif %}
+                        
+                        <!-- Status Badge -->
+                        <div class="absolute top-4 right-4">
+                            {% if dorm.approval_status == 'rejected' %}
+                                <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg animate-pulse">
+                                    ❌ Rejected
+                                </span>
+                            {% elif dorm.approval_status == 'approved' %}
+                                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                    ✅ Approved
+                                </span>
+                            {% else %}
+                                <span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg animate-pulse">
+                                    ⏳ Pending
+                                </span>
+                            {% endif %}
+                        </div>
                     </div>
 
-                    <!-- Buttons -->
-                    <div class="mt-5 flex gap-3">
-                        <a href="{% url 'dormitory:dorm_detail' dorm.id %}"
-                           class="flex-1 text-center bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                            View Details
-                        </a>
+                    <!-- Content -->
+                    <div class="p-6">
+                        <!-- Title & Price -->
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors duration-300 line-clamp-1">
+                                {{ dorm.name }}
+                            </h3>
+                            <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold shadow-md">
+                                ₱{{ dorm.price }}
+                            </div>
+                        </div>
 
-                        {% if dorm.approval_status == 'approved' and dorm.accommodation_type != 'whole_unit' %}
-                            <a href="{% url 'dormitory:manage_rooms' dorm.id %}"
-                               class="flex-1 text-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition">
-                                Manage Rooms
-                            </a>
+                        <!-- Address -->
+                        <div class="flex items-center text-gray-600 mb-4">
+                            <span class="text-lg mr-2">📍</span>
+                            <p class="text-sm line-clamp-2">{{ dorm.address }}</p>
+                        </div>
+
+                        <!-- Accommodation Type -->
+                        <div class="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                            {{ dorm.accommodation_type|title }}
+                        </div>
+
+                        <!-- Rejection Reason -->
+                        {% if dorm.approval_status == 'rejected' %}
+                            <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 animate-shake">
+                                <div class="flex items-start">
+                                    <span class="text-red-500 text-lg mr-2">⚠️</span>
+                                    <div>
+                                        <p class="text-red-700 font-medium text-sm">Rejection Reason:</p>
+                                        <p class="text-red-600 text-sm mt-1">{{ dorm.rejection_reason }}</p>
+                                    </div>
+                                </div>
+                            </div>
                         {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3 pt-4 border-t border-gray-100">
+                            <a href="{% url 'dormitory:dorm_detail' dorm.id %}"
+                               class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
+                                <span class="flex items-center justify-center gap-2">
+                                    View Details
+                                </span>
+                            </a>
+
+                            {% if dorm.approval_status == 'approved' and dorm.accommodation_type != 'whole_unit' %}
+                                <a href="{% url 'dormitory:manage_rooms' dorm.id %}"
+                                   class="flex-1 bg-gradient-to-r from-green-800 to-green-600 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
+                                    <span class="flex items-center justify-center gap-2">
+                                         Manage Rooms
+                                    </span>
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
+
     {% else %}
-        <div class="text-center py-10">
-            <img src="{% static 'images/question.svg' %}" alt="No Dorms" class="mx-auto w-64 mb-6">
-            <p class="text-gray-500 text-lg">You haven't added any dorms yet.</p>
+        <!-- Empty State -->
+        <div class="text-center py-16 animate-float">
+            <div class="max-w-md mx-auto">
+                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg transform rotate-6">
+                    <span class="text-5xl">🏠</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">No Dorms Listed Yet</h3>
+                <p class="text-gray-600 mb-8">Start by adding your first dormitory property to get started</p>
+                <a href="#" 
+                   class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <span>+</span>
+                    Add First Dorm
+                </a>
+            </div>
         </div>
     {% endif %}
 </div>
+
+<style>
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes cardEnter {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    .animate-fade-in-down {
+        animation: fadeInDown 0.8s ease-out forwards;
+    }
+    
+    .animate-fade-in-up {
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+    
+    .animate-card-enter {
+        animation: cardEnter 0.6s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .animate-float {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .animate-shake {
+        animation: shake 0.5s ease-in-out;
+    }
+    
+    .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .group:hover .group-hover\:scale-105 {
+        transform: scale(1.05);
+    }
+</style>
 
 {% endblock %}

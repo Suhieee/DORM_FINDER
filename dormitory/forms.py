@@ -26,13 +26,14 @@ class DormForm(forms.ModelForm):
     class Meta:
         model = Dorm
         fields = [
-            'name', 'address', 'latitude', 'longitude', 'price', 'description',
+            'name', 'address', 'latitude', 'longitude', 'price', 'description', 'payment_terms',
             'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
             'total_beds', 'available_beds','max_occupants', 'key_features',
 
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
+            'payment_terms': forms.Textarea(attrs={'rows': 2, 'placeholder': 'e.g., 3 months deposit, 1 month advance'}),
             'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
             'address': forms.Textarea(attrs={'rows': 3}),
             'price': forms.NumberInput(attrs={'step': '0.01'}),
@@ -47,6 +48,7 @@ class DormForm(forms.ModelForm):
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
             'price': 'Enter the price per month in PHP',
+            'payment_terms': 'Enter payment terms (e.g., "3 months deposit, 1 month advance")',
             'total_beds': 'Total number of beds in the unit',
             'available_beds': 'Number of beds currently available for rent',
             'max_occupants': 'Maximum number of people allowed in the unit',

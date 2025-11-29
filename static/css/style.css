@@ -18,18 +18,3 @@ footer {
     text-align: center;
     width: 100%;
 }
-
-/* Ensure the navbar stays above Leaflet maps and popups */
-.nav-z-top {
-    z-index: 1000 !important;
-    position: relative;
-}
-
-/* Prevent maps from creating higher stacking contexts */
-#map, #filterMap, #dormitory-map, .leaflet-container {
-    z-index: 50;
-}
-
-.leaflet-pane, .leaflet-top, .leaflet-bottom, .leaflet-popup, .leaflet-control-container {
-    z-index: 400; /* below navbar */
-}

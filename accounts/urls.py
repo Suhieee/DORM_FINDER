@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
         RegisterView, LoginView, DashboardView,
-        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView, VerifyEmailView, TransactionLogView,
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView, UpdateUserRoleView, VerifyEmailView, ResendVerificationEmailView, ResendVerificationEmailLoggedInView, TransactionLogView,
         ViewUserProfileView, ReportUserView, ManageReportsView, ReportDetailView, ResolveReportView, EnhancedToggleUserStatusView
     )
 
@@ -24,10 +24,13 @@ urlpatterns = [
 
     path('create-admin/', CreateAdminView.as_view(), name='create_admin'),
     path('manage-users/', ManageUsersView.as_view(), name='manage_users'),
+    path('manage-users/<int:pk>/role/', UpdateUserRoleView.as_view(), name='update_user_role'),
     path('toggle-user-status/<int:pk>/', ToggleUserStatusView.as_view(), name='toggle_user_status'),
     path('enhanced-toggle-user-status/<int:pk>/', EnhancedToggleUserStatusView.as_view(), name='enhanced_toggle_user_status'),
     path('delete-user/<int:pk>/', DeleteUserView.as_view(), name='delete_user'),
     path("verify-email/<str:token>/", VerifyEmailView.as_view(), name="verify_email"),
+    path("resend-verification/", ResendVerificationEmailView.as_view(), name="resend_verification"),
+    path("resend-verification-logged-in/", ResendVerificationEmailLoggedInView.as_view(), name="resend_verification_logged_in"),
     path('transaction-log/', TransactionLogView.as_view(), name='transaction_log'),
     
     # Password reset flow

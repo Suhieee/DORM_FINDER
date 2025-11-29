@@ -3,98 +3,265 @@
 {% load static %}
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-8">User Management</h1>
+    <!-- Toast Notification -->
+<div id="toast" class="fixed top-6 right-6 z-50 hidden px-6 py-4 rounded-lg shadow-lg text-white text-lg font-semibold transition-opacity duration-300"></div>
+
+{% if messages %} 
+<div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50" role="alert">
+    <svg class="shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+    </svg>
+    <span class="sr-only">Info</span>
+    <div class="ms-3 text-sm font-medium">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8" data-dismiss-target="#alert-3" aria-label="Close">
+      <span class="sr-only">Close</span>
+      <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+    </button>
+</div>
+{% endif %}
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 text-center">User Management</h1>
+        <p class="text-gray-600 mt-2 text-center">Manage all users in the system</p>
+    </div>
 
     <!-- Search and Filter -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-        <div class="flex gap-2">
-            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-600 text-white" data-filter="all">All</button>
-            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-100 text-green-700" data-filter="active">Active</button>
-            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-100 text-red-700" data-filter="banned">Banned</button>
+        <div class="flex gap-2 flex-wrap">
+            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700" data-filter="all">All Users</button>
+            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-gray-100 text-purple-700 hover:bg-purple-100" data-filter="admin">Admins</button>
+            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-gray-100 text-green-700 hover:bg-green-100" data-filter="active">Active</button>
+            <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-gray-100 text-red-700 hover:bg-red-100" data-filter="banned">Banned</button>
         </div>
         <div class="relative w-full md:w-80">
-            <input id="user-search" type="text" placeholder="Search by name or email..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-            <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
+            <input id="user-search" type="text" placeholder="Search users..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+            <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+            </svg>
         </div>
     </div>
 
-    <!-- User Cards Grid -->
-    <div id="user-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for user in users %}
-        <div class="user-card bg-white rounded-xl shadow-lg p-6 flex flex-col items-center transition-transform hover:scale-105 focus-within:scale-105" data-status="{% if user.is_active %}active{% else %}banned{% endif %}" data-name="{{ user.username|lower }}" data-email="{{ user.email|lower }}">
-            <div class="relative">
-                <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-600">
-                    {% if user.userprofile.profile_picture %}
-                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover rounded-full">
-                    {% else %}
-                        {{ user.username|make_list|first|upper }}
-                    {% endif %}
-                </div>
-                <span class="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full text-xs font-semibold {% if user.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}" tabindex="0" aria-label="Status: {% if user.is_active %}Active{% else %}Banned{% endif %}">
-                    {% if user.is_active %}Active{% else %}Banned{% endif %}
-                </span>
-              
-            </div>
-            <br>
-            <div class="mt-4 text-center w-full">
-                <p class="text-lg font-semibold text-gray-900">{{ user.username }}</p>
-                <p class="text-sm text-gray-500">{{ user.email }}</p>
-                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium {% if user.user_type == 'landlord' %}bg-yellow-100 text-yellow-800{% elif user.user_type == 'student' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
-                    {{ user.get_user_type_display }}
-                </span>
-                {% if not user.is_active %}
-                    <div class="mt-2">
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {{ user.ban_status }}
-                        </span>
-                        {% if user.ban_severity %}
-                            <span class="inline-block ml-1 px-2 py-0.5 rounded-full text-xs font-medium 
-                                {% if user.ban_severity == 'minor' %}bg-yellow-100 text-yellow-800
-                                {% elif user.ban_severity == 'moderate' %}bg-orange-100 text-orange-800
-                                {% elif user.ban_severity == 'major' %}bg-red-100 text-red-800
-                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ user.get_ban_severity_display }}
+    <!-- Users Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ban Details</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for user in users %}
+                    <tr class="user-row hover:bg-gray-50 transition-colors" data-status="{% if user.is_active %}active{% else %}banned{% endif %}" data-role="{{ user.user_type }}" data-name="{{ user.username|lower }}" data-email="{{ user.email|lower }}">
+                        <!-- User Info -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 mr-4">
+                                    {% if user.userprofile.profile_picture %}
+                                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover rounded-full">
+                                    {% else %}
+                                        {{ user.username|make_list|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
+                                    <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Role -->
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if user.user_type == 'landlord' %}bg-yellow-100 text-yellow-800
+                                {% elif user.user_type == 'student' %}bg-blue-100 text-blue-800
+                                {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ user.get_user_type_display }}
                             </span>
-                        {% endif %}
-                    </div>
-                    {% if user.ban_reason %}
-                        <p class="mt-2 text-xs text-red-600 font-medium bg-red-50 rounded px-2 py-1 text-center">
-                            Reason: {{ user.ban_reason|truncatechars:50 }}
-                        </p>
-                    {% endif %}
-                {% endif %}
-            </div>
-            <div class="flex gap-2 mt-6 w-full justify-center">
-                <a href="{% url 'accounts:view_user_profile' user.id %}" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    View Profile
-                </a>
-                {% if request.user != user and user.user_type != 'admin' %}
-                    <a href="{% url 'accounts:report_user' user.id %}" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-orange-100 text-orange-800 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors">
-                        Report
-                    </a>
-                {% endif %}
-                <button type="button" class="ban-toggle-btn px-3 py-1.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors {% if user.is_active %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %}" data-user-id="{{ user.id }}" data-is-active="{{ user.is_active }}">
-                    {% if user.is_active %}Ban{% else %}Unban{% endif %}
-                </button>
-                <button type="button" class="delete-btn px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-100 text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500" data-user-id="{{ user.id }}">Delete</button>
-            </div>
+                        </td>
+
+                        <!-- Status -->
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if user.is_active %}bg-green-100 text-green-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if user.is_active %}
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Active
+                                {% else %}
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Banned
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <!-- Ban Details -->
+                        <td class="px-6 py-4">
+                            {% if not user.is_active %}
+                            <div class="space-y-1">
+                                {% if user.ban_severity %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
+                                    {% if user.ban_severity == 'minor' %}bg-yellow-100 text-yellow-800
+                                    {% elif user.ban_severity == 'moderate' %}bg-orange-100 text-orange-800
+                                    {% elif user.ban_severity == 'major' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ user.get_ban_severity_display }}
+                                </span>
+                                {% endif %}
+                                {% if user.ban_reason %}
+                                <button onclick="openBanReasonTooltip('{{ user.ban_reason|escapejs }}')" 
+                                        class="block text-xs text-gray-500 hover:text-gray-700 text-left truncate max-w-xs">
+                                    {{ user.ban_reason|truncatechars:50 }}
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-6 py-4">
+                            <div class="flex justify-end">
+                                <div class="relative" x-data="{ open: false }">
+                                    <!-- Three-dot menu button -->
+                                    <button @click="open = !open" 
+                                            class="inline-flex items-center p-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                        </svg>
+                                    </button>
+
+                                    <!-- Dropdown menu -->
+                                    <div x-show="open" 
+                                         @click.away="open = false" 
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="transform opacity-0 scale-95"
+                                         x-transition:enter-end="transform opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-75"
+                                         x-transition:leave-start="transform opacity-100 scale-100"
+                                         x-transition:leave-end="transform opacity-0 scale-95"
+                                         class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                        
+                                        <!-- View Profile -->
+                                        <a href="{% url 'accounts:view_user_profile' user.id %}" 
+                                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            View Profile
+                                        </a>
+
+                                        <!-- Report (if not current user and not admin) -->
+                                        {% if request.user != user and user.user_type != 'admin' %}
+                                        <a href="{% url 'accounts:report_user' user.id %}" 
+                                           class="flex items-center px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 transition-colors">
+                                            <svg class="w-4 h-4 mr-3 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            Report User
+                                        </a>
+                                        {% endif %}
+
+                                        {% if request.user != user %}
+                                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">Change Role</div>
+                                        {% for role_key, role_label in user_roles %}
+                                            {% if role_key != user.user_type %}
+                                             <form method="post"
+                                                   action="{% url 'accounts:update_user_role' user.id %}"
+                                                   class="role-change-form"
+                                                   data-username="{{ user.username }}"
+                                                   data-new-role="{{ role_label }}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="new_role" value="{{ role_key }}">
+                                                <button type="submit"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                    <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                    Make {{ role_label }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <div class="border-t border-gray-100 my-1"></div>
+                                        {% endif %}
+
+                                        <!-- Ban/Unban -->
+                                        <button type="button" 
+                                                class="ban-toggle-btn flex items-center w-full px-4 py-2 text-sm {% if user.is_active %}text-yellow-700 hover:bg-yellow-50{% else %}text-green-700 hover:bg-green-50{% endif %} transition-colors"
+                                                data-user-id="{{ user.id }}" 
+                                                data-is-active="{{ user.is_active }}">
+                                            <svg class="w-4 h-4 mr-3 {% if user.is_active %}text-yellow-500{% else %}text-green-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                {% if user.is_active %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                {% else %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                                {% endif %}
+                                            </svg>
+                                            {% if user.is_active %}Ban User{% else %}Unban User{% endif %}
+                                        </button>
+
+                                        <!-- Delete (if not current user) -->
+                                        {% if request.user != user %}
+                                        <button type="button" 
+                                                class="delete-btn flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
+                                                data-user-id="{{ user.id }}">
+                                            <svg class="w-4 h-4 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                            Delete User
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                                </svg>
+                                <p class="text-lg font-medium text-gray-900 mb-2">No users found</p>
+                                <p class="text-gray-500">Try adjusting your search or filter criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        {% empty %}
-        <div class="col-span-full text-center text-gray-500 py-8">No users found.</div>
-        {% endfor %}
     </div>
 </div>
 
 <!-- Ban Reason Modal -->
 <div id="banReasonModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-semibold mb-4">Ban User</h3>
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ban User</h3>
         <form id="banReasonForm">
             <input type="hidden" id="banUserId" name="user_id">
             
             <div class="mb-4">
                 <label for="ban_severity" class="block text-sm font-medium text-gray-700 mb-2">Ban Severity <span class="text-red-500">*</span></label>
-                <select id="ban_severity" name="ban_severity" required class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                <select id="ban_severity" name="ban_severity" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                     <option value="">Select severity...</option>
                     <option value="minor">Minor (1 day)</option>
                     <option value="moderate">Moderate (7 days)</option>
@@ -105,12 +272,12 @@
             
             <div class="mb-4">
                 <label for="ban_reason" class="block text-sm font-medium text-gray-700 mb-2">Reason for Ban <span class="text-red-500">*</span></label>
-                <textarea id="ban_reason" name="ban_reason" rows="3" required class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Provide detailed reason for the ban..."></textarea>
+                <textarea id="ban_reason" name="ban_reason" rows="4" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Provide detailed reason for the ban..."></textarea>
             </div>
             
-            <div class="flex justify-end">
-                <button type="button" onclick="closeBanModal()" class="mr-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Ban User</button>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeBanModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Ban User</button>
             </div>
         </form>
     </div>
@@ -118,82 +285,72 @@
 
 <!-- Ban Reason Tooltip Modal -->
 <div id="banReasonTooltip" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-semibold mb-4 text-red-700">Ban Reason</h3>
-        <p id="banReasonText" class="text-gray-800"></p>
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-red-700 mb-4">Ban Reason</h3>
+        <p id="banReasonText" class="text-gray-800 bg-gray-50 rounded-lg p-4"></p>
         <div class="flex justify-end mt-4">
-            <button type="button" onclick="closeBanReasonTooltip()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+            <button type="button" onclick="closeBanReasonTooltip()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Close</button>
         </div>
     </div>
 </div>
 
-<!-- Toast Notification -->
-<div id="toast" class="fixed top-6 right-6 z-50 hidden px-6 py-4 rounded-lg shadow-lg text-white text-lg font-semibold"></div>
 
-{% if messages %} 
-<div id="alert-3" class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-100 dark:text-green-400" role="alert">
-    <svg class="shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-    </svg>
-    <span class="sr-only">Info</span>
-    <div class="ms-3 text-sm font-medium">
-        {% for message in messages %}
-        <p>{{ message }}</p>
-        {% endfor %}
-    </div>
-    <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-white-700" data-dismiss-target="#alert-3" aria-label="Close">
-      <span class="sr-only">Close</span>
-      <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-      </svg>
-    </button>
-</div>
-{% endif %}
 
+
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 <script>
-// Modal logic
+// Modal functions
 function openBanModal(userId) {
     document.getElementById('banUserId').value = userId;
     document.getElementById('ban_reason').value = '';
     document.getElementById('banReasonModal').classList.remove('hidden');
 }
+
 function closeBanModal() {
     document.getElementById('banReasonModal').classList.add('hidden');
 }
+
 function openBanReasonTooltip(reason) {
     document.getElementById('banReasonText').textContent = reason;
     document.getElementById('banReasonTooltip').classList.remove('hidden');
 }
+
 function closeBanReasonTooltip() {
     document.getElementById('banReasonTooltip').classList.add('hidden');
 }
-function showToast(message, type='success') {
+
+function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.className = `fixed top-6 right-6 z-50 px-6 py-4 rounded-lg shadow-lg text-white text-lg font-semibold ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+    toast.className = `fixed top-6 right-6 z-50 px-6 py-4 rounded-lg shadow-lg text-white text-lg font-semibold transition-opacity duration-300 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
     toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 2500);
+    setTimeout(() => toast.classList.add('hidden'), 3000);
 }
 
 // Filter logic
 const filterTabs = document.querySelectorAll('.filter-tab');
 filterTabs.forEach(tab => {
     tab.addEventListener('click', function() {
-        filterTabs.forEach(t => t.classList.remove('bg-blue-600', 'text-white', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700'));
-        if (this.dataset.filter === 'all') {
+        filterTabs.forEach(t => t.classList.remove('bg-blue-600', 'text-white', 'bg-purple-100', 'text-purple-700', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700'));
+
+        const filter = this.dataset.filter;
+        if (filter === 'all') {
             this.classList.add('bg-blue-600', 'text-white');
-        } else if (this.dataset.filter === 'active') {
+        } else if (filter === 'admin') {
+            this.classList.add('bg-purple-100', 'text-purple-700');
+        } else if (filter === 'active') {
             this.classList.add('bg-green-100', 'text-green-700');
-        } else {
+        } else if (filter === 'banned') {
             this.classList.add('bg-red-100', 'text-red-700');
         }
-        const status = this.dataset.filter;
-        document.querySelectorAll('.user-card').forEach(card => {
-            if (status === 'all' || card.dataset.status === status) {
-                card.classList.remove('hidden');
-            } else {
-                card.classList.add('hidden');
-            }
+
+        document.querySelectorAll('.user-row').forEach(row => {
+            const matches =
+                filter === 'all' ||
+                (filter === 'admin' && row.dataset.role === 'admin') ||
+                (filter === 'active' && row.dataset.status === 'active') ||
+                (filter === 'banned' && row.dataset.status === 'banned');
+            row.classList.toggle('hidden', !matches);
         });
     });
 });
@@ -202,27 +359,27 @@ filterTabs.forEach(tab => {
 const searchInput = document.getElementById('user-search');
 searchInput.addEventListener('input', function() {
     const query = this.value.toLowerCase();
-    document.querySelectorAll('.user-card').forEach(card => {
-        const name = card.dataset.name;
-        const email = card.dataset.email;
+    document.querySelectorAll('.user-row').forEach(row => {
+        const name = row.dataset.name;
+        const email = row.dataset.email;
         if (name.includes(query) || email.includes(query)) {
-            card.classList.remove('hidden');
+            row.classList.remove('hidden');
         } else {
-            card.classList.add('hidden');
+            row.classList.add('hidden');
         }
     });
 });
 
 // Ban/Unban logic
-const banButtons = document.querySelectorAll('.ban-toggle-btn');
-banButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-        const userId = this.getAttribute('data-user-id');
-        const isActive = this.getAttribute('data-is-active') === 'True';
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('ban-toggle-btn')) {
+        const userId = e.target.getAttribute('data-user-id');
+        const isActive = e.target.getAttribute('data-is-active') === 'True';
+        
         if (isActive) {
             openBanModal(userId);
         } else {
-            this.disabled = true;
+            e.target.disabled = true;
             fetch(`{% url 'accounts:toggle_user_status' 0 %}`.replace('0', userId), {
                 method: 'POST',
                 headers: {
@@ -237,7 +394,7 @@ banButtons.forEach(btn => {
                 setTimeout(() => window.location.reload(), 1200);
             });
         }
-    });
+    }
 });
 
 // Handle ban form submit
@@ -282,12 +439,11 @@ if (banForm) {
 }
 
 // Delete logic
-const deleteButtons = document.querySelectorAll('.delete-btn');
-deleteButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-        const userId = this.getAttribute('data-user-id');
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('delete-btn')) {
+        const userId = e.target.getAttribute('data-user-id');
         if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-            this.disabled = true;
+            e.target.disabled = true;
             fetch(`{% url 'accounts:delete_user' 0 %}`.replace('0', userId), {
                 method: 'POST',
                 headers: {
@@ -302,16 +458,21 @@ deleteButtons.forEach(btn => {
                 setTimeout(() => window.location.reload(), 1200);
             });
         }
-    });
+    }
 });
 
-// Ban reason info tooltip/modal
-const infoBtns = document.querySelectorAll('.info-btn');
-infoBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-        const reason = this.getAttribute('data-reason');
-        openBanReasonTooltip(reason);
+// Role change confirmation
+document.querySelectorAll('.role-change-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const username = this.dataset.username;
+        const newRole = this.dataset.newRole;
+        const message = `Are you sure you want to change ${username}'s role to ${newRole}?`;
+        if (!confirm(message)) {
+            e.preventDefault();
+        } else if (!confirm('Please confirm again to proceed with the role change.')) {
+            e.preventDefault();
+        }
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

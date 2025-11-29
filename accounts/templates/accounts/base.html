@@ -91,6 +91,9 @@
                             <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Dashboard</a></li>
                             <li><a href="{{ manage_users_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == manage_users_url %}active{% endif %}">Manage Users</a></li>
                             <li><a href="{{ transaction_log_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == transaction_log_url %}active{% endif %}">Transaction Log</a></li>
+                            <li class="relative">
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='adminNavNotificationButton' dropdown_id='adminNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
+                            </li>
                         {% elif request.user.user_type == "landlord" %}
                             {% url 'accounts:dashboard' as dashboard_url %}
                             {% url 'dormitory:my_dorms' as my_dorms_url %}
@@ -102,46 +105,7 @@
                             <li><a href="{{ landlord_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == landlord_reservations_url %}active{% endif %}"><span>Manage Reservations</span>{% if pending_count > 0 %}<span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ pending_count }}</span>{% endif %}</a></li>
 
                             <li class="relative">
-                                <!-- Notification Button (Bell Icon) -->
-                                <button id="notificationButton" class="relative p-2 text-black hover:bg-gray-300 dark:text-white dark:hover:bg-gred-200 rounded-full
-                                ">
-                                    <svg class="w-6 h-6 text-black-800 dark:text-black" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"/>
-                                    </svg>
-                                    <!-- Notification Counter -->
-                                    <span class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full px-1">
-                                        {{ notifications.count }}
-                                    </span>
-                                </button>
-                            
-                                <!-- Notification Dropdown -->
-                                <div id="dropdownNotification" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200 dark:border-gray-200">
-                                    <!-- Header -->
-                                    <div class="flex justify-between items-center bg-blue-600 text-white font-medium px-4 py-2 rounded-t-lg">
-                                        <span>Notifications</span>
-                                    </div>
-                            
-                                    <!-- Notification List -->
-                                    <div class="divide-y divide-gray-100 dark:divide-gray-700">
-                                        {% for notification in notifications %}
-                                        <div class="notification-item flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-400 cursor-pointer transition-opacity duration-300"
-                                             data-id="{{ notification.id }}">
-                                            <div class="w-full">
-                                                <p class="text-sm text-black font-extrabold">{{ notification.user.name }}</p>
-                                                <p class="text-sm text-gray-600 dark:text-gray-800">{{ notification.message }}</p>
-                                                <span class="text-xs text-blue-500 dark:text-blue-400">{{ notification.created_at|timesince }} ago</span>
-                                            </div>
-                                        </div>
-                                        {% empty %}
-                                        <div class="text-center py-3 text-black dark:text-white">No new notifications</div>
-                                        {% endfor %}
-                                    </div>
-                            
-                                    <!-- Footer: View All -->
-                                    <div class="text-center py-2 bg-blue-600 bg-blue-300 rounded-b-lg">
-                                       
-                                    </div>
-                                </div>
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='landlordNotificationButton' dropdown_id='landlordDropdownNotification' notifications=notifications header='Notifications' %}
                             </li>
                             
 
@@ -157,6 +121,9 @@
                             <li><a href="{{ dorm_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dorm_list_url %}active{% endif %}">Browse Dorms</a></li>
                             <li><a href="{{ roommate_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == roommate_list_url %}active{% endif %}">Roommate Finder</a></li>
                             <li><a href="{{ student_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == student_reservations_url %}active{% endif %}"><span>My Reservations</span>{% if user_pending_reservations %}<span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>{% endif %}</a></li>
+                            <li class="relative">
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='studentNavNotificationButton' dropdown_id='studentNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
+                            </li>
 
                         {% endif %}
     
@@ -205,34 +172,46 @@ document.addEventListener("DOMContentLoaded", function () {
     const userMenuButton = document.getElementById("user-menu-button");
     const userDropdown = document.getElementById("user-dropdown");
 
-    userMenuButton.addEventListener("click", function () {
-        userDropdown.classList.toggle("hidden");
-    });
-
-    document.addEventListener("click", function (event) {
-        if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)) {
-            userDropdown.classList.add("hidden");
-        }
-    });
-
-    const notificationButton = document.getElementById("notificationButton");
-    const dropdownNotification = document.getElementById("dropdownNotification");
-
-    if (notificationButton && dropdownNotification) {
-        notificationButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            dropdownNotification.classList.toggle("hidden");
+    if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener("click", function () {
+            userDropdown.classList.toggle("hidden");
         });
 
         document.addEventListener("click", function (event) {
-            if (!notificationButton.contains(event.target) && !dropdownNotification.contains(event.target)) {
-                dropdownNotification.classList.add("hidden");
+            if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)) {
+                userDropdown.classList.add("hidden");
             }
         });
+    }
 
-        document.querySelectorAll(".notification-item").forEach((notif) => {
-            notif.addEventListener("click", function (event) {
+    initNotificationWidgets();
+    initReservationsDropdown();
+});
+
+function initNotificationWidgets() {
+    const widgets = document.querySelectorAll("[data-notification-widget]");
+    if (!widgets.length) {
+        return;
+    }
+
+    widgets.forEach((widget) => {
+        const button = widget.querySelector("[data-notification-toggle]");
+        const dropdown = widget.querySelector("[data-notification-dropdown]");
+        if (!button || !dropdown) {
+            return;
+        }
+
+        button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            dropdown.classList.toggle("hidden");
+        });
+
+        widget.querySelectorAll(".notification-item").forEach((notif) => {
+            notif.addEventListener("click", function () {
                 const notificationId = this.dataset.id;
+                if (!notificationId) {
+                    return;
+                }
 
                 fetch(`/accounts/notifications/read/${notificationId}/`, {
                     method: "POST",
@@ -241,33 +220,33 @@ document.addEventListener("DOMContentLoaded", function () {
                         "Content-Type": "application/json",
                     },
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        this.classList.add("opacity-50", "transition-opacity", "duration-300");
-                        setTimeout(() => {
-                            this.remove();
-                        }, 300);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            this.classList.add("opacity-50", "transition-opacity", "duration-300");
+                            setTimeout(() => {
+                                this.remove();
+                            }, 300);
+                        }
+                    })
+                    .catch((error) => console.error("Error:", error));
             });
         });
+    });
 
-        function getCSRFToken() {
-            let cookieValue = null;
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith("csrftoken=")) {
-                    cookieValue = cookie.substring("csrftoken=".length, cookie.length);
-                    break;
+    document.addEventListener("click", function (event) {
+        widgets.forEach((widget) => {
+            if (!widget.contains(event.target)) {
+                const dropdown = widget.querySelector("[data-notification-dropdown]");
+                if (dropdown) {
+                    dropdown.classList.add("hidden");
                 }
             }
-            return cookieValue;
-        }
-    }
+        });
+    });
+}
 
+function initReservationsDropdown() {
     const reservationsButton = document.getElementById("reservationsButton");
     const reservationsDropdown = document.getElementById("reservationsDropdown");
 
@@ -283,7 +262,20 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-});
+}
+
+function getCSRFToken() {
+    let cookieValue = null;
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith("csrftoken=")) {
+            cookieValue = cookie.substring("csrftoken=".length, cookie.length);
+            break;
+        }
+    }
+    return cookieValue;
+}
 
 </script>
 
@@ -317,3 +309,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
 </body>
 </html>
+

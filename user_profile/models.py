@@ -11,6 +11,7 @@ class UserProfile(models.Model):
     favorite_dorms = models.ManyToManyField(Dorm, through='FavoriteDorm', related_name='favorited_by')
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=64, blank=True, null=True)
+    verification_token_created_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

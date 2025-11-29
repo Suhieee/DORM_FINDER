@@ -44,6 +44,7 @@ class Dorm(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
+    payment_terms = models.TextField(null=True, blank=True, help_text="Payment terms (e.g., '3 months deposit, 1 month advance')")
     permit = models.FileField(upload_to='dorm_permits/', null=True, blank=True)
     payment_qr = models.ImageField(upload_to='payment_qr_codes/', null=True, blank=True, help_text="Upload your GCash/Maya QR code for payments")
     available = models.BooleanField(default=True)
@@ -243,6 +244,15 @@ class RoommatePost(models.Model):
         score = RoommateMatchingService.calculate_compatibility(user_post, self)
         return round(float(score), 1)
 
+    def get_profile_image_url(self):
+        """
+        Safely get profile image URL with fallback to default image
+        """
+        if self.profile_image and hasattr(self.profile_image, 'url'):
+            return self.profile_image.url
+        return '/static/images/default-profile.png'  # Path to your default image
+
+
     def __str__(self):
         return f"{self.name} - {self.get_mood_display()} ({self.preferred_location})"
 
@@ -417,8 +427,36 @@ class RoommateChat(models.Model):
                 self.receiver = self.match.initiator.user
         super().save(*args, **kwargs)
 
+    def get_reactions_summary(self):
+        """Get a summary of reactions for this message"""
+        reactions = self.reactions.values('emoji').annotate(count=models.Count('id'))
+        return {r['emoji']: r['count'] for r in reactions}
+
     def __str__(self):
         return f"Message from {self.sender.username} at {self.timestamp}"
+
+class RoommateChatReaction(models.Model):
+    EMOJI_CHOICES = [
+        ('👍', 'Thumbs Up'),
+        ('❤️', 'Heart'),
+        ('😊', 'Smile'),
+        ('😂', 'Laugh'),
+        ('😮', 'Wow'),
+        ('😢', 'Sad'),
+        ('😡', 'Angry'),
+    ]
+    
+    message = models.ForeignKey(RoommateChat, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    emoji = models.CharField(max_length=10, choices=EMOJI_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('message', 'user', 'emoji')  # One reaction per user per emoji per message
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.user.username} reacted {self.emoji} to message {self.message.id}"
 
 class Room(models.Model):
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name="rooms")

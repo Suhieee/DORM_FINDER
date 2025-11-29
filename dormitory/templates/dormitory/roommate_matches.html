@@ -4,7 +4,6 @@
 {% block content %}
 
 <!-- Loader -->
-
 <div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
 </div>
@@ -23,10 +22,26 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 /* Dropdown animation */
 .dropdown-menu { transform-origin: top right; transition: transform .12s ease, opacity .12s ease; }
 
-/* Message bubble tail adjustments (subtle) */
-.msg-left::after, .msg-right::after { content: ""; display:block; width:10px; height:10px; transform:rotate(45deg); position:relative; }
-.msg-left::after { background: #f3f4f6; margin-left:-6px; margin-top:6px; }
-.msg-right::after { background: linear-gradient(90deg,#7c3aed,#2563eb); margin-left:6px; margin-top:6px; }
+/* Enhanced message bubble styling */
+.msg-left::after, .msg-right::after { content: ""; display:block; width:8px; height:8px; transform:rotate(45deg); position:relative; }
+.msg-left::after { background: #f3f4f6; margin-left:-4px; margin-top:4px; }
+.msg-right::after { background: linear-gradient(90deg,#7c3aed,#2563eb); margin-left:4px; margin-top:4px; }
+
+/* Enhanced message bubble */
+.message-bubble {
+  position: relative;
+  animation: slideInUp 0.3s ease-out;
+  max-width: 85%;
+  word-wrap: break-word;
+  border-radius: 18px !important;
+}
+
+.message-bubble img {
+  border-radius: 12px !important;
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: cover;
+}
 
 /* Scrollbar thin */
 .scrollbar-thin::-webkit-scrollbar { height:8px; width:8px; }
@@ -38,6 +53,518 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 }
 .remove-preview {
   background: rgba(0,0,0,0.6); color: white; width:18px; height:18px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:11px;
+}
+
+/* Enhanced animations and transitions */
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+}
+
+/* New styles for messenger layout */
+.messenger-container {
+  height: calc(100vh - 120px);
+  max-height: 800px;
+}
+
+.matches-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  height: 100%;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Enhanced match cards */
+.match-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.match-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.5s;
+}
+
+.match-card:hover::before {
+  left: 100%;
+}
+
+.match-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Status indicators */
+.status-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-online { background: #10b981; }
+.status-away { background: #f59e0b; }
+.status-offline { background: #6b7280; }
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  margin: 8px 0;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: #9ca3af;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Enhanced compatibility bar */
+.compatibility-bar {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
+  border-radius: 10px;
+  height: 8px;
+}
+
+.compatibility-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #7c3aed, #2563eb, #06b6d4);
+  position: relative;
+  transition: width 1s ease-out;
+}
+
+.compatibility-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Message reactions */
+.message-reactions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.reaction {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.reaction:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+
+.reaction.active {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.reaction.reacting {
+  animation: reactionPulse 0.3s ease;
+}
+
+@keyframes reactionPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Profile preview tooltip */
+.profile-preview {
+  position: absolute;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  padding: 16px;
+  width: 280px;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.profile-preview.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* Enhanced floating button */
+.floating-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+}
+
+.floating-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Enhanced message bubbles */
+.message-bubble.sending {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+/* Unread message indicator */
+.unread-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+}
+
+/* Enhanced conversation items */
+.conversation-item {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.conversation-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #7c3aed, #2563eb);
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
+.conversation-item.active::after {
+  transform: scaleY(1);
+}
+
+.conversation-item:hover {
+  background: linear-gradient(90deg, #f8fafc, #f1f5f9);
+}
+
+/* Enhanced search input */
+.search-input {
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  border: 2px solid transparent;
+}
+
+.search-input:focus {
+  background: white;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* Loading states */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.chat-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+}
+
+.chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-input-container {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.close-chat-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.close-chat-btn:hover {
+  color: #374151;
+}
+
+/* Messenger-style layout */
+.messenger-layout {
+  display: flex;
+  height: 100%;
+}
+
+.conversations-sidebar {
+  width: 350px;
+  border-right: 1px solid #e5e7eb;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversations-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.conversations-search {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.conversations-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-item {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.conversation-item:hover {
+  background: #f9fafb;
+}
+
+.conversation-item.active {
+  background: #eff6ff;
+}
+
+.conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-preview {
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.conversation-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.conversation-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.open-chat-button {
+  position: fixed;
+  top: 120px;
+  right: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  z-index: 40;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.open-chat-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+}
+
+.open-chat-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.open-chat-button .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+}
+
+.empty-chat-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.empty-chat-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 1024px) {
+  .matches-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .conversations-sidebar {
+    width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .messenger-layout {
+    flex-direction: column;
+  }
+  
+  .conversations-sidebar {
+    width: 100%;
+    height: 40%;
+  }
+  
+  .chat-main {
+    height: 60%;
+  }
+  
+  .open-chat-button {
+    right: 1rem;
+    bottom: 1rem;
+    top: auto;
+  }
 }
 </style>
 
@@ -52,7 +579,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
         <div class="hidden md:flex items-center gap-4">
             {% if user_post %}
             <div class="flex items-center gap-3 bg-white/70 backdrop-blur px-3 py-2 rounded-xl border shadow-sm">
-                <img src="{{ user_post.profile_image.url|default:'' }}" onerror="this.style.display='none'"
+                <img src="{{ user_post.get_profile_image_url }}"
                      class="w-9 h-9 rounded-full object-cover border" alt="me">
                 <div class="text-sm">
                     <div class="text-xs text-gray-500">Your compatibility</div>
@@ -67,25 +594,38 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
         </div>
     </div>
 
-```
-<!-- Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- LEFT: Matches (scrollable, no wasted blank space) -->
-    <aside class="lg:col-span-1 bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
+    <!-- Floating Chat Button -->
+    <div id="roommate-chat-meta"
+         data-selected-match="{% if selected_match %}{{ selected_match.id }}{% endif %}"
+         data-open-chat="{% if request.GET.open_chat or selected_match %}true{% else %}false{% endif %}">
+    </div>
+    <button class="open-chat-button" id="open-chat-button">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        {% if unread_message_count %}
+        <span class="badge">{{ unread_message_count }}</span>
+        {% endif %}
+    </button>
+
+    <!-- Grid layout for matches and discover -->
+    <div class="matches-grid">
+        <!-- LEFT: Matches -->
+        <div class="bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
         <div class="p-4 border-b flex items-center justify-between">
             <h2 class="text-base font-semibold text-gray-800">Your Matches</h2>
             <span class="text-xs text-gray-500">{{ matches|length }} total</span>
         </div>
 
-        <!-- scrollable list (max height fits viewport) -->
-        <div class="divide-y divide-gray-100 overflow-y-auto scrollbar-thin px-2" style="max-height: calc(80vh);">
+            <!-- scrollable list -->
+            <div class="divide-y divide-gray-100 overflow-y-auto scrollbar-thin px-2 flex-1">
             {% for match in matches %}
             <div class="p-3">
-                <div class="flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match.id == match.id %}bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600{% endif %}">
-                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none">
-                        <img src="{% if match.initiator.user == request.user %}{{ match.target.profile_image.url|default:'' }}{% else %}{{ match.initiator.profile_image.url|default:'' }}{% endif %}"
-                             onerror="this.style.display='none'"
+                    <div class="match-card flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match and selected_match.id == match.id %}bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600{% endif %}">
+                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none relative profile-hover" data-user-id="{% if match.initiator.user == request.user %}{{ match.target.user.id }}{% else %}{{ match.initiator.user.id }}{% endif %}">
+                        <img src="{% if match.initiator.user == request.user %}{{ match.target.get_profile_image_url }}{% else %}{{ match.initiator.get_profile_image_url }}{% endif %}"
                              class="w-12 h-12 rounded-full object-cover border shadow-sm" alt="avatar">
+                        <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
                     </a>
 
                     <div class="flex-1 min-w-0">
@@ -101,43 +641,26 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                                 <div class="text-xs text-gray-400">Updated {{ match.created_at|timesince }} ago</div>
                             </div>
 
-                            <!-- 3-dot dropdown -->
-                            <div class="relative inline-block text-left">
-                                <button type="button" onclick="toggleDropdown('dropdown-match-{{ match.id }}')" aria-haspopup="true" aria-expanded="false"
-                                    class="p-1 rounded-full hover:bg-gray-100 focus:outline-none">
-                                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+                                <!-- Chat button in upper right -->
+                                <button type="button" class="p-2 rounded-full hover:bg-purple-50 text-purple-600 open-chat-sidebar-btn" data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
                                 </button>
-
-                                <div id="dropdown-match-{{ match.id }}" class="hidden dropdown-menu absolute right-0 mt-2 w-44 rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-50">
-                                    <div class="py-1">
-                                        {% if match.initiator.user == request.user %}
-                                            <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
-                                            {% if match.target.user.user_type != 'admin' %}
-                                            <a href="{% url 'accounts:report_user' match.target.user.id %}" class="block px-4 py-2 text-sm text-orange-600 hover:bg-gray-100">Report</a>
-                                            {% endif %}
-                                        {% else %}
-                                            <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Profile</a>
-                                            {% if match.initiator.user.user_type != 'admin' %}
-                                            <a href="{% url 'accounts:report_user' match.initiator.user.id %}" class="block px-4 py-2 text-sm text-orange-600 hover:bg-gray-100">Report</a>
-                                            {% endif %}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
-                        <!-- compatibility bar -->
+                        <!-- Enhanced compatibility bar -->
                         <div class="mt-3">
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                <div class="h-2 rounded-full" style="width: {{ match.compatibility_score|floatformat:0 }}%; background: linear-gradient(90deg,#7c3aed,#2563eb);"></div>
+                            <div class="compatibility-bar">
+                                <div class="compatibility-fill" data-progress="{{ match.compatibility_score|floatformat:0 }}"></div>
                             </div>
-                            <div class="mt-1 flex items-center justify-between">
-                                <span class="text-xs text-gray-600">{{ match.compatibility_score }}% match</span>
+                            <div class="mt-2 flex items-center justify-between">
+                                <span class="text-xs font-medium text-gray-700">{{ match.compatibility_score }}% match</span>
                                 <span class="text-xs">
-                                    <span class="px-2 py-0.5 rounded-full text-[11px]
-                                        {% if match.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                        {% elif match.status == 'accepted' %}bg-green-100 text-green-800
-                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                    <span class="px-2 py-1 rounded-full text-[11px] font-medium shadow-sm
+                                        {% if match.status == 'pending' %}bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800
+                                        {% elif match.status == 'accepted' %}bg-gradient-to-r from-green-100 to-green-200 text-green-800
+                                        {% else %}bg-gradient-to-r from-red-100 to-red-200 text-red-800{% endif %}">
                                         {{ match.get_status_display }}
                                     </span>
                                 </span>
@@ -166,26 +689,26 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
             <div class="p-4 text-gray-500">No matches found.</div>
             {% endfor %}
         </div>
-    </aside>
+        </div>
 
-    <!-- MIDDLE: Discover -->
-    <div class="lg:col-span-1 bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
+        <!-- RIGHT: Discover -->
+        <div class="bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
         <div class="p-4 border-b flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-4.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <h2 class="text-base font-semibold text-gray-800">Discover</h2>
         </div>
 
-        <div class="p-4 space-y-3 overflow-y-auto" style="max-height: calc(80vh);">
+            <div class="p-4 space-y-3 overflow-y-auto flex-1">
             {% for post, score in potential_matches %}
             <div class="p-3 rounded-2xl border hover:shadow-md transition flex items-start justify-between gap-3">
                 <div class="flex items-start gap-3 min-w-0">
-                    <img src="{{ post.profile_image.url|default:'' }}" onerror="this.style.display='none'" class="w-12 h-12 rounded-lg object-cover border" alt="avatar">
+                    <img src="{{ post.get_profile_image_url }}" class="w-12 h-12 rounded-lg object-cover border" alt="avatar">
                     <div class="min-w-0">
                         <h3 class="font-medium text-gray-800 truncate"><a href="{% url 'accounts:view_user_profile' post.user.id %}" class="hover:text-blue-600">{{ post.name }}</a></h3>
                         <p class="text-xs text-gray-500 mt-1 truncate">{{ post.preferred_location }}</p>
                         <div class="mt-2 w-full">
                             <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                <div class="h-2 rounded-full" style="width: {{ score|floatformat:0 }}%; background: linear-gradient(90deg,#7c3aed,#2563eb);"></div>
+                                    <div class="h-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600" data-progress="{{ score|floatformat:0 }}"></div>
                             </div>
                             <div class="mt-1 text-xs text-blue-700 font-medium">{{ score }}%</div>
                         </div>
@@ -213,121 +736,209 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
             {% endfor %}
         </div>
     </div>
-
-    <!-- RIGHT: Details + Chat (chat is fixed height + scrollable) -->
-    <main class="lg:col-span-2 bg-white rounded-2xl shadow border flex flex-col overflow-hidden">
-        <!-- Tabs -->
-        <div class="p-4 border-b flex items-center gap-3">
-            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700" data-tab="details">Details</button>
-            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50" data-tab="overlaps">Overlaps</button>
-            <button class="rm-tab px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50" data-tab="chat">Chat</button>
+    </div>
         </div>
 
-        {% if selected_match %}
-        <div class="flex-1 relative flex flex-col min-h-0">
-            <!-- DETAILS -->
-            <section id="tab-details" class="p-6 overflow-y-auto">
-                <div class="flex items-center gap-4">
+<!-- Fullscreen Chat Container with Messenger Layout -->
+<div id="chat-fullscreen" class="chat-fullscreen">
+    <div class="messenger-layout">
+        <!-- Conversations Sidebar -->
+        <div class="conversations-sidebar">
+            <div class="conversations-header">
+                <h2 class="text-lg font-semibold text-gray-800">Messages</h2>
+                    </div>
+
+            <div class="conversations-search">
+                <div class="relative">
+                    <input type="text" placeholder="Search conversations..." class="search-input w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    </div>
+                </div>
+
+            <div class="conversations-list scrollbar-thin">
+                {% if matches %}
+                    {% for match in matches %}
+                        {% if match.initiator.user == request.user %}
+                            {% with partner=match.target %}
+                            <div class="conversation-item {% if selected_match and selected_match.id == match.id %}active{% endif %}"
+                                 data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
+                                <div class="relative">
+                                    <img src="{{ partner.get_profile_image_url }}" class="conversation-avatar" alt="{{ partner.name }}">
+                                    <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
+                    </div>
+                                <div class="conversation-info">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <div class="conversation-name">{{ partner.name }}</div>
+                                        <div class="text-xs font-medium text-purple-600">{{ match.compatibility_score }}%</div>
+                    </div>
+                                    <div class="conversation-preview">
+                                        {% if match.messages.last %}
+                                            {{ match.messages.last.content|truncatechars:35 }}
+                                        {% else %}
+                                            Start a conversation...
+                                        {% endif %}
+                    </div>
+                </div>
+                                <div class="conversation-time">{{ match.created_at|timesince }} ago</div>
+                </div>
+                            {% endwith %}
+                        {% else %}
+                            {% with partner=match.initiator %}
+                            <div class="conversation-item {% if selected_match and selected_match.id == match.id %}active{% endif %}"
+                                 data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
+                                <div class="relative">
+                                    <img src="{{ partner.get_profile_image_url }}" class="conversation-avatar" alt="{{ partner.name }}">
+                                    <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
+                                </div>
+                                <div class="conversation-info">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <div class="conversation-name">{{ partner.name }}</div>
+                                        <div class="text-xs font-medium text-purple-600">{{ match.compatibility_score }}%</div>
+                                    </div>
+                                    <div class="conversation-preview">
+                                        {% if match.messages.last %}
+                                            {{ match.messages.last.content|truncatechars:35 }}
+                                        {% else %}
+                                            Start a conversation...
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="conversation-time">{{ match.created_at|timesince }} ago</div>
+                            </div>
+                            {% endwith %}
+                        {% endif %}
+                    {% empty %}
+                        <div class="empty-chat-state text-sm">No matches yet. Start connecting to see conversations here.</div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-chat-state text-sm">No matches available.</div>
+                {% endif %}
+            </div>
+                    </div>
+        
+        <!-- Chat Main Area -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="flex items-center gap-3">
+                    <button class="close-chat-btn" id="close-chat-btn">&times;</button>
+                    {% if selected_match and chat_partner %}
+                    <img id="chat-avatar" src="{{ chat_partner.get_profile_image_url }}" class="w-10 h-10 rounded-full object-cover border" alt="{{ chat_partner.name }}">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            {% if selected_match.initiator.user == request.user %}{{ selected_match.target.name }}{% else %}{{ selected_match.initiator.name }}{% endif %}
-                        </h3>
-                        <div class="text-sm text-gray-500 mt-1">Match updated {{ selected_match.created_at|timesince }} ago</div>
+                        <h3 id="chat-name" class="font-medium text-gray-800">{{ chat_partner.name }}</h3>
+                        <div id="chat-status" class="text-xs text-gray-500">{{ selected_match.get_status_display }}</div>
                     </div>
-
-                    <div class="ml-auto text-right">
-                        <div class="text-xs text-gray-500">Compatibility</div>
-                        <div class="text-2xl font-bold" style="color: #4f46e5;">{{ selected_match.compatibility_score }}%</div>
+                    {% else %}
+                    <div>
+                        <h3 class="font-medium text-gray-800">Messages</h3>
+                        <div class="text-xs text-gray-500">Select a conversation to get started</div>
                     </div>
+                    {% endif %}
+                </div>
+                {% if selected_match and chat_partner %}
+                <div class="flex items-center gap-2">
+                    <button class="p-2 rounded-full hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
                 </div>
 
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="p-4 rounded-lg border">
-                        <div class="text-xs text-gray-500">Name</div>
-                        <div class="font-medium mt-1">{% if selected_match.initiator.user == request.user %}{{ selected_match.target.name }}{% else %}{{ selected_match.initiator.name }}{% endif %}</div>
-                    </div>
-                    <div class="p-4 rounded-lg border">
-                        <div class="text-xs text-gray-500">Status</div>
-                        <div class="font-medium mt-1">{{ selected_match.get_status_display }}</div>
-                    </div>
-                    <div class="p-4 rounded-lg border">
-                        <div class="text-xs text-gray-500">Joined</div>
-                        <div class="font-medium mt-1">{{ selected_match.created_at|date:"M d, Y" }}</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- OVERLAPS -->
-            <section id="tab-overlaps" class="p-6 overflow-y-auto hidden">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Key overlaps</h4>
-                <div class="flex flex-wrap gap-2">
-                    <span class="px-3 py-1 rounded-full text-xs bg-green-50 text-green-700">Budget fit</span>
-                    <span class="px-3 py-1 rounded-full text-xs bg-indigo-50 text-indigo-700">Preferred location</span>
-                    <span class="px-3 py-1 rounded-full text-xs bg-yellow-50 text-yellow-700">Lifestyle</span>
-                </div>
-            </section>
-
-            <!-- CHAT -->
-            <section id="tab-chat" class="flex-1 flex flex-col overflow-hidden hidden">
-                <div class="p-4 border-b flex items-center gap-3">
-                    <h3 class="text-base font-semibold text-gray-800">Chat with
-                        {% if selected_match.initiator.user == request.user %} {{ selected_match.target.name }} {% else %} {{ selected_match.initiator.name }} {% endif %}
-                    </h3>
-                    <div class="ml-auto text-xs text-gray-500" id="typing-indicator" style="opacity:0;">Typing…</div>
-                </div>
-
-                <!-- messages area: fixed height via flex-1 and min-h, scrollable -->
-                <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-b from-white to-gray-50 scrollbar-thin" style="min-height: 260px; max-height: calc(70vh);">
+            {% if selected_match and chat_partner %}
+            <div class="chat-messages-container scrollbar-thin" id="fullscreen-chat-messages">
+                {% if chat_messages %}
                     {% for message in chat_messages %}
-                    <div class="{% if message.sender == request.user %}flex justify-end{% else %}flex justify-start{% endif %}">
-                        <div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm {% if message.sender == request.user %}bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
+                    <div class="mb-4 {% if message.sender == request.user %}flex justify-end{% else %}flex justify-start{% endif %}">
+                        <div class="message-bubble inline-block rounded-2xl px-4 py-3 shadow-sm {% if message.sender == request.user %}bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
                             {% if message.content|slice:":7" == "[image]" %}
-                                <img src="{{ message.content|cut:'[image]' }}" alt="image" class="max-h-60 rounded-lg mb-2 object-cover" />
+                                <img src="{{ message.content|cut:'[image]' }}" alt="image" class="max-h-32 w-auto rounded-xl mb-2 object-cover" />
                             {% else %}
                                 <p class="text-sm leading-relaxed">{{ message.content }}</p>
                             {% endif %}
+                            
+                            <!-- Message reactions -->
+                            <div class="message-reactions" data-message-id="{{ message.id }}">
+                                {% for emoji, count in message.get_reactions_summary.items %}
+                                    <span class="reaction active" data-emoji="{{ emoji }}" data-count="{{ count }}">
+                                        {{ emoji }} {{ count }}
+                                    </span>
+                                {% empty %}
+                                    <span class="reaction" data-emoji="👍">👍</span>
+                                    <span class="reaction" data-emoji="❤️">❤️</span>
+                                    <span class="reaction" data-emoji="😊">😊</span>
+                                {% endfor %}
+                            </div>
+                            
                             <div class="flex items-center gap-2 mt-2 justify-end">
-                                <span class="text-xs {% if message.sender == request.user %}text-blue-200{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
+                                <span class="text-xs {% if message.sender == request.user %}text-white/80{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
                                 {% if message.sender == request.user %}
-                                    <span class="text-[10px] {% if message.is_read %}text-blue-200{% else %}text-blue-300{% endif %}">✓{% if message.is_read %}✓{% endif %}</span>
+                                    <span class="text-[10px] {% if message.is_read %}text-white/70{% else %}text-white/40{% endif %}">✓{% if message.is_read %}✓{% endif %}</span>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                     {% endfor %}
+                {% else %}
+                    <div class="empty-chat-state">
+                        <div class="empty-chat-icon">💬</div>
+                        <p>No conversation yet. Start the conversation anytime.</p>
+                </div>
+                {% endif %}
+                
+                <!-- Typing indicator (hidden by default) -->
+                <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="text-xs text-gray-500 ml-2">Someone is typing...</span>
+                </div>
                 </div>
 
-                <!-- send bar (sticky-like at bottom) with file upload + floating preview -->
                 {% if selected_match.status == 'accepted' %}
-                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="p-3 border-t bg-white flex items-center gap-3 relative" id="chat-form" enctype="multipart/form-data">
+            <div class="chat-input-container">
+                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="flex items-center gap-3" id="fullscreen-chat-form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <label class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg border bg-gray-50 text-gray-600 hover:bg-gray-100 cursor-pointer">
-                        <input type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="chat-image-input" />
+                        <input type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="fullscreen-chat-image-input" />
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m18 0H3"/></svg>
                     </label>
 
-                    <input type="text" name="content" id="chat-input" class="flex-1 rounded-2xl border border-gray-200 px-4 py-2 focus:ring-1 focus:ring-purple-400" placeholder="Type a message..." autocomplete="off">
+                    <input type="text" name="content" id="fullscreen-chat-input" class="flex-1 rounded-2xl border border-gray-200 px-4 py-2 focus:ring-1 focus:ring-purple-400" placeholder="Type a message..." autocomplete="off">
 
-                    <!-- floating preview thumbnail (hidden until file selected) -->
-                    <div id="file-preview-wrapper" class="hidden items-center gap-2 absolute right-28 bottom-4">
-                        <img id="file-preview-thumb" src="" alt="preview" class="file-preview">
-                        <button type="button" id="remove-preview-btn" class="remove-preview -ml-3" title="Remove">×</button>
+                    <div id="fullscreen-file-preview-wrapper" class="hidden items-center gap-2 absolute right-28 bottom-4">
+                        <img id="fullscreen-file-preview-thumb" src="" alt="preview" class="file-preview">
+                        <button type="button" id="fullscreen-remove-preview-btn" class="remove-preview -ml-3" title="Remove">×</button>
                     </div>
 
                     <button type="submit" class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-2xl shadow">Send</button>
                 </form>
+            </div>
+            {% elif selected_match.status == 'pending' %}
+            <div class="chat-input-container text-center text-gray-500">
+                Waiting for match acceptance to start chatting.
+            </div>
                 {% else %}
-                <div class="p-4 border-t text-center text-gray-500"> {% if selected_match.status == 'pending' %} Waiting for match acceptance to start chatting. {% else %} This match has been {{ selected_match.status }}. {% endif %} </div>
-                {% endif %}
-            </section>
+            <div class="chat-input-container text-center text-gray-500">
+                This match has been {{ selected_match.status }}.
         </div>
+            {% endif %}
         {% else %}
-        <div class="flex-1 p-8 flex items-center justify-center text-gray-500">Select a match to view details and chat.</div>
+            <div class="empty-chat-state">
+                <div class="empty-chat-icon">💬</div>
+                <p class="text-base font-medium">Select a match to view messages</p>
+                <p class="text-sm text-gray-500">Use the message buttons or conversation list to open a chat.</p>
+            </div>
         {% endif %}
-    </main>
+        </div>
 </div>
-```
-
 </div>
 
 {% block extra_js %}
@@ -353,7 +964,130 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(hideLoader, 8000);
     }
 
-    // dropdown toggles (per-match)
+    // Enhanced progress bars with animation
+    document.querySelectorAll('[data-progress]').forEach(bar => {
+        const value = parseFloat(bar.getAttribute('data-progress'));
+        if (isNaN(value)) return;
+        const clamped = Math.min(Math.max(value, 0), 100);
+        
+        // Animate from 0 to target width
+        setTimeout(() => {
+            bar.style.width = clamped + '%';
+        }, 100);
+    });
+    
+    // Profile hover preview functionality
+    document.querySelectorAll('.profile-hover').forEach(function(element) {
+        let timeout;
+        
+        element.addEventListener('mouseenter', function(e) {
+            timeout = setTimeout(() => {
+                showProfilePreview(e.target, this.dataset.userId);
+            }, 500);
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            clearTimeout(timeout);
+            hideProfilePreview();
+        });
+    });
+    
+    function showProfilePreview(element, userId) {
+        // Create profile preview tooltip
+        const preview = document.createElement('div');
+        preview.className = 'profile-preview show';
+        preview.innerHTML = `
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${element.src}" class="w-12 h-12 rounded-full object-cover" alt="profile">
+                <div>
+                    <h4 class="font-semibold text-gray-800">Loading...</h4>
+                    <p class="text-sm text-gray-500">Profile preview</p>
+                </div>
+            </div>
+            <div class="skeleton h-4 rounded mb-2"></div>
+            <div class="skeleton h-4 rounded w-3/4"></div>
+        `;
+        
+        document.body.appendChild(preview);
+        
+        // Position the preview
+        const rect = element.getBoundingClientRect();
+        preview.style.position = 'fixed';
+        preview.style.top = (rect.top - preview.offsetHeight - 10) + 'px';
+        preview.style.left = (rect.left - preview.offsetWidth/2 + rect.width/2) + 'px';
+    }
+    
+    function hideProfilePreview() {
+        const preview = document.querySelector('.profile-preview');
+        if (preview) {
+            preview.remove();
+        }
+    }
+    
+    // Message reactions functionality
+    function handleReactionClick(reaction) {
+        reaction.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            
+            const messageId = this.closest('.message-reactions').dataset.messageId;
+            const emoji = this.dataset.emoji;
+            
+            // Add animation
+            this.classList.add('reacting');
+            
+            try {
+                const response = await fetch(`/dormitory/roommate-message/${messageId}/react/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: `emoji=${encodeURIComponent(emoji)}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Update reaction display
+                    updateReactionDisplay(this.closest('.message-reactions'), data.reactions);
+                } else {
+                    console.error('Reaction failed:', data.message);
+                }
+            } catch (error) {
+                console.error('Error toggling reaction:', error);
+            } finally {
+                // Remove animation
+                setTimeout(() => {
+                    this.classList.remove('reacting');
+                }, 300);
+            }
+        });
+    }
+    
+    function updateReactionDisplay(container, reactions) {
+        // Clear current reactions
+        container.innerHTML = '';
+        
+        // Add reactions with counts
+        const availableEmojis = ['👍', '❤️', '😊'];
+        
+        for (const emoji of availableEmojis) {
+            const count = reactions[emoji] || 0;
+            const reactionEl = document.createElement('span');
+            reactionEl.className = count > 0 ? 'reaction active' : 'reaction';
+            reactionEl.dataset.emoji = emoji;
+            reactionEl.dataset.count = count;
+            reactionEl.textContent = count > 0 ? `${emoji} ${count}` : emoji;
+            
+            handleReactionClick(reactionEl);
+            container.appendChild(reactionEl);
+        }
+    }
+    
+    // Initialize reaction handlers
+    document.querySelectorAll('.reaction').forEach(handleReactionClick);
+
+    // Dropdown toggles (per-match)
     window.toggleDropdown = function(id) {
         document.querySelectorAll('[id^="dropdown-match-"]').forEach(el => {
             if (el.id !== id) el.classList.add('hidden');
@@ -372,14 +1106,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
         if (!e.target.closest('[id^="dropdown-match-"]') && !e.target.closest('[onclick^="toggleDropdown"]')) {
             document.querySelectorAll('[id^="dropdown-match-"]').forEach(el => el.classList.add('hidden'));
         }
     });
 
-    // Initiate match form (AJAX)
+    // Initiate match forms (AJAX)
     document.querySelectorAll('.initiate-match-form').forEach(function(form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -433,23 +1166,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Chat: auto-scroll & submit + file preview
-    const chatMessages = document.getElementById('chat-messages');
+    // Chat overlay controls
+    const openChatButton = document.getElementById('open-chat-button');
+    const chatFullscreen = document.getElementById('chat-fullscreen');
+    const closeChatBtn = document.getElementById('close-chat-btn');
+    const chatMeta = document.getElementById('roommate-chat-meta');
+    const conversationItems = document.querySelectorAll('.conversation-item[data-match-url]');
+    const openChatSidebarBtns = document.querySelectorAll('.open-chat-sidebar-btn');
+
+    function openChatOverlay() {
+        if (!chatFullscreen) return;
+        chatFullscreen.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeChatOverlay() {
+        if (!chatFullscreen) return;
+        chatFullscreen.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    if (openChatButton) openChatButton.addEventListener('click', openChatOverlay);
+    if (closeChatBtn) closeChatBtn.addEventListener('click', closeChatOverlay);
+
+    if (chatMeta && chatMeta.dataset.openChat === 'true') {
+        openChatOverlay();
+    }
+
+    conversationItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const url = item.dataset.matchUrl;
+            if (url) window.location.href = url;
+        });
+    });
+
+    openChatSidebarBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = btn.dataset.matchUrl;
+            if (url) window.location.href = url;
+        });
+    });
+
+    // Chat messaging helpers
+    const chatMessages = document.getElementById('fullscreen-chat-messages');
+    const chatForm = document.getElementById('fullscreen-chat-form');
+    const imageInput = document.getElementById('fullscreen-chat-image-input');
+    const previewWrapper = document.getElementById('fullscreen-file-preview-wrapper');
+    const previewThumb = document.getElementById('fullscreen-file-preview-thumb');
+    const removePreviewBtn = document.getElementById('fullscreen-remove-preview-btn');
+
     function scrollChatToBottom(smooth = false) {
         if (!chatMessages) return;
         if (smooth) chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         else chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-    // initial auto-scroll on load
     setTimeout(()=> scrollChatToBottom(false), 200);
 
-    const chatForm = document.getElementById('chat-form');
-    const imageInput = document.getElementById('chat-image-input');
-    const previewWrapper = document.getElementById('file-preview-wrapper');
-    const previewThumb = document.getElementById('file-preview-thumb');
-    const removePreviewBtn = document.getElementById('remove-preview-btn');
-
-    // file selection -> show thumbnail preview
     if (imageInput) {
         imageInput.addEventListener('change', function() {
             const file = this.files && this.files[0];
@@ -457,7 +1230,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (previewWrapper) previewWrapper.classList.add('hidden');
                 return;
             }
-            // Only images - show thumbnail
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -466,15 +1238,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 reader.readAsDataURL(file);
             } else {
-                // For non-image files show generic icon (optional). We'll still attempt to show name as thumbnail fallback.
                 previewThumb.src = '';
-                previewThumb.alt = 'file';
                 previewWrapper.classList.remove('hidden');
             }
         });
     }
 
-    // remove preview button: clears file input
     if (removePreviewBtn) {
         removePreviewBtn.addEventListener('click', function() {
             if (imageInput) imageInput.value = '';
@@ -490,7 +1259,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const content = input ? input.value.trim() : '';
             const btn = this.querySelector('button[type="submit"]') || null;
 
-            // allow sending image-only messages as well
             const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
             if (!content && !hasImage) return;
 
@@ -506,7 +1274,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    // append message locally
                     let bodyHtml = '';
                     if (data.image_url) {
                         bodyHtml = `<img src="${data.image_url}" alt="image" class="max-h-60 rounded-lg mb-2 object-cover" />`;
@@ -516,11 +1283,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         bodyHtml = `<p class="text-sm leading-relaxed">${content}</p>`;
                     }
 
-                    const msgHtml = `<div class="flex justify-end"><div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white">${bodyHtml}<div class="flex items-center gap-2 mt-2 justify-end"><span class="text-xs text-blue-200">${(data.message && data.message.timestamp) || ''}</span><span class="text-[10px] text-blue-300">✓</span></div></div></div>`;
+                    const msgHtml = `<div class="flex justify-end"><div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right">${bodyHtml}<div class="flex items-center gap-2 mt-2 justify-end"><span class="text-xs text-white/80">${(data.message && data.message.timestamp) || ''}</span><span class="text-[10px] text-white/60">✓</span></div></div></div>`;
                     if (chatMessages) chatMessages.insertAdjacentHTML('beforeend', msgHtml);
                     scrollChatToBottom(true);
 
-                    // clear inputs & preview
                     if (input) input.value = '';
                     if (imageInput) imageInput.value = '';
                     if (previewWrapper) previewWrapper.classList.add('hidden');
@@ -533,18 +1299,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally { if (btn) btn.disabled = false; }
         });
     }
-
-    // Tabs
-    const tabs = document.querySelectorAll('.rm-tab');
-    const sections = { details: document.getElementById('tab-details'), overlaps: document.getElementById('tab-overlaps'), chat: document.getElementById('tab-chat') };
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-        tabs.forEach(b => b.classList.remove('bg-gradient-to-r','from-purple-50','to-blue-50','text-purple-700'));
-        btn.classList.add('bg-gradient-to-r','from-purple-50','to-blue-50','text-purple-700');
-        Object.values(sections).forEach(sec => sec && sec.classList.add('hidden'));
-        const key = btn.getAttribute('data-tab');
-        if (sections[key]) sections[key].classList.remove('hidden');
-        if (key === 'chat') setTimeout(()=> scrollChatToBottom(false), 120);
-    }));
 });
 </script>
 

@@ -58,6 +58,7 @@ urlpatterns = [
     path('roommate-match/initiate/<int:target_id>/', views.InitiateRoommateMatchView.as_view(), name='initiate_match'),
     path('roommate-match/status/<int:match_id>/', views.UpdateRoommateMatchStatusView.as_view(), name='update_match_status'),
     path('roommate-match/chat/<int:match_id>/', views.SendRoommateChatMessageView.as_view(), name='send_roommate_message'),
+    path('roommate-message/<int:message_id>/react/', views.ToggleMessageReactionView.as_view(), name='toggle_message_reaction'),
 
     # Room management for landlords
     path('dorms/<int:dorm_id>/rooms/', ManageRoomsView.as_view(), name='manage_rooms'),
