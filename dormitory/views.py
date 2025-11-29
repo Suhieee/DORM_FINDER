@@ -1030,6 +1030,8 @@ class UpdateReservationStatusView(View):
         
         if action == 'confirm':
             if request.user.user_type != 'landlord':
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'error', 'error': 'Only landlords can confirm reservations.'}, status=403)
                 messages.error(request, "Only landlords can confirm reservations.")
                 return redirect('dormitory:student_reservations')
                 
@@ -1043,7 +1045,11 @@ class UpdateReservationStatusView(View):
             if reservation.room is not None:
                 reservation.room.is_available = False
                 reservation.room.save()
-            messages.success(request, f"Reservation for {reservation.dorm.name} has been confirmed.")
+            reservation.save()  # Save the reservation status change
+            
+            success_message = f"Reservation for {reservation.dorm.name} has been confirmed."
+            messages.success(request, success_message)
+            
             # Create a system message
             Message.objects.create(
                 sender=request.user,
@@ -1057,6 +1063,10 @@ class UpdateReservationStatusView(View):
                 message=f"Your reservation for {reservation.dorm.name} was confirmed.",
                 related_object_id=reservation.id
             )
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'message': success_message})
         elif action == 'verify_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can verify payments.")
@@ -1110,20 +1120,29 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "No payment proof found for this reservation.")
         elif action == 'decline':
             if request.user.user_type != 'landlord':
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'error', 'error': 'Only landlords can decline reservations.'}, status=403)
                 messages.error(request, "Only landlords can decline reservations.")
                 return redirect('dormitory:student_reservations')
             
             decline_reason = request.POST.get('decline_reason')
             if not decline_reason:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'error', 'error': 'Please provide a reason for declining the reservation.'}, status=400)
                 messages.error(request, "Please provide a reason for declining the reservation.")
                 return redirect('dormitory:landlord_reservations')
+            
             reservation.status = 'declined'
             reservation.cancellation_reason = decline_reason
             # Set room as available if assigned
             if reservation.room is not None:
                 reservation.room.is_available = True
                 reservation.room.save()
-            messages.warning(request, f"Reservation for {reservation.dorm.name} has been declined.")
+            reservation.save()  # Save the reservation status change
+            
+            success_message = f"Reservation for {reservation.dorm.name} has been declined."
+            messages.warning(request, success_message)
+            
             # Create a system message
             Message.objects.create(
                 sender=request.user,
@@ -1137,6 +1156,10 @@ class UpdateReservationStatusView(View):
                 message=f"Reservation for {reservation.dorm.name} was declined. Reason: {decline_reason}",
                 related_object_id=reservation.id
             )
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'message': success_message})
         elif action == 'cancel':
             if request.user.user_type != 'student':
                 messages.error(request, "Only students can cancel their reservations.")
@@ -1233,11 +1256,15 @@ class UpdateReservationStatusView(View):
         
         reservation.save()
         
-        # Redirect based on user type
-        if request.user.user_type == 'landlord':
-            return redirect('dormitory:landlord_reservations')
+        # Redirect based on user type (only for non-AJAX requests)
+        if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+            if request.user.user_type == 'landlord':
+                return redirect('dormitory:landlord_reservations')
+            else:
+                return redirect('dormitory:student_reservations')
         else:
-            return redirect('dormitory:student_reservations')
+            # For AJAX requests that didn't return earlier, return a generic success
+            return JsonResponse({'status': 'success', 'message': 'Action completed successfully.'})
 
 # Update the context processor to include pending reservations
 def user_context(request):

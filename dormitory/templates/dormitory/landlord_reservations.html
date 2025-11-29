@@ -20,6 +20,9 @@
     {% endfor %}
 </div>
 {% endif %}
+<!-- Toast Notification -->
+<div id="reservationToast" class="fixed top-6 right-6 z-50 hidden px-6 py-4 rounded-xl shadow-lg text-white text-lg font-semibold transition-all duration-300 transform translate-x-full"></div>
+
 <!-- Image Preview Modal -->
 <div id="imagePreviewModal" class="fixed inset-0 bg-black/100 z-50 hidden flex items-center justify-center">
     <div class="relative w-full h-full">
@@ -994,6 +997,28 @@
 
     // Handle form submissions with AJAX
     document.addEventListener('DOMContentLoaded', function() {
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('reservationToast');
+            if (!toast) return;
+            
+            // Set message and styling based on type
+            toast.textContent = message;
+            toast.className = `fixed top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-lg text-white text-lg font-semibold transition-all duration-300 transform translate-x-full`;
+            
+            if (type === 'success') {
+                toast.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-600');
+            } else if (type === 'warning') {
+                toast.classList.add('bg-yellow-600');
+            }
+            
+            // Show toast
+            toast.classList.remove('hidden', 'translate-x-full');
+            toast.classList.add('translate-x-0');
+        }
+
         function handleFormSubmit(formId) {
             const form = document.getElementById(formId);
             if (form) {
@@ -1001,6 +1026,7 @@
                     e.preventDefault();
                     
                     const formData = new FormData(form);
+                    const action = formData.get('action');
                     
                     fetch(form.getAttribute('action'), {
                         method: 'POST',
@@ -1011,14 +1037,35 @@
                     })
                     .then(response => {
                         if (response.ok) {
-                            window.location.reload();
+                            return response.json();
                         } else {
-                            throw new Error('Network response was not ok');
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            }).catch(() => {
+                                throw new Error('Network response was not ok');
+                            });
+                        }
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Show toast message
+                            if (action === 'confirm') {
+                                showToast(data.message || 'Reservation confirmed successfully!', 'success');
+                            } else if (action === 'decline') {
+                                showToast(data.message || 'Reservation declined successfully!', 'warning');
+                            }
+                            
+                            // Reload page after showing toast
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            throw new Error(data.error || 'Unknown error occurred');
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('There was an error processing your request. Please try again.');
+                        showToast(error.message || 'There was an error processing your request. Please try again.', 'error');
                     });
                 });
             }
@@ -1079,7 +1126,9 @@
             return;
         }
         document.getElementById('decline_reason_input').value = reason;
-        document.getElementById('declineForm').submit();
+        closeDeclineModal();
+        // Trigger form submit which will be handled by the AJAX handler
+        document.getElementById('declineForm').dispatchEvent(new Event('submit'));
     }
 </script>
 

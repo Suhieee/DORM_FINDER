@@ -41,6 +41,13 @@ media/
 staticfiles/
 static_root/
 
+# Database backups and dumps
+*.sql
+*.dump
+*.backup.sql
+data.json
+fixtures/
+
 # Environment Variables
 .env
 .env.local
