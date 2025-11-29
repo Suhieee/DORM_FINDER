@@ -43,6 +43,17 @@ if not SECRET_KEY:
 # Update ALLOWED_HOSTS for better security
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF settings for Railway deployment
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if os.environ.get('CSRF_TRUSTED_ORIGINS') else []
+if not CSRF_TRUSTED_ORIGINS and not DEBUG:
+    # Auto-generate from ALLOWED_HOSTS if not set
+    CSRF_TRUSTED_ORIGINS = [f'https://{host}' for host in ALLOWED_HOSTS if host and host != 'localhost' and host != '127.0.0.1']
+
+# Session and CSRF cookie settings for HTTPS
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 
 # Application definition
 
