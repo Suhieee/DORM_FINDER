@@ -58,23 +58,29 @@ class RegisterView(CreateView):
             profile.verification_token_created_at = now
             profile.save()
 
-        # Send verification email (HTML)
-        verification_url = self.request.build_absolute_uri(
-            reverse_lazy('accounts:verify_email', kwargs={'token': token})
-        )
-        html_message = render_to_string('email/verify_email.html', {
-            'user': user,
-            'verification_url': verification_url,
-            'year': datetime.now().year,
-        })
-        send_mail(
-            'Verify your email address',
-            '',  # plain text fallback (optional)
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-            html_message=html_message,
-        )
+        # Send verification email (HTML) - with error handling
+        try:
+            verification_url = self.request.build_absolute_uri(
+                reverse_lazy('accounts:verify_email', kwargs={'token': token})
+            )
+            html_message = render_to_string('email/verify_email.html', {
+                'user': user,
+                'verification_url': verification_url,
+                'year': datetime.now().year,
+            })
+            send_mail(
+                'Verify your email address',
+                '',  # plain text fallback (optional)
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,  # Changed to True to prevent blocking
+                html_message=html_message,
+            )
+        except Exception as e:
+            # Log error but don't block registration
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Failed to send verification email to {user.email}: {str(e)}')
 
         login(self.request, user)
         messages.success(self.request, f"Registration successful! Welcome, {user.username}. Please check your email to verify your account.")
@@ -709,7 +715,7 @@ def send_verification_email(request, user):
             '',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=False,
+            fail_silently=True,  # Changed to True to prevent blocking
             html_message=html_message,
         )
         
