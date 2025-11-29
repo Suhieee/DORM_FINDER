@@ -68,19 +68,39 @@ class RegisterView(CreateView):
                 'verification_url': verification_url,
                 'year': datetime.now().year,
             })
-            send_mail(
-                'Verify your email address',
-                '',  # plain text fallback (optional)
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=True,  # Changed to True to prevent blocking
-                html_message=html_message,
-            )
+            
+            # Check if email settings are configured
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+                logger.error(f'Email not configured. EMAIL_HOST_USER={bool(settings.EMAIL_HOST_USER)}, EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}')
+                messages.warning(self.request, 'Email verification could not be sent. Please contact support.')
+            else:
+                logger.info(f'Attempting to send verification email to {user.email} from {settings.DEFAULT_FROM_EMAIL}')
+                try:
+                    result = send_mail(
+                        'Verify your email address',
+                        '',  # plain text fallback (optional)
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,  # Changed to False to see errors in Railway logs
+                        html_message=html_message,
+                    )
+                    if result:
+                        logger.info(f'✅ Verification email sent successfully to {user.email}')
+                    else:
+                        logger.warning(f'⚠️ Email send returned False for {user.email}')
+                except Exception as email_error:
+                    logger.error(f'❌ Email send failed for {user.email}: {str(email_error)}')
+                    # Don't block registration, but log the error
+                    messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
         except Exception as e:
             # Log error but don't block registration
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f'Failed to send verification email to {user.email}: {str(e)}')
+            messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
 
         login(self.request, user)
         messages.success(self.request, f"Registration successful! Welcome, {user.username}. Please check your email to verify your account.")
