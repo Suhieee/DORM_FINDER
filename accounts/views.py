@@ -79,8 +79,10 @@ class RegisterView(CreateView):
             logger = logging.getLogger(__name__)
             
             # Check if email settings are configured
-            if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-                logger.error(f'Email not configured. EMAIL_HOST_USER={bool(settings.EMAIL_HOST_USER)}, EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}')
+            # For SendGrid, EMAIL_HOST_USER is 'apikey', so check EMAIL_HOST_PASSWORD instead
+            email_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+            if not email_configured:
+                logger.error(f'Email not configured. EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}, DEFAULT_FROM_EMAIL={bool(settings.DEFAULT_FROM_EMAIL)}')
                 messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
             else:
                 logger.info(f'Attempting to send verification email to {user.email} from {settings.DEFAULT_FROM_EMAIL}')
@@ -119,14 +121,9 @@ class RegisterView(CreateView):
             return next_url
         
         user = self.request.user
-        if user.user_type == "Student":
-            return reverse_lazy("accounts:student_dashboard")
-        elif user.user_type == "Teacher":
-            return reverse_lazy("accounts:teacher_dashboard")
-        elif user.user_type == "Admin":
-            return reverse_lazy("accounts:admin_dashboard")
-        else:
-            return reverse_lazy("accounts:dashboard")  # Default fallback
+        # User types are stored as lowercase: 'student', 'landlord', 'admin'
+        # All users redirect to the main dashboard which shows different content based on user_type
+        return reverse_lazy("accounts:dashboard")
 
     def form_invalid(self, form):
         """Handle errors if registration fails."""
