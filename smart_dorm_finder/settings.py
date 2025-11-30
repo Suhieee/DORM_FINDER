@@ -114,6 +114,11 @@ WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 database_url = os.environ.get('DATABASE_URL', '')
 print(f"DATABASE_URL: {database_url}")
 
+# TEMPORARY FIX: Force PostgreSQL for Railway environment
+if os.environ.get('RAILWAY_ENVIRONMENT') and not database_url:
+    database_url = 'postgresql://postgres:jYKaVfoiIjLbvvTuRofmtgQfaUCJjYZS@postgres.railway.internal:5432/railway'
+    print(f"🚀 Using hardcoded DATABASE_URL for Railway")
+
 # Handle database configuration with better error handling
 try:
     if database_url and 'postgres' in database_url.lower():
