@@ -214,13 +214,10 @@ MAILGUN_API_KEY = os.environ.get('MAILGUN_API_KEY', '')
 MAILGUN_DOMAIN = os.environ.get('MAILGUN_DOMAIN', '')
 
 # Use SendGrid if API key is set
+# Use HTTP API instead of SMTP (works on Railway free tier - SMTP ports are blocked)
 if SENDGRID_API_KEY:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'apikey'
-    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+    # Use custom SendGrid HTTP API backend (works on free tier)
+    EMAIL_BACKEND = 'accounts.email_backend.SendGridHTTPBackend'
     DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@dormfinder.com')
 # Use Mailgun if API key is set
 elif MAILGUN_API_KEY and MAILGUN_DOMAIN:
