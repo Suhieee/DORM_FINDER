@@ -1268,18 +1268,34 @@ class UpdateReservationStatusView(View):
 
 # Update the context processor to include pending reservations
 def user_context(request):
+    """Context processor optimized to reduce database queries."""
+    from django.core.cache import cache
+    
     context = {}
-    if request.user.is_authenticated:
-        if request.user.user_type == 'student':
-            context['user_pending_reservations'] = Reservation.objects.filter(
+    if not request.user.is_authenticated:
+        return context
+    
+    # Cache reservation data for 30 seconds to reduce queries
+    if request.user.user_type == 'student':
+        cache_key = f'student_reservations_{request.user.id}'
+        reservations = cache.get(cache_key)
+        if reservations is None:
+            reservations = list(Reservation.objects.filter(
                 student=request.user,
                 status__in=['pending_payment', 'pending', 'confirmed']
-            ).select_related('dorm').order_by('-created_at')
-        elif request.user.user_type == 'landlord':
-            context['pending_count'] = Reservation.objects.filter(
+            ).select_related('dorm').order_by('-created_at')[:5])  # Limit to 5
+            cache.set(cache_key, reservations, 30)
+        context['user_pending_reservations'] = reservations
+    elif request.user.user_type == 'landlord':
+        cache_key = f'landlord_pending_count_{request.user.id}'
+        pending_count = cache.get(cache_key)
+        if pending_count is None:
+            pending_count = Reservation.objects.filter(
                 dorm__landlord=request.user,
                 status='pending'
             ).count()
+            cache.set(cache_key, pending_count, 30)
+        context['pending_count'] = pending_count
     return context
 
 @method_decorator(login_required, name='dispatch')

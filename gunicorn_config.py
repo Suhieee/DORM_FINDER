@@ -4,15 +4,17 @@
 import multiprocessing
 
 # Server socket
-bind = "0.0.0.0:8080"
+# Railway uses $PORT environment variable, bind is set in command line
+# This config file is for worker settings only
 backlog = 2048
 
 # Worker processes
-workers = 2
+workers = 1  # Reduced to 1 for Railway to avoid resource issues
 worker_class = "sync"
 worker_connections = 1000
-timeout = 120  # Increased from default 30 to 120 seconds
+timeout = 300  # Increased to 300 seconds (5 minutes) for Railway
 keepalive = 5
+graceful_timeout = 120  # Time to wait for workers to finish
 
 # Logging
 accesslog = "-"

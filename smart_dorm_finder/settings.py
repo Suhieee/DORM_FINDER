@@ -115,8 +115,14 @@ WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 # Use PostgreSQL if DATABASE_URL is set, otherwise fall back to SQLite
 if os.environ.get('DATABASE_URL'):
     import dj_database_url
+    db_config = dj_database_url.parse(os.environ.get('DATABASE_URL'))
+    # Add connection pooling settings for Railway
+    db_config['CONN_MAX_AGE'] = 600  # Keep connections alive for 10 minutes
+    db_config['OPTIONS'] = {
+        'connect_timeout': 10,
+    }
     DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
+        'default': db_config
     }
 else:
     # PostgreSQL configuration using environment variables
@@ -237,6 +243,19 @@ else:
 
 # Email timeout settings to prevent worker timeouts
 EMAIL_TIMEOUT = 10  # 10 seconds timeout for email sending
+
+# Cache configuration (using local memory cache - no Redis needed)
+# This helps reduce database queries from context processors
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        },
+        'TIMEOUT': 300,  # 5 minutes default timeout
+    }
+}
 
 # Site URL for email verification links (use in production)
 # Set this to your production domain (e.g., 'https://yourdomain.com')
