@@ -32,6 +32,7 @@ from django.db.models.functions import TruncMonth
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q, DecimalField
+import logging
 
 
 class RegisterView(CreateView):
@@ -58,53 +59,53 @@ class RegisterView(CreateView):
             profile.verification_token_created_at = now
             profile.save()
 
-        # Send verification email (HTML) - with error handling
+        # Send verification email (with proper error handling)
         try:
+            from django.urls import reverse
             # Use SITE_URL from settings if available (for production), otherwise use request
             if settings.SITE_URL:
-                verification_path = reverse_lazy('accounts:verify_email', kwargs={'token': token})
-                verification_url = settings.SITE_URL.rstrip('/') + str(verification_path)
+                verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+                verification_url = settings.SITE_URL.rstrip('/') + verification_path
             else:
-                verification_url = self.request.build_absolute_uri(
-                    reverse_lazy('accounts:verify_email', kwargs={'token': token})
-                )
+                verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+                verification_url = self.request.build_absolute_uri(verification_path)
+            
             html_message = render_to_string('email/verify_email.html', {
                 'user': user,
                 'verification_url': verification_url,
                 'year': datetime.now().year,
             })
             
-            # Check if email settings are configured
-            import logging
             logger = logging.getLogger(__name__)
             
+            # Check if email settings are configured
             if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
                 logger.error(f'Email not configured. EMAIL_HOST_USER={bool(settings.EMAIL_HOST_USER)}, EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}')
-                messages.warning(self.request, 'Email verification could not be sent. Please contact support.')
+                messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
             else:
                 logger.info(f'Attempting to send verification email to {user.email} from {settings.DEFAULT_FROM_EMAIL}')
+                # Send email with fail_silently=True to prevent crashes, but log errors
                 try:
                     result = send_mail(
                         'Verify your email address',
                         '',  # plain text fallback (optional)
                         settings.DEFAULT_FROM_EMAIL,
                         [user.email],
-                        fail_silently=False,  # Changed to False to see errors in Railway logs
+                        fail_silently=True,  # Don't crash if email fails
                         html_message=html_message,
                     )
                     if result:
                         logger.info(f'✅ Verification email sent successfully to {user.email}')
                     else:
                         logger.warning(f'⚠️ Email send returned False for {user.email}')
+                        messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
                 except Exception as email_error:
-                    logger.error(f'❌ Email send failed for {user.email}: {str(email_error)}')
-                    # Don't block registration, but log the error
+                    logger.error(f'❌ Email send failed for {user.email}: {str(email_error)}', exc_info=True)
                     messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
         except Exception as e:
             # Log error but don't block registration
-            import logging
             logger = logging.getLogger(__name__)
-            logger.error(f'Failed to send verification email to {user.email}: {str(e)}')
+            logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
             messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
 
         login(self.request, user)
@@ -731,15 +732,15 @@ def send_verification_email(request, user):
         profile.save()
         
         # Send verification email
+        from django.urls import reverse
         # Use SITE_URL from settings if available (for production), otherwise use request
         if settings.SITE_URL:
-            verification_path = reverse_lazy('accounts:verify_email', kwargs={'token': token})
-            verification_url = settings.SITE_URL.rstrip('/') + str(verification_path)
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = settings.SITE_URL.rstrip('/') + verification_path
             logger.info(f'Using SITE_URL from settings: {verification_url}')
         else:
-            verification_url = request.build_absolute_uri(
-                reverse_lazy('accounts:verify_email', kwargs={'token': token})
-            )
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = request.build_absolute_uri(verification_path)
             logger.info(f'Using request.build_absolute_uri: {verification_url}')
         
         # Check if email settings are configured
@@ -762,7 +763,7 @@ def send_verification_email(request, user):
             '',  # plain text fallback
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=False,  # Changed to False to see errors
+            fail_silently=True,  # Changed to True to prevent crashes
             html_message=html_message,
         )
         
