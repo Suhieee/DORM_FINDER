@@ -79,10 +79,13 @@ class RegisterView(CreateView):
             logger = logging.getLogger(__name__)
             
             # Check if email settings are configured
-            # For SendGrid, EMAIL_HOST_USER is 'apikey', so check EMAIL_HOST_PASSWORD instead
-            email_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+            # Check for SendGrid API key (HTTP API) or SMTP credentials
+            sendgrid_configured = bool(getattr(settings, 'SENDGRID_API_KEY', None))
+            smtp_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+            email_configured = sendgrid_configured or smtp_configured
+            
             if not email_configured:
-                logger.error(f'Email not configured. EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}, DEFAULT_FROM_EMAIL={bool(settings.DEFAULT_FROM_EMAIL)}')
+                logger.error(f'Email not configured. SENDGRID_API_KEY={sendgrid_configured}, EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}, DEFAULT_FROM_EMAIL={bool(settings.DEFAULT_FROM_EMAIL)}')
                 messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
             else:
                 logger.info(f'Attempting to send verification email to {user.email} from {settings.DEFAULT_FROM_EMAIL}')
@@ -741,12 +744,18 @@ def send_verification_email(request, user):
             logger.info(f'Using request.build_absolute_uri: {verification_url}')
         
         # Check if email settings are configured
-        if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        # Check for SendGrid API key (HTTP API) or SMTP credentials
+        sendgrid_configured = bool(getattr(settings, 'SENDGRID_API_KEY', None))
+        smtp_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+        email_configured = sendgrid_configured or smtp_configured
+        
+        if not email_configured:
             logger.error(
-                f'Email not configured. EMAIL_HOST_USER={bool(settings.EMAIL_HOST_USER)}, '
-                f'EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}'
+                f'Email not configured. SENDGRID_API_KEY={sendgrid_configured}, '
+                f'EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}, '
+                f'DEFAULT_FROM_EMAIL={bool(settings.DEFAULT_FROM_EMAIL)}'
             )
-            return False, 'Email service is not configured. Please contact support.'
+            return False, 'Email service is not configured. Please set SENDGRID_API_KEY in Railway environment variables.'
         
         html_message = render_to_string('email/verify_email.html', {
             'user': user,
