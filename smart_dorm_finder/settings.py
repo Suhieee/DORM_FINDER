@@ -237,3 +237,10 @@ else:
 
 # Email timeout settings to prevent worker timeouts
 EMAIL_TIMEOUT = 10  # 10 seconds timeout for email sending
+
+# Site URL for email verification links (use in production)
+# Set this to your production domain (e.g., 'https://yourdomain.com')
+# If not set, will use request.build_absolute_uri() which may not work correctly in production
+SITE_URL = os.environ.get('SITE_URL', '')  # e.g., 'https://yourdomain.com'
+if SITE_URL and not SITE_URL.endswith('/'):
+    SITE_URL = SITE_URL + '/'

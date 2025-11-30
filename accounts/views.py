@@ -60,9 +60,14 @@ class RegisterView(CreateView):
 
         # Send verification email (HTML) - with error handling
         try:
-            verification_url = self.request.build_absolute_uri(
-                reverse_lazy('accounts:verify_email', kwargs={'token': token})
-            )
+            # Use SITE_URL from settings if available (for production), otherwise use request
+            if settings.SITE_URL:
+                verification_path = reverse_lazy('accounts:verify_email', kwargs={'token': token})
+                verification_url = settings.SITE_URL.rstrip('/') + str(verification_path)
+            else:
+                verification_url = self.request.build_absolute_uri(
+                    reverse_lazy('accounts:verify_email', kwargs={'token': token})
+                )
             html_message = render_to_string('email/verify_email.html', {
                 'user': user,
                 'verification_url': verification_url,
@@ -707,11 +712,15 @@ class VerifyEmailView(View):
 
 def send_verification_email(request, user):
     """Helper function to send verification email to a user."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         profile, _ = UserProfile.objects.get_or_create(user=user)
         
         # Check if already verified
         if profile.is_verified:
+            logger.info(f'Email verification skipped for {user.email}: already verified')
             return False, 'Your email is already verified!'
         
         # Generate new token
@@ -722,27 +731,51 @@ def send_verification_email(request, user):
         profile.save()
         
         # Send verification email
-        verification_url = request.build_absolute_uri(
-            reverse_lazy('accounts:verify_email', kwargs={'token': token})
-        )
+        # Use SITE_URL from settings if available (for production), otherwise use request
+        if settings.SITE_URL:
+            verification_path = reverse_lazy('accounts:verify_email', kwargs={'token': token})
+            verification_url = settings.SITE_URL.rstrip('/') + str(verification_path)
+            logger.info(f'Using SITE_URL from settings: {verification_url}')
+        else:
+            verification_url = request.build_absolute_uri(
+                reverse_lazy('accounts:verify_email', kwargs={'token': token})
+            )
+            logger.info(f'Using request.build_absolute_uri: {verification_url}')
+        
+        # Check if email settings are configured
+        if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+            logger.error(
+                f'Email not configured. EMAIL_HOST_USER={bool(settings.EMAIL_HOST_USER)}, '
+                f'EMAIL_HOST_PASSWORD={bool(settings.EMAIL_HOST_PASSWORD)}'
+            )
+            return False, 'Email service is not configured. Please contact support.'
+        
         html_message = render_to_string('email/verify_email.html', {
             'user': user,
             'verification_url': verification_url,
             'year': datetime.now().year,
         })
-        send_mail(
+        
+        logger.info(f'Attempting to send verification email to {user.email} from {settings.DEFAULT_FROM_EMAIL}')
+        result = send_mail(
             'Verify your email address',
-            '',
+            '',  # plain text fallback
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=True,  # Changed to True to prevent blocking
+            fail_silently=False,  # Changed to False to see errors
             html_message=html_message,
         )
         
-        return True, 'A new verification email has been sent to your email address. Please check your inbox.'
+        if result:
+            logger.info(f'✅ Verification email sent successfully to {user.email}')
+            return True, 'A new verification email has been sent to your email address. Please check your inbox.'
+        else:
+            logger.warning(f'⚠️ Email send returned False for {user.email}')
+            return False, 'Failed to send verification email. Please try again later.'
         
     except Exception as e:
-        return False, f'An error occurred: {str(e)}'
+        logger.error(f'❌ Error sending verification email to {user.email}: {str(e)}', exc_info=True)
+        return False, f'An error occurred while sending the verification email: {str(e)}'
 
 class ResendVerificationEmailLoggedInView(LoginRequiredMixin, View):
     """Simple view for logged-in users to resend verification email."""
