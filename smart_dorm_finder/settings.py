@@ -117,12 +117,26 @@ print(f"DATABASE_URL: {database_url}")
 # Handle database configuration with better error handling
 try:
     if database_url and 'postgres' in database_url.lower():
-        # Use PostgreSQL with dj-database-url - FIXED VERSION
-        import dj_database_url
+        # Use PostgreSQL with manual configuration (more reliable)
+        from urllib.parse import urlparse
+        
+        result = urlparse(database_url)
+        
         DATABASES = {
-            'default': dj_database_url.parse(database_url, conn_max_age=600)
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': result.path[1:],  # Remove the leading '/'
+                'USER': result.username,
+                'PASSWORD': result.password,
+                'HOST': result.hostname,
+                'PORT': result.port,
+                'CONN_MAX_AGE': 600,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
+            }
         }
-        print("✅ Using PostgreSQL database")
+        print("✅ Using PostgreSQL database (manual config)")
     else:
         # Fallback to SQLite
         DATABASES = {
