@@ -16,8 +16,17 @@ class SendGridHTTPBackend(BaseEmailBackend):
     
     def __init__(self, fail_silently=False, **kwargs):
         super().__init__(fail_silently=fail_silently, **kwargs)
-        self.sendgrid_api_key = getattr(settings, 'SENDGRID_API_KEY', None)
+        # Get SENDGRID_API_KEY from environment or settings
+        import os
+        self.sendgrid_api_key = os.environ.get('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
         self.default_from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@dormfinder.com')
+        
+        if not self.sendgrid_api_key:
+            logger.warning('SENDGRID_API_KEY not found in environment or settings')
+        else:
+            # Log first few characters for debugging (but not the full key for security)
+            api_key_preview = self.sendgrid_api_key[:10] + '...' if len(self.sendgrid_api_key) > 10 else '***'
+            logger.info(f'SendGrid API key found: {api_key_preview} (length: {len(self.sendgrid_api_key)})')
     
     def send_messages(self, email_messages):
         """Send messages using SendGrid HTTP API."""
@@ -69,9 +78,21 @@ class SendGridHTTPBackend(BaseEmailBackend):
                         sent_count += 1
                         logger.info(f'✅ Email sent via SendGrid HTTP API to {to_emails}')
                     else:
-                        logger.error(f'❌ SendGrid API error: {response.status_code} - {response.body}')
+                        # Get error details from response
+                        try:
+                            error_body = response.body.decode('utf-8') if hasattr(response.body, 'decode') else str(response.body)
+                        except:
+                            error_body = str(response.body)
+                        
+                        # 401 Unauthorized usually means invalid API key
+                        if response.status_code == 401:
+                            logger.error(f'❌ SendGrid 401 Unauthorized - API key is invalid or missing permissions. Check your SENDGRID_API_KEY in Railway.')
+                            logger.error(f'Error details: {error_body}')
+                        else:
+                            logger.error(f'❌ SendGrid API error: {response.status_code} - {error_body}')
+                        
                         if not self.fail_silently:
-                            raise Exception(f'SendGrid API error: {response.status_code}')
+                            raise Exception(f'SendGrid API error: {response.status_code} - {error_body}')
                 
                 except Exception as e:
                     logger.error(f'❌ Error sending email via SendGrid: {str(e)}', exc_info=True)
