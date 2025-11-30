@@ -110,14 +110,53 @@ TEMPLATES = [
 WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 
 
-# TEMPORARY FIX - Use SQLite to get app running
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+ #Debug: Check what DATABASE_URL contains
+database_url = os.environ.get('DATABASE_URL', '')
+print(f"DATABASE_URL: {database_url}")
+
+# Handle database configuration with better error handling
+try:
+    if database_url and 'postgres' in database_url.lower():
+        # Use PostgreSQL with manual configuration (more reliable)
+        from urllib.parse import urlparse
+        
+        result = urlparse(database_url)
+        
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': result.path[1:],  # Remove the leading '/'
+                'USER': result.username,
+                'PASSWORD': result.password,
+                'HOST': result.hostname,
+                'PORT': result.port,
+                'CONN_MAX_AGE': 600,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
+            }
+        }
+        print("✅ Using PostgreSQL database (manual config)")
+    else:
+        # Fallback to SQLite
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+        print("✅ Using SQLite database (fallback)")
+        
+except Exception as e:
+    print(f"❌ Database configuration error: {e}")
+    # Ultimate fallback to SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-print("✅ Using SQLite database (temporary)")
+    print("✅ Using SQLite database (error fallback)")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
