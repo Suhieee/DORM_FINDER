@@ -110,10 +110,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-
 # Debug: Check what DATABASE_URL contains
 database_url = os.environ.get('DATABASE_URL', '')
 print(f"DATABASE_URL: {database_url}")
@@ -121,14 +117,10 @@ print(f"DATABASE_URL: {database_url}")
 # Handle database configuration with better error handling
 try:
     if database_url and 'postgres' in database_url.lower():
-        # Use PostgreSQL with dj-database-url
+        # Use PostgreSQL with dj-database-url - FIXED VERSION
         import dj_database_url
         DATABASES = {
-            'default': dj_database_url.config(
-                default=database_url,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
+            'default': dj_database_url.parse(database_url, conn_max_age=600)
         }
         print("✅ Using PostgreSQL database")
     else:
@@ -151,7 +143,6 @@ except Exception as e:
         }
     }
     print("✅ Using SQLite database (error fallback)")
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
