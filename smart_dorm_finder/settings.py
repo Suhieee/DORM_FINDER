@@ -113,47 +113,44 @@ WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Use PostgreSQL if DATABASE_URL is set, otherwise fall back to SQLite
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    db_config = dj_database_url.parse(os.environ.get('DATABASE_URL'))
-    # Add connection pooling settings for Railway
-    db_config['CONN_MAX_AGE'] = 600  # Keep connections alive for 10 minutes
-    db_config['OPTIONS'] = {
-        'connect_timeout': 10,
-    }
-    DATABASES = {
-        'default': db_config
-    }
-else:
-    # PostgreSQL configuration using environment variables
-    DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3')
-    DB_NAME = os.environ.get('DB_NAME', '')
-    DB_USER = os.environ.get('DB_USER', '')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    
-    # Use PostgreSQL if DB_ENGINE is set to postgresql and DB_NAME is provided
-    if DB_ENGINE == 'django.db.backends.postgresql' and DB_NAME:
+
+# Debug: Check what DATABASE_URL contains
+database_url = os.environ.get('DATABASE_URL', '')
+print(f"DATABASE_URL: {database_url}")
+
+# Handle database configuration with better error handling
+try:
+    if database_url and 'postgres' in database_url.lower():
+        # Use PostgreSQL with dj-database-url
+        import dj_database_url
         DATABASES = {
-            'default': {
-                'ENGINE': DB_ENGINE,
-                'NAME': DB_NAME,
-                'USER': DB_USER,
-                'PASSWORD': DB_PASSWORD,
-                'HOST': DB_HOST,
-                'PORT': DB_PORT,
-            }
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
         }
+        print("✅ Using PostgreSQL database")
     else:
-        # Fallback to SQLite for development
+        # Fallback to SQLite
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
+        print("✅ Using SQLite database (fallback)")
+        
+except Exception as e:
+    print(f"❌ Database configuration error: {e}")
+    # Ultimate fallback to SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    print("✅ Using SQLite database (error fallback)")
 
 
 # Password validation
