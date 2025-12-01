@@ -122,46 +122,45 @@ if database_url:
         masked_url = database_url.replace(parsed.password, '***')
         print(f"Database URL (masked): {masked_url}")
 
-# Handle database configuration
-if not database_url:
-    raise ImproperlyConfigured(
-        "DATABASE_URL environment variable is not set. "
-        "Please set DATABASE_URL to connect to PostgreSQL."
-    )
-
-if 'postgres' not in database_url.lower():
-    raise ImproperlyConfigured(
-        f"DATABASE_URL must be a PostgreSQL connection string. "
-        f"Got: {database_url[:50]}..."
-    )
-
-try:
-    # Use dj-database-url which handles psycopg3 automatically
-    import dj_database_url
-    
+# Handle database configuration WITH SQLITE FALLBACK
+if database_url and 'postgres' in database_url.lower():
+    # Use PostgreSQL if DATABASE_URL is provided and is PostgreSQL
+    try:
+        import dj_database_url
+        
+        DATABASES = {
+            'default': dj_database_url.parse(
+                database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+                ssl_require=True
+            )
+        }
+        
+        # For psycopg3, we need to update ENGINE
+        DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+        
+        print(f"✅ Using PostgreSQL database: {DATABASES['default']['NAME']}")
+        
+    except Exception as e:
+        print(f"❌ PostgreSQL connection failed: {e}")
+        print("⚠️  Falling back to SQLite...")
+        # Fallback to SQLite
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+else:
+    # Use SQLite for local development (when DATABASE_URL is empty or not PostgreSQL)
     DATABASES = {
-        'default': dj_database_url.parse(
-            database_url,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True
-        )
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-    
-    # For psycopg3, we need to update ENGINE
-    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-    
-    print(f"✅ Successfully configured PostgreSQL database with psycopg3")
-    print(f"   Database: {DATABASES['default']['NAME']}")
-    print(f"   Host: {DATABASES['default']['HOST']}")
-    print(f"   Port: {DATABASES['default']['PORT']}")
-    print(f"   User: {DATABASES['default']['USER']}")
-    
-except Exception as e:
-    raise ImproperlyConfigured(
-        f"Failed to configure database: {str(e)}\n"
-        f"DATABASE_URL: {database_url[:100]}..."
-    )
+    print(f"✅ Using SQLite database for local development: {DATABASES['default']['NAME']}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
