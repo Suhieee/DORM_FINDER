@@ -189,167 +189,201 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Form elements
+
+    /* =====================
+       FORM INPUT ELEMENTS
+    ===================== */
     const latitudeInput = document.getElementById("latitude");
     const longitudeInput = document.getElementById("longitude");
     const addressInput = document.getElementById("address");
-    
-    // Default coordinates (Manila)
-    const defaultLat = latitudeInput.value ? parseFloat(latitudeInput.value) : 14.5995;
-    const defaultLng = longitudeInput.value ? parseFloat(longitudeInput.value) : 120.9842;
 
-    // Initialize map
+    /* =====================
+        DEFAULT LOCATION
+    ===================== */
+    const defaultLat = parseFloat(latitudeInput.value) || 14.5995;
+    const defaultLng = parseFloat(longitudeInput.value) || 120.9842;
+
+    /* =====================
+         MAP BOUNDS
+    ===================== */
     const manilaBounds = L.latLngBounds(
-        [14.47, 120.90], // Southwest corner
-        [14.70, 121.07]  // Northeast corner
+        [14.47, 120.90],
+        [14.70, 121.07]
     );
-    const map = L.map('map', {
+
+    /* =====================
+           INITIAL MAP
+    ===================== */
+    const map = L.map("map", {
         center: [defaultLat, defaultLng],
-        zoom: 1,
+        zoom: 14,
         minZoom: 12,
         maxZoom: 16,
         maxBounds: manilaBounds
     });
-    map.on('drag', function() {
+
+    map.on("drag", function() {
         map.panInsideBounds(manilaBounds, { animate: false });
     });
-    
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    // Add marker
-    const marker = L.marker([defaultLat, defaultLng], {
-        draggable: true
-    }).addTo(map);
+    /* =====================
+           MARKER
+    ===================== */
+    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
 
-    // Add search control (always visible)
+    /* =====================
+         SEARCH CONTROL
+    ===================== */
     const searchControl = L.Control.geocoder({
         defaultMarkGeocode: false,
         collapsed: false,
-        position: 'topright',
-        placeholder: 'Search address...',
-        errorMessage: 'Address not found.'
+        position: "topright",
+        placeholder: "Search address...",
+        errorMessage: "Address not found."
     }).addTo(map);
 
-    // Function to get coordinates from address
+    /* =====================
+      GEOCODING FUNCTIONS
+    ===================== */
     async function getCoordinates(address) {
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+            const response = await fetch(url);
             const data = await response.json();
-            if (data && data.length > 0) {
-                return {
-                    lat: parseFloat(data[0].lat),
-                    lng: parseFloat(data[0].lon),
-                    display_name: data[0].display_name
-                };
-            }
-            return null;
+
+            if (data.length === 0) return null;
+
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                name: data[0].display_name
+            };
         } catch (error) {
             console.error("Geocoding error:", error);
             return null;
         }
     }
 
-    // Function to get address from coordinates
     async function getAddress(lat, lng) {
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+            const response = await fetch(url);
             const data = await response.json();
+
             return data.display_name || "Address not found";
         } catch (error) {
-            console.error("Geocoding error:", error);
+            console.error("Reverse geocoding error:", error);
             return "Could not retrieve address";
         }
     }
 
-    // Update address field
     async function updateAddress(lat, lng) {
         const address = await getAddress(lat, lng);
         addressInput.value = address;
     }
 
-    // Debounce function to prevent too many API calls
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+    /* =====================
+         DEBOUNCE
+    ===================== */
+    function debounce(func, delay) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => func(...args), delay);
         };
     }
 
-    // Handle address input changes
-    const handleAddressChange = debounce(async () => {
-        const address = addressInput.value;
-        if (address) {
-            const result = await getCoordinates(address);
-            if (result) {
-                const { lat, lng, display_name } = result;
-                marker.setLatLng([lat, lng]);
-                map.setView([lat, lng], 16);
-                latitudeInput.value = lat.toFixed(6);
-                longitudeInput.value = lng.toFixed(6);
-                addressInput.value = display_name;
-            }
-        }
-    }, 1000); // Wait 1 second after typing stops
+    /* =====================
+       ADDRESS INPUT TYPING
+    ===================== */
+    const handleAddressInput = debounce(async () => {
+        const query = addressInput.value.trim();
+        if (!query) return;
 
-    // Add event listener for address input
-    addressInput.addEventListener('input', handleAddressChange);
+        const result = await getCoordinates(query);
+        if (!result) return;
 
-    // Handle marker movement
-    marker.on('dragend', async function(e) {
-        const latlng = e.target.getLatLng();
-        latitudeInput.value = latlng.lat.toFixed(6);
-        longitudeInput.value = latlng.lng.toFixed(6);
-        await updateAddress(latlng.lat, latlng.lng);
+        const { lat, lng, name } = result;
+
+        marker.setLatLng([lat, lng]);
+        map.setView([lat, lng], 16);
+
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+        addressInput.value = name;
+
+    }, 1000);
+
+    addressInput.addEventListener("input", handleAddressInput);
+
+    /* =====================
+        MARKER DRAG EVENT
+    ===================== */
+    marker.on("dragend", async (e) => {
+        const { lat, lng } = e.target.getLatLng();
+
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+
+        await updateAddress(lat, lng);
     });
 
-    // Handle map clicks
-    map.on('click', async function(e) {
-        marker.setLatLng(e.latlng);
-        latitudeInput.value = e.latlng.lat.toFixed(6);
-        longitudeInput.value = e.latlng.lng.toFixed(6);
-        await updateAddress(e.latlng.lat, e.latlng.lng);
+    /* =====================
+          MAP CLICK
+    ===================== */
+    map.on("click", async (e) => {
+        const { lat, lng } = e.latlng;
+
+        marker.setLatLng([lat, lng]);
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+
+        await updateAddress(lat, lng);
     });
 
-    // Handle search results
-    searchControl.on('markgeocode', function(e) {
+    /* =====================
+         SEARCH RESULT
+    ===================== */
+    searchControl.on("markgeocode", function(e) {
         const center = e.geocode.center;
+
         marker.setLatLng(center);
         map.setView(center, 16);
+
         latitudeInput.value = center.lat.toFixed(6);
         longitudeInput.value = center.lng.toFixed(6);
         addressInput.value = e.geocode.name;
     });
 
-    // Initialize with current values
+    /* =====================
+      INITIAL LOAD ADDRESS
+    ===================== */
     if (latitudeInput.value && longitudeInput.value) {
         updateAddress(defaultLat, defaultLng);
     }
 });
 
-// Add this JavaScript to show/hide bedspace options based on accommodation type
-document.addEventListener('DOMContentLoaded', function() {
-    const accommodationType = document.getElementById('accommodation_type');
-    const bedspaceOptions = document.getElementById('bedspace-options');
 
-    function toggleBedspaceOptions() {
-        const selectedType = accommodationType.value;
-        if (selectedType === 'bedspace' || selectedType === 'room_sharing') {
-            bedspaceOptions.style.display = 'block';
-        } else {
-            bedspaceOptions.style.display = 'none';
-        }
+/* ===================================================
+   SHOW / HIDE BEDSPACE OPTIONS (UNCHANGED LOGIC)
+=================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+    const accommodationType = document.getElementById("accommodation_type");
+    const bedspaceOptions = document.getElementById("bedspace-options");
+
+    function toggleOptions() {
+        const type = accommodationType.value;
+        bedspaceOptions.style.display =
+            (type === "bedspace" || type === "room_sharing") ? "block" : "none";
     }
 
-    accommodationType.addEventListener('change', toggleBedspaceOptions);
-    toggleBedspaceOptions(); // Run on page load
+    accommodationType.addEventListener("change", toggleOptions);
+    toggleOptions(); // Load state on open
 });
 </script>
+
 {% endblock %}

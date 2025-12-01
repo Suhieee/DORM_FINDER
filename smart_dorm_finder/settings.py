@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # Load environment variables from .env file (optional)
 try:
@@ -110,53 +111,73 @@ TEMPLATES = [
 WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 
 
- #Debug: Check what DATABASE_URL contains
+# Debug: Check what DATABASE_URL contains
 database_url = os.environ.get('DATABASE_URL', '')
-print(f"DATABASE_URL: {database_url}")
+print(f"DATABASE_URL present: {'Yes' if database_url else 'No'}")
 
-# Handle database configuration with better error handling
+if database_url:
+    # Mask password for security in logs
+    from urllib.parse import urlparse
+    parsed = urlparse(database_url)
+    if parsed.password:
+        masked_url = database_url.replace(parsed.password, '***')
+        print(f"Database URL (masked): {masked_url}")
+
+# Handle database configuration - PostgreSQL ONLY
+if not database_url:
+    raise ImproperlyConfigured(
+        "DATABASE_URL environment variable is not set. "
+        "Please set DATABASE_URL to connect to PostgreSQL."
+    )
+
+if 'postgres' not in database_url.lower():
+    raise ImproperlyConfigured(
+        f"DATABASE_URL must be a PostgreSQL connection string. "
+        f"Got: {database_url[:50]}..."
+    )
+
 try:
-    if database_url and 'postgres' in database_url.lower():
-        # Use PostgreSQL with manual configuration (more reliable)
-        from urllib.parse import urlparse
-        
-        result = urlparse(database_url)
-        
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': result.path[1:],  # Remove the leading '/'
-                'USER': result.username,
-                'PASSWORD': result.password,
-                'HOST': result.hostname,
-                'PORT': result.port,
-                'CONN_MAX_AGE': 600,
-                'OPTIONS': {
-                    'sslmode': 'require',
-                },
-            }
-        }
-        print("✅ Using PostgreSQL database (manual config)")
-    else:
-        # Fallback to SQLite
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-        print("✅ Using SQLite database (fallback)")
-        
-except Exception as e:
-    print(f"❌ Database configuration error: {e}")
-    # Ultimate fallback to SQLite
+    # Use PostgreSQL with manual configuration
+    from urllib.parse import urlparse
+    
+    result = urlparse(database_url)
+    
+    # Extract and clean database name
+    db_name = result.path[1:]  # Remove the leading '/'
+    if '?' in db_name:
+        db_name = db_name.split('?')[0]
+    
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_name,
+            'USER': result.username,
+            'PASSWORD': result.password,
+            'HOST': result.hostname,
+            'PORT': result.port,
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': 10,
+                'keepalives': 1,
+                'keepalives_idle': 30,
+                'keepalives_interval': 10,
+                'keepalives_count': 5,
+            },
         }
     }
-    print("✅ Using SQLite database (error fallback)")
+    
+    print(f"✅ Successfully configured PostgreSQL database")
+    print(f"   Database: {db_name}")
+    print(f"   Host: {result.hostname}")
+    print(f"   Port: {result.port}")
+    print(f"   User: {result.username}")
+    
+except Exception as e:
+    raise ImproperlyConfigured(
+        f"Failed to configure PostgreSQL database: {str(e)}\n"
+        f"DATABASE_URL: {database_url[:100]}..."
+    )
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
