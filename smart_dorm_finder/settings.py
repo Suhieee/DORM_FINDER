@@ -111,7 +111,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'smart_dorm_finder.wsgi.application'
 
 
-# Debug: Check what DATABASE_URL contains
 database_url = os.environ.get('DATABASE_URL', '')
 print(f"DATABASE_URL present: {'Yes' if database_url else 'No'}")
 
@@ -123,7 +122,7 @@ if database_url:
         masked_url = database_url.replace(parsed.password, '***')
         print(f"Database URL (masked): {masked_url}")
 
-# Handle database configuration - PostgreSQL ONLY
+# Handle database configuration
 if not database_url:
     raise ImproperlyConfigured(
         "DATABASE_URL environment variable is not set. "
@@ -137,45 +136,30 @@ if 'postgres' not in database_url.lower():
     )
 
 try:
-    # Use PostgreSQL with manual configuration
-    from urllib.parse import urlparse
-    
-    result = urlparse(database_url)
-    
-    # Extract and clean database name
-    db_name = result.path[1:]  # Remove the leading '/'
-    if '?' in db_name:
-        db_name = db_name.split('?')[0]
+    # Use dj-database-url which handles psycopg3 automatically
+    import dj_database_url
     
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_name,
-            'USER': result.username,
-            'PASSWORD': result.password,
-            'HOST': result.hostname,
-            'PORT': result.port,
-            'CONN_MAX_AGE': 600,
-            'OPTIONS': {
-                'sslmode': 'require',
-                'connect_timeout': 10,
-                'keepalives': 1,
-                'keepalives_idle': 30,
-                'keepalives_interval': 10,
-                'keepalives_count': 5,
-            },
-        }
+        'default': dj_database_url.parse(
+            database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True
+        )
     }
     
-    print(f"✅ Successfully configured PostgreSQL database")
-    print(f"   Database: {db_name}")
-    print(f"   Host: {result.hostname}")
-    print(f"   Port: {result.port}")
-    print(f"   User: {result.username}")
+    # For psycopg3, we need to update ENGINE
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+    
+    print(f"✅ Successfully configured PostgreSQL database with psycopg3")
+    print(f"   Database: {DATABASES['default']['NAME']}")
+    print(f"   Host: {DATABASES['default']['HOST']}")
+    print(f"   Port: {DATABASES['default']['PORT']}")
+    print(f"   User: {DATABASES['default']['USER']}")
     
 except Exception as e:
     raise ImproperlyConfigured(
-        f"Failed to configure PostgreSQL database: {str(e)}\n"
+        f"Failed to configure database: {str(e)}\n"
         f"DATABASE_URL: {database_url[:100]}..."
     )
 
