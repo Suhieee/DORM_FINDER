@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('reservation_date', models.DateTimeField(auto_now_add=True)),
                 ('status', models.CharField(default='pending', max_length=20)),
                 ('dorm', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='dormitory.dorm')),
-                ('student', models.ForeignKey(limit_choices_to={'user_type': 'student'}, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('tenant', models.ForeignKey(limit_choices_to={'user_type': 'tenant'}, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(

@@ -120,17 +120,17 @@
                             <div class="relative">
                                 <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                                      onclick="previewImage(this)">
-                                    {% if reservation.student.userprofile.profile_picture %}
-                                        <img src="{{ reservation.student.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                    {% if reservation.tenant.userprofile.profile_picture %}
+                                        <img src="{{ reservation.tenant.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
                                     {% else %}
                                         <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                                     {% endif %}
                                 </div>
-                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if reservation.student.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} border-2 border-white"></div>
+                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if reservation.tenant.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} border-2 border-white"></div>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-start">
-                                    <h3 class="font-semibold text-sm truncate">{{ reservation.student.get_full_name }}</h3>
+                                    <h3 class="font-semibold text-sm truncate">{{ reservation.tenant.get_full_name }}</h3>
                                     <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
                                 </div>
                                 <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
@@ -173,15 +173,15 @@
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="previewImage(this)">
-                            {% if selected_reservation.student.userprofile.profile_picture %}
-                                <img src="{{ selected_reservation.student.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                            {% if selected_reservation.tenant.userprofile.profile_picture %}
+                                <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                             {% endif %}
                         </div>
                         <div>
-                            <h2 class="font-semibold">{{ selected_reservation.student.get_full_name }}</h2>
-                            <p class="text-xs text-gray-500">Last active {{ selected_reservation.student.last_login|timesince }} ago</p>
+                            <h2 class="font-semibold">{{ selected_reservation.tenant.get_full_name }}</h2>
+                            <p class="text-xs text-gray-500">Last active {{ selected_reservation.tenant.last_login|timesince }} ago</p>
                         </div>
                     </div>
 
@@ -378,19 +378,19 @@
 
                 <!-- User Profiles -->
                 <div class="flex justify-between items-center border-t pt-4">
-                    <!-- Student Profile -->
+                    <!-- tenant Profile -->
                     <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="previewImage(this)">
-                            {% if selected_reservation.student.userprofile.profile_picture %}
-                                <img src="{{ selected_reservation.student.userprofile.profile_picture.url }}" alt="Student Profile" class="w-full h-full object-cover">
+                            {% if selected_reservation.tenant.userprofile.profile_picture %}
+                                <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="tenant Profile" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                             {% endif %}
                         </div>
                         <div>
-                            <p class="font-semibold text-sm">{{ selected_reservation.student.get_full_name }}</p>
-                            <p class="text-xs text-gray-500">Student</p>
+                            <p class="font-semibold text-sm">{{ selected_reservation.tenant.get_full_name }}</p>
+                            <p class="text-xs text-gray-500">tenant</p>
                         </div>
                     </div>
                     <!-- Landlord Profile -->
@@ -504,8 +504,8 @@
                     <h4 class="font-semibold">Reservation Information</h4>
                     <div class="text-sm">
                         <p><span class="text-gray-600">Reserved on:</span> {{ selected_reservation.reservation_date|date:"F j, Y" }}</p>
-                        <p><span class="text-gray-600">Student:</span> {{ selected_reservation.student.get_full_name }}</p>
-                        <p><span class="text-gray-600">Contact:</span> {{ selected_reservation.student.email }}</p>
+                        <p><span class="text-gray-600">tenant:</span> {{ selected_reservation.tenant.get_full_name }}</p>
+                        <p><span class="text-gray-600">Contact:</span> {{ selected_reservation.tenant.email }}</p>
                     </div>
                 </div>
 
@@ -1078,7 +1078,7 @@
 
     // Function to handle payment verification and rejection
     function handlePaymentAction(action, reservationId) {
-        if (action === 'reject_payment' && !confirm('Are you sure you want to reject this payment proof? The student will need to submit a new one.')) {
+        if (action === 'reject_payment' && !confirm('Are you sure you want to reject this payment proof? The tenant will need to submit a new one.')) {
             return;
         }
 

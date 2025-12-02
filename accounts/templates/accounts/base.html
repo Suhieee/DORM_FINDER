@@ -85,7 +85,7 @@
                             {% url 'dormitory:landlord_reservations' as landlord_reservations_url %}
                             {% url 'dormitory:dorm_list' as dorm_list_url %}
                             {% url 'dormitory:roommate_list' as roommate_list_url %}
-                            {% url 'dormitory:student_reservations' as student_reservations_url %}
+                            {% url 'dormitory:tenant_reservations' as tenant_reservations_url %}
                             {% url 'accounts:login' as login_url %}
                             {% url 'accounts:register' as register_url %}
                             <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Dashboard</a></li>
@@ -114,15 +114,15 @@
                             {% url 'accounts:dashboard' as dashboard_url %}
                             {% url 'dormitory:dorm_list' as dorm_list_url %}
                             {% url 'dormitory:roommate_list' as roommate_list_url %}
-                            {% url 'dormitory:student_reservations' as student_reservations_url %}
+                            {% url 'dormitory:tenant_reservations' as tenant_reservations_url %}
                             {% url 'accounts:login' as login_url %}
                             {% url 'accounts:register' as register_url %}
                             <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Home</a></li>
                             <li><a href="{{ dorm_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dorm_list_url %}active{% endif %}">Browse Dorms</a></li>
                             <li><a href="{{ roommate_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == roommate_list_url %}active{% endif %}">Roommate Finder</a></li>
-                            <li><a href="{{ student_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == student_reservations_url %}active{% endif %}"><span>My Reservations</span>{% if user_pending_reservations %}<span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>{% endif %}</a></li>
+                            <li><a href="{{ tenant_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == tenant_reservations_url %}active{% endif %}"><span>My Reservations</span>{% if user_pending_reservations %}<span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>{% endif %}</a></li>
                             <li class="relative">
-                                {% include 'accounts/components/notification_dropdown.html' with button_id='studentNavNotificationButton' dropdown_id='studentNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='tenantNavNotificationButton' dropdown_id='tenantNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
                             </li>
 
                         {% endif %}

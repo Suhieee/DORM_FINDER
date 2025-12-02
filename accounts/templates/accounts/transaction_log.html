@@ -13,7 +13,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2 text-left">Dorm</th>
-                            <th class="px-4 py-2 text-left">Student</th>
+                            <th class="px-4 py-2 text-left">Tenant</th>
                             <th class="px-4 py-2 text-left">Status</th>
                             <th class="px-4 py-2 text-left">Amount</th>
                             <th class="px-4 py-2 text-left">Date</th>
@@ -24,7 +24,7 @@
                         {% for tx in page_obj %}
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-4 py-2 font-medium text-gray-900">{{ tx.dorm.name }}</td>
-                            <td class="px-4 py-2">{{ tx.student.username }}</td>
+                            <td class="px-4 py-2">{{ tx.tenant.username }}</td>
                             <td class="px-4 py-2">
                                 {% if tx.status == 'completed' %}
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">

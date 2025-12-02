@@ -1,5 +1,5 @@
 {% extends 'accounts/base.html' %}
-{% block title %} Student Dashboard {% endblock %}
+{% block title %} tenant Dashboard {% endblock %}
 {% load static %}
 {% block content %}
 
@@ -37,7 +37,7 @@
 <!-- Hero Section -->
 <div style="height: 600px;" class="w-full border z-10 border-gray-300 rounded-md mb-6 relative">
   <div class="absolute inset-0">
-    <img class="w-full h-full  object-cover opacity-20" src="{% static 'images/student-living.jpg' %}" alt="Student Living">
+    <img class="w-full h-full  object-cover opacity-20" src="{% static 'images/student-living.jpg' %}" alt="tenant Living">
   </div>
   <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center">
     <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-500 mb-6">
@@ -64,7 +64,7 @@
     </div>
     <div class="flex items-center gap-4">
         <span class="text-sm text-gray-500 hidden md:inline">Latest updates</span>
-        {% include 'accounts/components/notification_dropdown.html' with button_id='studentNotificationButton' dropdown_id='studentDropdownNotification' notifications=notifications header='Your Notifications' dropdown_position='right-0 md:right-0' button_class='relative p-3 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full focus:outline-none' %}
+        {% include 'accounts/components/notification_dropdown.html' with button_id='tenantNotificationButton' dropdown_id='tenantDropdownNotification' notifications=notifications header='Your Notifications' dropdown_position='right-0 md:right-0' button_class='relative p-3 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full focus:outline-none' %}
     </div>
 </section>
 {% endif %}
@@ -130,7 +130,7 @@
                     <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
                     <div class="flex items-center gap-2">
                         <span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-sm">Recommended</span>
-                        {% if request.user.is_authenticated and request.user.user_type == 'student' %}
+                        {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
                                 class="text-red-500 hover:text-red-700 focus:outline-none favorite-btn">
@@ -250,7 +250,7 @@
                     <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
                     <div class="flex items-center gap-2">
                         <span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm">Bedspace</span>
-                        {% if request.user.is_authenticated and request.user.user_type == 'student' %}
+                        {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
                                 class="text-red-500 hover:text-red-700 focus:outline-none favorite-btn">
@@ -378,7 +378,7 @@
                     <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
                     <div class="flex items-center gap-2">
                         <span class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-sm">Popular</span>
-                        {% if request.user.is_authenticated and request.user.user_type == 'student' %}
+                        {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
                                 class="text-red-500 hover:text-red-700 focus:outline-none favorite-btn">
@@ -463,8 +463,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
         </svg>
       </div>
-      <h3 class="text-xl font-semibold mb-2 text-blue-800">Student-Focused</h3>
-      <p class="text-gray-600 dark:text-gray-500">Properties selected with student needs and budgets in mind.</p>
+      <h3 class="text-xl font-semibold mb-2 text-blue-800">tenant-Focused</h3>
+      <p class="text-gray-600 dark:text-gray-500">Properties selected with tenant needs and budgets in mind.</p>
     </div>
     <div class="text-center">
         <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -472,8 +472,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold mb-2 text-blue-800">Student-Focused</h3>
-        <p class="text-gray-600 dark:text-gray-500">Properties selected with student needs and budgets in mind.</p>
+        <h3 class="text-xl font-semibold mb-2 text-blue-800">tenant-Focused</h3>
+        <p class="text-gray-600 dark:text-gray-500">Properties selected with tenant needs and budgets in mind.</p>
       </div>
 
 <script>

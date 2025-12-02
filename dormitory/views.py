@@ -741,7 +741,7 @@ class ReviewCreateView(LoginRequiredMixin, CreateView):
         # Check if user has a confirmed or completed reservation
         valid_reservation = Reservation.objects.filter(
             dorm=self.dorm,
-            student=request.user,
+            tenant=request.user,
             status__in=['confirmed', 'completed']
         ).first()
         
@@ -820,8 +820,8 @@ class ReservationCreateView(CreateView):
     template_name = "dormitory/reservation_form.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'student':
-            messages.error(request, "Only students can make reservations.")
+        if request.user.user_type != 'tenant':
+            messages.error(request, "Only tenants can make reservations.")
             return redirect('accounts:dashboard')
         
         # Get the dorm and store it as an instance variable
@@ -830,12 +830,12 @@ class ReservationCreateView(CreateView):
         # Check if user already has a reservation for this dorm
         existing_reservation = Reservation.objects.filter(
             dorm=self.dorm,
-            student=request.user,
+            tenant=request.user,
             status__in=['pending', 'confirmed']
         ).first()
         
         if existing_reservation:
-            return redirect(f"{reverse('dormitory:student_reservations')}?selected_reservation={existing_reservation.pk}")
+            return redirect(f"{reverse('dormitory:tenant_reservations')}?selected_reservation={existing_reservation.pk}")
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -851,7 +851,7 @@ class ReservationCreateView(CreateView):
 
     def form_valid(self, form):
         form.instance.dorm = self.dorm
-        form.instance.student = self.request.user
+        form.instance.tenant = self.request.user
         form.instance.status = 'pending'
         
         # Save the reservation
@@ -877,7 +877,7 @@ class ReservationCreateView(CreateView):
 
     def get_success_url(self):
         """Return the URL to redirect to after processing a valid form."""
-        base_url = reverse('dormitory:student_reservations')
+        base_url = reverse('dormitory:tenant_reservations')
         return f"{base_url}?selected_reservation={self.object.pk}"
 
 @login_required
@@ -954,7 +954,7 @@ class ReservationPaymentView(DetailView):
 
     def get_queryset(self):
         # Only allow access to reservations that belong to the current user
-        return Reservation.objects.select_related('dorm').filter(student=self.request.user)
+        return Reservation.objects.select_related('dorm').filter(tenant=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -983,7 +983,7 @@ class LandlordReservationsView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Reservation.objects.select_related('dorm', 'student').prefetch_related(
+        return Reservation.objects.select_related('dorm', 'tenant').prefetch_related(
             'chat_messages'
         ).filter(
             dorm__landlord=self.request.user
@@ -1020,11 +1020,11 @@ class LandlordReservationsView(ListView):
 @method_decorator(login_required, name='dispatch')
 class UpdateReservationStatusView(View):
     def post(self, request, reservation_id):
-        # Check if the request is from a landlord or student
+        # Check if the request is from a landlord or tenant
         if request.user.user_type == 'landlord':
             reservation = get_object_or_404(Reservation, id=reservation_id, dorm__landlord=request.user)
         else:
-            reservation = get_object_or_404(Reservation, id=reservation_id, student=request.user)
+            reservation = get_object_or_404(Reservation, id=reservation_id, tenant=request.user)
         
         action = request.POST.get('action')
         
@@ -1033,7 +1033,7 @@ class UpdateReservationStatusView(View):
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'status': 'error', 'error': 'Only landlords can confirm reservations.'}, status=403)
                 messages.error(request, "Only landlords can confirm reservations.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
                 
             reservation.status = 'confirmed'
             # Decrement available_beds if greater than 0
@@ -1053,13 +1053,13 @@ class UpdateReservationStatusView(View):
             # Create a system message
             Message.objects.create(
                 sender=request.user,
-                receiver=reservation.student,
+                receiver=reservation.tenant,
                 content="Your reservation has been confirmed! You may proceed with the payment if you wish to secure your slot.",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
             notify_user(
-                user=reservation.student,
+                user=reservation.tenant,
                 message=f"Your reservation for {reservation.dorm.name} was confirmed.",
                 related_object_id=reservation.id
             )
@@ -1070,7 +1070,7 @@ class UpdateReservationStatusView(View):
         elif action == 'verify_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can verify payments.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
                 
             if reservation.payment_proof:
                 reservation.has_paid_reservation = True
@@ -1078,13 +1078,13 @@ class UpdateReservationStatusView(View):
                 # Create a system message
                 Message.objects.create(
                     sender=request.user,
-                    receiver=reservation.student,
+                    receiver=reservation.tenant,
                     content="Your payment has been verified. Your slot is now secured!",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
-                    user=reservation.student,
+                    user=reservation.tenant,
                     message=f"Payment for {reservation.dorm.name} was verified.",
                     related_object_id=reservation.id
                 )
@@ -1094,7 +1094,7 @@ class UpdateReservationStatusView(View):
         elif action == 'reject_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can reject payments.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
                 
             if reservation.payment_proof:
                 # Clear the payment proof and reset payment status
@@ -1106,13 +1106,13 @@ class UpdateReservationStatusView(View):
                 # Create a system message
                 Message.objects.create(
                     sender=request.user,
-                    receiver=reservation.student,
+                    receiver=reservation.tenant,
                     content="Your payment proof has been rejected. Please submit a new payment proof.",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
-                    user=reservation.student,
+                    user=reservation.tenant,
                     message=f"Payment proof for {reservation.dorm.name} was rejected. Please upload a new copy.",
                     related_object_id=reservation.id
                 )
@@ -1123,7 +1123,7 @@ class UpdateReservationStatusView(View):
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'status': 'error', 'error': 'Only landlords can decline reservations.'}, status=403)
                 messages.error(request, "Only landlords can decline reservations.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
             
             decline_reason = request.POST.get('decline_reason')
             if not decline_reason:
@@ -1146,13 +1146,13 @@ class UpdateReservationStatusView(View):
             # Create a system message
             Message.objects.create(
                 sender=request.user,
-                receiver=reservation.student,
+                receiver=reservation.tenant,
                 content=f"Your reservation has been declined. Reason: {decline_reason}",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
             notify_user(
-                user=reservation.student,
+                user=reservation.tenant,
                 message=f"Reservation for {reservation.dorm.name} was declined. Reason: {decline_reason}",
                 related_object_id=reservation.id
             )
@@ -1161,19 +1161,19 @@ class UpdateReservationStatusView(View):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success', 'message': success_message})
         elif action == 'cancel':
-            if request.user.user_type != 'student':
-                messages.error(request, "Only students can cancel their reservations.")
+            if request.user.user_type != 'tenant':
+                messages.error(request, "Only tenants can cancel their reservations.")
                 return redirect('dormitory:landlord_reservations')
             
             if reservation.status not in ['pending', 'confirmed'] or reservation.has_paid_reservation:
                 messages.error(request, "You cannot cancel this reservation at this stage.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
             
             # Get cancellation reason from form
             cancellation_reason = request.POST.get('cancellation_reason')
             if not cancellation_reason:
                 messages.error(request, "Please provide a reason for cancellation.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
             
             reservation.status = 'cancelled'
             reservation.cancellation_reason = cancellation_reason
@@ -1187,7 +1187,7 @@ class UpdateReservationStatusView(View):
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.dorm.landlord,
-                content="The student has cancelled their reservation.",
+                content="The tenant has cancelled their reservation.",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
@@ -1202,26 +1202,26 @@ class UpdateReservationStatusView(View):
             )
             notify_user(
                 user=reservation.dorm.landlord,
-                message=f"{reservation.student.get_full_name() or reservation.student.username} cancelled their reservation for {reservation.dorm.name}.",
+                message=f"{reservation.tenant.get_full_name() or reservation.tenant.username} cancelled their reservation for {reservation.dorm.name}.",
                 related_object_id=reservation.id
             )
         elif action == 'complete':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can complete transactions.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
             if reservation.status == 'confirmed':
                 reservation.status = 'completed'
                 messages.success(request, f"Transaction for {reservation.dorm.name} has been marked as complete.")
                 # Create a system message
                 Message.objects.create(
                     sender=request.user,
-                    receiver=reservation.student,
+                    receiver=reservation.tenant,
                     content="Transaction has been marked as complete. Thank you for using our service!",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
-                    user=reservation.student,
+                    user=reservation.tenant,
                     message=f"Transaction for {reservation.dorm.name} has been marked complete.",
                     related_object_id=reservation.id
                 )
@@ -1230,7 +1230,7 @@ class UpdateReservationStatusView(View):
         elif action == 'make_available':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can manage room availability.")
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
             if reservation.room is not None:
                 reservation.room.is_available = True
                 reservation.room.save()
@@ -1241,13 +1241,13 @@ class UpdateReservationStatusView(View):
                 messages.success(request, f"Room set to available for {reservation.dorm.name}.")
                 Message.objects.create(
                     sender=request.user,
-                    receiver=reservation.student,
+                    receiver=reservation.tenant,
                     content="The room you reserved has been marked available by the landlord.",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
-                    user=reservation.student,
+                    user=reservation.tenant,
                     message=f"The room for {reservation.dorm.name} is available again.",
                     related_object_id=reservation.id
                 )
@@ -1261,7 +1261,7 @@ class UpdateReservationStatusView(View):
             if request.user.user_type == 'landlord':
                 return redirect('dormitory:landlord_reservations')
             else:
-                return redirect('dormitory:student_reservations')
+                return redirect('dormitory:tenant_reservations')
         else:
             # For AJAX requests that didn't return earlier, return a generic success
             return JsonResponse({'status': 'success', 'message': 'Action completed successfully.'})
@@ -1276,12 +1276,12 @@ def user_context(request):
         return context
     
     # Cache reservation data for 30 seconds to reduce queries
-    if request.user.user_type == 'student':
-        cache_key = f'student_reservations_{request.user.id}'
+    if request.user.user_type == 'tenant':
+        cache_key = f'tenant_reservations_{request.user.id}'
         reservations = cache.get(cache_key)
         if reservations is None:
             reservations = list(Reservation.objects.filter(
-                student=request.user,
+                tenant=request.user,
                 status__in=['pending_payment', 'pending', 'confirmed']
             ).select_related('dorm').order_by('-created_at')[:5])  # Limit to 5
             cache.set(cache_key, reservations, 30)
@@ -1299,20 +1299,20 @@ def user_context(request):
     return context
 
 @method_decorator(login_required, name='dispatch')
-class StudentReservationsView(ListView):
+class tenantReservationsView(ListView):
     model = Reservation
-    template_name = 'dormitory/student_reservations.html'
+    template_name = 'dormitory/tenant_reservations.html'
     context_object_name = 'reservations'
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'student':
-            messages.error(request, "Only students can access this page.")
+        if request.user.user_type != 'tenant':
+            messages.error(request, "Only tenants can access this page.")
             return redirect('accounts:dashboard')
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return Reservation.objects.select_related('dorm').filter(
-            student=self.request.user
+            tenant=self.request.user
         ).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -1340,12 +1340,12 @@ class StudentReservationsView(ListView):
         reservation_id = request.GET.get('selected_reservation')
         if not reservation_id:
             messages.error(request, "No reservation selected.")
-            return redirect('dormitory:student_reservations')
+            return redirect('dormitory:tenant_reservations')
 
         try:
             reservation = Reservation.objects.get(
                 id=reservation_id,
-                student=request.user
+                tenant=request.user
             )
 
             if 'payment_proof' in request.FILES:
@@ -1380,7 +1380,7 @@ class StudentReservationsView(ListView):
         except Reservation.DoesNotExist:
             messages.error(request, "Reservation not found.")
 
-        base_url = reverse('dormitory:student_reservations')
+        base_url = reverse('dormitory:tenant_reservations')
         return redirect(f"{base_url}?selected_reservation={reservation_id}")
 
 @method_decorator(login_required, name='dispatch')
@@ -1400,7 +1400,7 @@ class MessagesView(ListView):
             # For landlords, get all messages related to their dorms
             return base_query.filter(dorm__landlord=user).order_by('-last_message')
         else:
-            # For students, get all messages they're involved in
+            # For tenants, get all messages they're involved in
             return base_query.filter(
                 Q(sender=user) | Q(receiver=user)
             ).order_by('-last_message')
@@ -1445,14 +1445,14 @@ class SendMessageView(View):
         try:
             # Fix: Move Q objects to filter() instead of get()
             reservation = Reservation.objects.filter(
-                Q(student=request.user) | Q(dorm__landlord=request.user)
+                Q(tenant=request.user) | Q(dorm__landlord=request.user)
             ).get(id=reservation_id)
             
             # Determine the receiver
-            if request.user == reservation.student:
+            if request.user == reservation.tenant:
                 receiver = reservation.dorm.landlord
             else:
-                receiver = reservation.student
+                receiver = reservation.tenant
             
             # Handle file uploads
             attachment = request.FILES.get('attachment')
@@ -1505,7 +1505,7 @@ class CheckNewMessagesView(View):
         try:
             # Fix: Move Q objects to filter() instead of get()
             reservation = Reservation.objects.filter(
-                Q(student=request.user) | Q(dorm__landlord=request.user)
+                Q(tenant=request.user) | Q(dorm__landlord=request.user)
             ).get(id=reservation_id)
             
             # Check for unread messages

@@ -27,10 +27,10 @@
                         <div class="relative">
                             <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                                 {% if request.user == conversation.dorm.landlord %}
-                                    {% if conversation.student.profile_picture %}
-                                        <img src="{{ conversation.student.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                    {% if conversation.tenant.profile_picture %}
+                                        <img src="{{ conversation.tenant.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
                                     {% else %}
-                                        <span class="text-xl text-gray-600">{{ conversation.student.get_initials }}</span>
+                                        <span class="text-xl text-gray-600">{{ conversation.tenant.get_initials }}</span>
                                     {% endif %}
                                 {% else %}
                                     {% if conversation.dorm.landlord.profile_picture %}
@@ -48,7 +48,7 @@
                             <div class="flex justify-between items-start">
                                 <h3 class="font-semibold truncate">
                                     {% if request.user == conversation.dorm.landlord %}
-                                        {{ conversation.student.get_full_name }}
+                                        {{ conversation.tenant.get_full_name }}
                                     {% else %}
                                         {{ conversation.dorm.landlord.get_full_name }}
                                     {% endif %}
@@ -81,10 +81,10 @@
                         <!-- Profile Picture -->
                         <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                             {% if request.user == selected_conversation.dorm.landlord %}
-                                {% if selected_conversation.student.profile_picture %}
-                                    <img src="{{ selected_conversation.student.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                {% if selected_conversation.tenant.profile_picture %}
+                                    <img src="{{ selected_conversation.tenant.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
                                 {% else %}
-                                    <span class="text-lg text-gray-600">{{ selected_conversation.student.get_initials }}</span>
+                                    <span class="text-lg text-gray-600">{{ selected_conversation.tenant.get_initials }}</span>
                                 {% endif %}
                             {% else %}
                                 {% if selected_conversation.dorm.landlord.profile_picture %}
@@ -97,7 +97,7 @@
                         <div>
                             <h2 class="font-semibold">
                                 {% if request.user == selected_conversation.dorm.landlord %}
-                                    {{ selected_conversation.student.get_full_name }}
+                                    {{ selected_conversation.tenant.get_full_name }}
                                 {% else %}
                                     {{ selected_conversation.dorm.landlord.get_full_name }}
                                 {% endif %}

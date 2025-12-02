@@ -298,7 +298,7 @@ class Reservation(models.Model):
     )
 
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='reservations')
-    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'student'})
+    tenant = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'tenant'})
     room = models.ForeignKey('Room', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     reservation_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
@@ -322,7 +322,7 @@ class Reservation(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.student.username}'s reservation for {self.dorm.name}"
+        return f"{self.tenant.username}'s reservation for {self.dorm.name}"
 
     @property
     def is_reviewable(self):

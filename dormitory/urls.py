@@ -5,7 +5,7 @@ from .views import (
     RoommateListView, RoommateCreateView, RoommateDetailView,
     RoommateUpdateView, RoommateDeleteView, ReviewListView, 
     ReviewCreateView, ReviewUpdateView, ReviewDeleteView,
-    ReservationCreateView, LandlordReservationsView, StudentReservationsView,
+    ReservationCreateView, LandlordReservationsView, tenantReservationsView,
     MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView,
     ManageRoomsView, PublicDormListView, PublicDormDetailView, 
     PublicRoommateListView, PublicRoommateDetailView, HomePageView
@@ -44,7 +44,7 @@ urlpatterns = [
     path("dorms/<int:dorm_id>/reviews/<int:pk>/delete/", ReviewDeleteView.as_view(), name="delete_review"),
 
     path("dormitory/<int:dorm_id>/reserve/", ReservationCreateView.as_view(), name="reserve_dorm"),
-    path('my-reservations/', StudentReservationsView.as_view(), name='student_reservations'),
+    path('my-reservations/', tenantReservationsView.as_view(), name='tenant_reservations'),
     path('landlord/reservations/', LandlordReservationsView.as_view(), name='landlord_reservations'),
 
     # Messaging URLs

@@ -360,19 +360,19 @@
 
                 <!-- User Profiles -->
                 <div class="flex justify-between items-center border-t pt-4">
-                    <!-- Student Profile -->
+                    <!-- tenant Profile -->
                     <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="previewImage(this)">
                             {% if request.user.userprofile.profile_picture %}
-                                <img src="{{ request.user.userprofile.profile_picture.url }}" alt="Student Profile" class="w-full h-full object-cover">
+                                <img src="{{ request.user.userprofile.profile_picture.url }}" alt="tenant Profile" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                             {% endif %}
                             </div>
                             <div>
                             <p class="font-semibold text-sm">{{ request.user.get_full_name }}</p>
-                            <p class="text-xs text-gray-500">Student</p>
+                            <p class="text-xs text-gray-500">tenant</p>
                         </div>
                     </div>
                     <!-- Landlord Profile -->

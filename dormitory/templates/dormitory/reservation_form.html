@@ -121,7 +121,7 @@
         {% if reservation and reservation.id %}
         <div class="mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
             <div class="p-6">
-                <h3 class="text-xl font-semibold mb-4">Chat with {% if request.user == reservation.student %}Landlord{% else %}Student{% endif %}</h3>
+                <h3 class="text-xl font-semibold mb-4">Chat with {% if request.user == reservation.tenant %}Landlord{% else %}tenant{% endif %}</h3>
                 
                 <!-- Messages Container -->
                 <div id="messages-container" class="h-96 overflow-y-auto border rounded-lg mb-4 p-4">

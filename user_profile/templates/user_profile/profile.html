@@ -50,8 +50,8 @@
                         {{ request.user.get_full_name|default:request.user.username }}
                         {% if request.user.user_type == 'landlord' %}
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 ml-2">Landlord</span>
-                        {% elif request.user.user_type == 'student' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 ml-2">Student</span>
+                        {% elif request.user.user_type == 'tenant' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 ml-2">Tenant</span>
                         {% endif %}
                         {% if request.user.userprofile.is_verified %}
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300 ml-2">
@@ -98,8 +98,8 @@
         </div>
     </div>
 
-    <!-- Favorites Section - Only show for students -->
-    {% if request.user.user_type == 'student' %}
+    <!-- Favorites Section - Only show for tenants -->
+    {% if request.user.user_type == 'tenant' %}
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">My Favorite Dorms</h2>

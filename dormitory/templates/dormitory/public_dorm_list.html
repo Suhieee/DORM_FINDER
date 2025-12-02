@@ -39,7 +39,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-4xl text-blue-500 md:text-5xl font-bold mb-4">Browse Available Dorms</h1>
         <p class="text-xl  text-gray-800 max-w-3xl mx-auto">
-            Find your perfect student accommodation from our carefully curated selection of verified dormitories.
+            Find your perfect tenant accommodation from our carefully curated selection of verified dormitories.
         </p>
         
         <!-- Quick Stats -->
@@ -392,7 +392,7 @@
             <div class="p-4">
                 <div class="flex justify-between items-start mb-3">
                     <h3 class="text-lg font-semibold text-gray-900">{{ dorm.name }}</h3>
-                    {% if user.is_authenticated and user.user_type == 'student' %}
+                    {% if user.is_authenticated and user.user_type == 'tenant' %}
                     <button type="button"
                             data-dorm-id="{{ dorm.id }}"
                             class="text-red-500 hover:text-red-700 focus:outline-none favorite-btn">

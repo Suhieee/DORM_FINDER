@@ -124,7 +124,7 @@ class RegisterView(CreateView):
             return next_url
         
         user = self.request.user
-        # User types are stored as lowercase: 'student', 'landlord', 'admin'
+        # User types are stored as lowercase: 'tenant', 'landlord', 'admin'
         # All users redirect to the main dashboard which shows different content based on user_type
         return reverse_lazy("accounts:dashboard")
 
@@ -178,7 +178,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         elif user.user_type == "landlord":
             return ["accounts/landlord_dashboard.html"]
         else:
-            return ["accounts/student_dashboard.html"]
+            return ["accounts/tenant_dashboard.html"]
 
     def calculate_distance(self, lat1, lon1, lat2, lon2):
         """Calculate distance between two points using Haversine formula."""
@@ -211,14 +211,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             User = get_user_model()
             
             context["total_users"] = User.objects.count()
-            context["total_students"] = User.objects.filter(user_type="student").count()
+            context["total_tenants"] = User.objects.filter(user_type="tenant").count()
             context["total_landlords"] = User.objects.filter(user_type="landlord").count()
             context["total_reviews"] = Review.objects.count()
             context["total_dorms"] = Dorm.objects.count()
             
-            # Get active users (landlords and students)
+            # Get active users (landlords and tenants)
             context["active_landlords"] = User.objects.filter(user_type="landlord", is_active=True)
-            context["active_students"] = User.objects.filter(user_type="student", is_active=True)
+            context["active_tenants"] = User.objects.filter(user_type="tenant", is_active=True)
 
             # Dynamic chart data for analytics
             # Monthly user registrations (last 12 months)
@@ -249,7 +249,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['active_users'] = active_users
             context['inactive_users'] = inactive_users
             
-        elif user.user_type == "student":
+        elif user.user_type == "tenant":
             user_profile = UserProfile.objects.get(user=user)
             favorite_dorms = user_profile.favorite_dorms.all()
             recent_views = UserInteraction.objects.filter(user=user, interaction_type='view').order_by('-timestamp')[:10]
@@ -329,7 +329,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             else:
                 ml_recommended_indices = []
 
-            # --- Calculate distance score if student has a school ---
+            # --- Calculate distance score if tenant has a school ---
             if hasattr(user, 'school') and user.school and user.school.latitude and user.school.longitude:
                 for dorm in dorms:
                     distance = self.calculate_distance(
@@ -362,15 +362,15 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 if i in ml_recommended_indices:
                     reasons.append("Similar to your favorites/views")
                 if dorm.id in collab_dorm_ids:
-                    reasons.append("Liked by students with similar taste")
+                    reasons.append("Liked by tenants with similar taste")
                 if getattr(dorm, 'avg_rating', dorm.get_average_rating()) >= 4.5:
-                    reasons.append("Highly rated by students")
+                    reasons.append("Highly rated by tenants")
                 if dorm.distance_score >= 0.8:
                     reasons.append("Very close to your school")
                 if dorm.amenity_count >= 7:
                     reasons.append("Has many amenities")
                 if getattr(dorm, 'review_count', 0) >= 10:
-                    reasons.append("Popular among students")
+                    reasons.append("Popular among tenants")
                 explanation = " and ".join(reasons[:2]) if reasons else "Recommended for you"
 
                 scored_dorms.append((dorm, total_score, explanation))
@@ -387,13 +387,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             
         elif user.user_type == 'landlord':
             # Recent reservations
-            context['recent_reservations'] = Reservation.objects.select_related('dorm', 'student').filter(
+            context['recent_reservations'] = Reservation.objects.select_related('dorm', 'tenant').filter(
                 dorm__landlord=user
             ).order_by('-reservation_date')[:5]
 
             # Core collections
             landlord_dorms = Dorm.objects.filter(landlord=user)
-            reservations = Reservation.objects.select_related('dorm', 'student').filter(dorm__landlord=user)
+            reservations = Reservation.objects.select_related('dorm', 'tenant').filter(dorm__landlord=user)
             messages_qs = Message.objects.select_related('sender', 'receiver', 'dorm', 'reservation').filter(dorm__landlord=user)
 
             # Top-line stats
@@ -521,7 +521,7 @@ class RoleBasedRedirectView(LoginRequiredMixin, TemplateView):
             return redirect("/admin/")
         elif request.user.user_type == "landlord":
             return redirect("accounts:dashboard")
-        elif request.user.user_type == "student":
+        elif request.user.user_type == "tenant":
             return redirect("accounts:dashboard")
         else:
             return redirect("accounts:login")
@@ -602,9 +602,9 @@ class DeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
         if user.user_type == 'landlord':
             # Delete all dorms owned by this landlord
             Dorm.objects.filter(landlord=user).delete()
-        elif user.user_type == 'student':
-            # Delete all reservations made by this student
-            Reservation.objects.filter(student=user).delete()
+        elif user.user_type == 'tenant':
+            # Delete all reservations made by this tenant
+            Reservation.objects.filter(tenant=user).delete()
             
         # Delete user profile
         if hasattr(user, 'userprofile'):
@@ -845,7 +845,7 @@ class TransactionLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transactions = Reservation.objects.select_related('dorm', 'student').order_by('-created_at')
+        transactions = Reservation.objects.select_related('dorm', 'tenant').order_by('-created_at')
         paginator = Paginator(transactions, 25)  # 25 per page
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
@@ -878,13 +878,13 @@ class ViewUserProfileView(LoginRequiredMixin, TemplateView):
         if profile_user.user_type == 'landlord':
             user_dorms = Dorm.objects.filter(landlord=profile_user, approval_status='approved')[:5]
         
-        # Get user's reviews if student
+        # Get user's reviews if tenant
         user_reviews = []
-        if profile_user.user_type == 'student':
+        if profile_user.user_type == 'tenant':
             user_reviews = Review.objects.filter(user=profile_user)[:5]
         
         # Get user's reservations
-        user_reservations = Reservation.objects.filter(student=profile_user)[:5]
+        user_reservations = Reservation.objects.filter(tenant=profile_user)[:5]
         
         # Add the report form for the modal
         report_form = UserReportForm()
@@ -992,7 +992,7 @@ class ReportDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         if reported_user.user_type == 'landlord':
             user_dorms = Dorm.objects.filter(landlord=reported_user)[:10]
-        elif reported_user.user_type == 'student':
+        elif reported_user.user_type == 'tenant':
             user_reviews = Review.objects.filter(user=reported_user)[:10]
         
         context.update({

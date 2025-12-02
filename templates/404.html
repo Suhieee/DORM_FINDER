@@ -45,7 +45,7 @@
                         
                         <div class="space-y-4">
                             {% if user.is_authenticated %}
-                                {% if user.user_type == 'student' %}
+                                {% if user.user_type == 'tenant' %}
                                     <a href="{% url 'accounts:dashboard' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
                                         <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                                            

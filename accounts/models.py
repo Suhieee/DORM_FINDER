@@ -7,11 +7,11 @@ from datetime import timedelta
 
 class CustomUser(AbstractUser):
     USER_TYPES = (
-        ('student', 'Student'),
+        ('tenant', 'Tenant'),
         ('landlord', 'Landlord'),
         ('admin', 'Admin'),
     )
-    user_type = models.CharField(max_length=10, choices=USER_TYPES, default='student')
+    user_type = models.CharField(max_length=10, choices=USER_TYPES, default='tenant')
     contact_number = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     ban_reason = models.TextField(null=True, blank=True, help_text='Reason for banning the user')
