@@ -14,6 +14,26 @@ class CustomUser(AbstractUser):
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='tenant')
     contact_number = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    
+    # Identity Verification (for landlords)
+    is_identity_verified = models.BooleanField(default=False, help_text='Has landlord submitted and been verified?')
+    verification_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('none', 'Not Requested'),
+            ('pending', 'Pending Review'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        default='none'
+    )
+    government_id = models.ImageField(upload_to='verification_docs/government_ids/', blank=True, null=True)
+    proof_of_ownership = models.ImageField(upload_to='verification_docs/property_ownership/', blank=True, null=True)
+    selfie_with_id = models.ImageField(upload_to='verification_docs/selfies/', blank=True, null=True)
+    verification_submitted_at = models.DateTimeField(null=True, blank=True)
+    verification_reviewed_at = models.DateTimeField(null=True, blank=True)
+    verification_rejection_reason = models.TextField(blank=True, null=True)
+    
     ban_reason = models.TextField(null=True, blank=True, help_text='Reason for banning the user')
     ban_expires_at = models.DateTimeField(null=True, blank=True, help_text='When the ban expires (null for permanent)')
     ban_severity = models.CharField(
@@ -109,6 +129,7 @@ class UserReport(models.Model):
     reason = models.CharField(max_length=50, choices=REPORT_REASONS)
     description = models.TextField(help_text='Detailed description of the issue')
     evidence = models.TextField(blank=True, null=True, help_text='Any additional evidence or context')
+    evidence_image = models.ImageField(upload_to='report_evidence/', blank=True, null=True, help_text='Screenshot or image evidence')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     admin_notes = models.TextField(blank=True, null=True, help_text='Admin notes on the report')
     created_at = models.DateTimeField(auto_now_add=True)

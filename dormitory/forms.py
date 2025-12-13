@@ -1,5 +1,7 @@
 from django import forms
-from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation, Room, RoomImage
+from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation, Room, RoomImage, DormVisit
+from datetime import timedelta
+from django.utils import timezone
 
 class DormForm(forms.ModelForm):
     amenities = forms.ModelMultipleChoiceField(
@@ -204,3 +206,83 @@ class RoomImageForm(forms.ModelForm):
     class Meta:
         model = RoomImage
         fields = ['image']
+
+
+class DormVisitForm(forms.ModelForm):
+    """Form for scheduling a dorm visit"""
+    
+    class Meta:
+        model = DormVisit
+        fields = ['visit_date', 'time_slot', 'student_message']
+        widgets = {
+            'visit_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'min': timezone.now().date().isoformat(),
+                'max': (timezone.now().date() + timedelta(days=7)).isoformat(),
+            }),
+            'time_slot': forms.Select(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+            }),
+            'student_message': forms.Textarea(attrs={
+                'class': 'w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500',
+                'rows': 3,
+                'placeholder': 'Optional: Add a message for the landlord (e.g., special requests, questions)'
+            }),
+        }
+        labels = {
+            'visit_date': 'Select Visit Date',
+            'time_slot': 'Select Time Slot',
+            'student_message': 'Message to Landlord (Optional)',
+        }
+        help_texts = {
+            'visit_date': 'Choose a date within the next 7 days',
+            'time_slot': 'Select your preferred time slot',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.dorm = kwargs.pop('dorm', None)
+        super().__init__(*args, **kwargs)
+        
+        # Set min and max dates dynamically
+        today = timezone.now().date()
+        max_date = today + timedelta(days=7)
+        self.fields['visit_date'].widget.attrs.update({
+            'min': today.isoformat(),
+            'max': max_date.isoformat(),
+        })
+    
+    def clean_visit_date(self):
+        visit_date = self.cleaned_data.get('visit_date')
+        today = timezone.now().date()
+        max_date = today + timedelta(days=7)
+        
+        if visit_date < today:
+            raise forms.ValidationError("Visit date cannot be in the past.")
+        
+        if visit_date > max_date:
+            raise forms.ValidationError("Visit date must be within the next 7 days.")
+        
+        return visit_date
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        visit_date = cleaned_data.get('visit_date')
+        time_slot = cleaned_data.get('time_slot')
+        
+        # Only check for conflicts if we have all required data and dorm is set
+        if visit_date and time_slot and self.dorm:
+            # Check if this time slot is already booked
+            conflicting_visits = DormVisit.objects.filter(
+                dorm=self.dorm,
+                visit_date=visit_date,
+                time_slot=time_slot,
+                status__in=['pending', 'confirmed']
+            )
+            
+            if conflicting_visits.exists():
+                raise forms.ValidationError(
+                    f"This time slot is already booked. Please choose a different time or date."
+                )
+        
+        return cleaned_data

@@ -59,7 +59,7 @@ class AdminCreationForm(UserCreationForm):
 class UserReportForm(forms.ModelForm):
     class Meta:
         model = UserReport
-        fields = ['reason', 'description', 'evidence']
+        fields = ['reason', 'description', 'evidence', 'evidence_image']
         widgets = {
             'reason': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
@@ -72,6 +72,10 @@ class UserReportForm(forms.ModelForm):
                 'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': 'Any additional evidence or context (optional)',
                 'rows': 3
+            }),
+            'evidence_image': forms.FileInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500',
+                'accept': 'image/*'
             }),
         }
     
@@ -136,3 +140,49 @@ class ResolveReportForm(forms.Form):
     )
 
 
+class IdentityVerificationForm(forms.Form):
+    """Form for landlords to submit identity verification documents"""
+    government_id = forms.ImageField(
+        required=True,
+        help_text='Upload a clear photo of your government-issued ID (driver\'s license, passport, or national ID)',
+        widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
+    )
+    proof_of_ownership = forms.ImageField(
+        required=True,
+        help_text='Upload proof of property ownership (title deed, tax declaration, or lease contract)',
+        widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
+    )
+    selfie_with_id = forms.ImageField(
+        required=True,
+        help_text='Upload a selfie holding your government ID next to your face',
+        widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
+    )
+
+
+class VerificationReviewForm(forms.Form):
+    """Form for admins to review identity verification requests"""
+    ACTION_CHOICES = [
+        ('approve', 'Approve Verification'),
+        ('reject', 'Reject Verification'),
+    ]
+    
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        help_text='Select verification decision'
+    )
+    rejection_reason = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Reason for rejection (required if rejecting)...'}),
+        required=False,
+        help_text='Provide a detailed reason if rejecting the verification'
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        rejection_reason = cleaned_data.get('rejection_reason')
+        
+        if action == 'reject' and not rejection_reason:
+            raise forms.ValidationError('Rejection reason is required when rejecting verification.')
+        
+        return cleaned_data

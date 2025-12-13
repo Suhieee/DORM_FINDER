@@ -6,15 +6,16 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity
+    RoommateAmenity, DormVisit
 )
-from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
+from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm, DormVisitForm
 from django.db.models import Avg , Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, ListView
 from accounts.models import CustomUser, Notification
+from django.core.exceptions import ValidationError
 
 from io import BytesIO
 from django.core.files.base import ContentFile
@@ -36,6 +37,8 @@ from .forms import RoomForm, RoomImageForm
 from django.forms import modelformset_factory
 from django.views.generic import TemplateView
 import json
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 
 
 
@@ -141,6 +144,11 @@ class PublicDormListView(ListView):
         accommodation_type = self.request.GET.get('accommodation_type')
         if accommodation_type and accommodation_type != 'all':
             queryset = queryset.filter(accommodation_type=accommodation_type)
+
+        # Verified landlord filtering
+        verified = self.request.GET.get('verified')
+        if verified == 'true':
+            queryset = queryset.filter(landlord__is_identity_verified=True)
 
         # Sorting
         sort_by = self.request.GET.get('sort')
@@ -407,6 +415,12 @@ class DormListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(accommodation_type=accommodation_type)
             print(f"Applying accommodation filter: {accommodation_type}")
             
+        # Apply verified landlord filter if provided
+        verified = self.request.GET.get('verified')
+        if verified == 'true':
+            queryset = queryset.filter(landlord__is_identity_verified=True)
+            print(f"Applying verified landlord filter")
+            
         # Apply amenities filter if provided
         if amenities:
             queryset = queryset.filter(amenities__id__in=amenities).distinct()
@@ -572,6 +586,13 @@ class MyDormsView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         # Pass landlord's dorm locations
         context["dorm_locations"] = list(Dorm.objects.filter(landlord=self.request.user).values("id", "latitude", "longitude", "name"))
+        
+        # Calculate stats by approval_status
+        dorms = self.get_queryset()
+        context['approved_count'] = dorms.filter(approval_status='approved').count()
+        context['pending_count'] = dorms.filter(approval_status='pending').count()
+        context['rejected_count'] = dorms.filter(approval_status='rejected').count()
+        
         return context
 
 
@@ -672,6 +693,19 @@ class RoommateCreateView(LoginRequiredMixin, CreateView):
     form_class = RoommatePostForm
     template_name = "dormitory/add_roommate.html"
     success_url = reverse_lazy("dormitory:roommate_list")
+
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user already has a roommate profile."""
+        existing_profile = RoommatePost.objects.filter(user=request.user).first()
+        
+        if existing_profile:
+            messages.error(
+                request, 
+                "You already have a roommate profile. You can edit it instead of creating a new one."
+            )
+            return redirect('dormitory:roommate_list')
+        
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -814,6 +848,7 @@ class ReviewDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='post')
 class ReservationCreateView(CreateView):
     model = Reservation
     form_class = ReservationForm
@@ -827,15 +862,41 @@ class ReservationCreateView(CreateView):
         # Get the dorm and store it as an instance variable
         self.dorm = get_object_or_404(Dorm, id=self.kwargs['dorm_id'])
         
-        # Check if user already has a reservation for this dorm
+        # NEW: Check if dorm is reservable
+        if not self.dorm.is_reservable():
+            messages.error(request, "This dorm is currently not available for reservations.")
+            return redirect('dormitory:dorm_detail', pk=self.dorm.id)
+        
+        # Check if user already has ANY active reservation
+        existing_active_reservation = Reservation.objects.filter(
+            tenant=request.user,
+            status__in=['pending', 'confirmed', 'pending_payment']
+        ).first()
+        
+        if existing_active_reservation:
+            messages.error(
+                request, 
+                f"You already have an active reservation for {existing_active_reservation.dorm.name}. "
+                f"Please cancel it first before making a new reservation."
+            )
+            return redirect('dormitory:tenant_reservations')
+        
+        # Check if user already has a reservation for this dorm (fallback)
         existing_reservation = Reservation.objects.filter(
             dorm=self.dorm,
             tenant=request.user,
-            status__in=['pending', 'confirmed']
+            status__in=['pending', 'confirmed', 'pending_payment']
         ).first()
         
         if existing_reservation:
             return redirect(f"{reverse('dormitory:tenant_reservations')}?selected_reservation={existing_reservation.pk}")
+        
+        # Check if user has a completed visit (recommended but not required)
+        self.completed_visit = DormVisit.objects.filter(
+            dorm=self.dorm,
+            student=request.user,
+            status='completed'
+        ).first()
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -847,12 +908,18 @@ class ReservationCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dorm'] = self.dorm
+        context['has_completed_visit'] = bool(self.completed_visit)
+        context['completed_visit'] = self.completed_visit
         return context
 
     def form_valid(self, form):
         form.instance.dorm = self.dorm
         form.instance.tenant = self.request.user
-        form.instance.status = 'pending'
+        form.instance.status = 'pending'  # Landlord needs to confirm first
+        
+        # Link to visit if exists
+        if self.completed_visit:
+            form.instance.visit = self.completed_visit
         
         # Save the reservation
         self.object = form.save()
@@ -861,17 +928,20 @@ class ReservationCreateView(CreateView):
         Message.objects.create(
             sender=self.request.user,
             receiver=self.dorm.landlord,
-            content=f"Hi! I'm interested in your dorm {self.dorm.name}. I would like to inquire about availability and make a reservation.",
+            content=f"Hi! I'm interested in your dorm {self.dorm.name}. I have made a reservation.",
             dorm=self.dorm,
             reservation=self.object
         )
         notify_user(
             user=self.dorm.landlord,
-            message=f"{self.request.user.get_full_name() or self.request.user.username} requested a reservation for {self.dorm.name}.",
+            message=f"{self.request.user.get_full_name() or self.request.user.username} made a reservation for {self.dorm.name}. Please review and confirm.",
             related_object_id=self.object.id
         )
         
-        messages.success(self.request, "Your reservation inquiry has been sent! Please wait for the landlord's confirmation.")
+        messages.success(
+            self.request, 
+            "Reservation submitted! Waiting for landlord confirmation."
+        )
         
         return super().form_valid(form)
 
@@ -997,6 +1067,7 @@ class LandlordReservationsView(ListView):
         context['confirmed_count'] = queryset.filter(status='confirmed').count()
         context['declined_count'] = queryset.filter(status='declined').count()
         context['completed_count'] = queryset.filter(status='completed').count()
+        context['today'] = timezone.now().date()  # For date input min value
         
         # Get selected reservation for chat
         selected_reservation_id = self.request.GET.get('selected_reservation')
@@ -1028,45 +1099,124 @@ class UpdateReservationStatusView(View):
         
         action = request.POST.get('action')
         
-        if action == 'confirm':
+        if action == 'confirm' or action == 'confirm_with_options':
             if request.user.user_type != 'landlord':
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'status': 'error', 'error': 'Only landlords can confirm reservations.'}, status=403)
                 messages.error(request, "Only landlords can confirm reservations.")
                 return redirect('dormitory:tenant_reservations')
+            
+            # Handle visit/move-in options if present
+            confirmation_type = request.POST.get('confirmation_type')
+            
+            if confirmation_type == 'visit':
+                # Schedule a visit
+                visit_date = request.POST.get('visit_date')
+                visit_time_slot = request.POST.get('visit_time_slot')
+                visit_notes = request.POST.get('visit_notes', '')
                 
-            reservation.status = 'confirmed'
-            # Decrement available_beds if greater than 0
-            dorm = reservation.dorm
-            if dorm.available_beds > 0:
-                dorm.available_beds -= 1
-                dorm.save()
+                if visit_date and visit_time_slot:
+                    from datetime import datetime
+                    reservation.visit_scheduled = True
+                    reservation.visit_status = 'scheduled'
+                    reservation.visit_date = datetime.strptime(visit_date, '%Y-%m-%d').date()
+                    reservation.visit_time_slot = visit_time_slot
+                    reservation.visit_notes = visit_notes
+                    
+                    # Notify tenant about scheduled visit
+                    visit_display_time = dict(reservation.TIME_SLOT_CHOICES).get(visit_time_slot, visit_time_slot)
+                    Message.objects.create(
+                        sender=request.user,
+                        receiver=reservation.tenant,
+                        content=f"Your reservation has been confirmed! A visit has been scheduled for {visit_date} at {visit_display_time}. {visit_notes}",
+                        dorm=reservation.dorm,
+                        reservation=reservation
+                    )
+                    notify_user(
+                        user=reservation.tenant,
+                        message=f"Visit scheduled for {reservation.dorm.name} on {visit_date}",
+                        related_object_id=reservation.id
+                    )
+                    success_message = f"Reservation confirmed and visit scheduled for {visit_date}."
+                else:
+                    messages.error(request, "Please provide visit date and time slot.")
+                    return redirect('dormitory:landlord_reservations')
+                    
+            elif confirmation_type == 'movein':
+                # Set move-in date directly
+                move_in_date = request.POST.get('move_in_date')
+                move_in_notes = request.POST.get('move_in_notes', '')
+                
+                if move_in_date:
+                    from datetime import datetime
+                    reservation.move_in_date = datetime.strptime(move_in_date, '%Y-%m-%d').date()
+                    reservation.move_in_notes = move_in_notes
+                    reservation.visit_status = 'not_scheduled'  # No visit needed
+                    
+                    # Notify tenant about move-in date
+                    Message.objects.create(
+                        sender=request.user,
+                        receiver=reservation.tenant,
+                        content=f"Your reservation has been confirmed! Move-in date is set for {move_in_date}. {move_in_notes}",
+                        dorm=reservation.dorm,
+                        reservation=reservation
+                    )
+                    notify_user(
+                        user=reservation.tenant,
+                        message=f"Move-in date set for {reservation.dorm.name} on {move_in_date}",
+                        related_object_id=reservation.id
+                    )
+                    success_message = f"Reservation confirmed with move-in date: {move_in_date}."
+                else:
+                    messages.error(request, "Please provide move-in date.")
+                    return redirect('dormitory:landlord_reservations')
+            else:
+                # Simple confirmation without visit/move-in (backward compatibility)
+                success_message = f"Reservation for {reservation.dorm.name} has been confirmed."
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.tenant,
+                    content="Your reservation has been confirmed! Please upload payment proof within 48 hours to secure your slot.",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.tenant,
+                    message=f"Your reservation for {reservation.dorm.name} was confirmed. Please upload payment.",
+                    related_object_id=reservation.id
+                )
+                
+            # Set status to pending_payment so tenant can upload payment proof
+            reservation.status = 'pending_payment'
+            
+            # Set payment deadline (48 hours from now)
+            from datetime import timedelta
+            reservation.payment_deadline = timezone.now() + timedelta(hours=48)
+            
+            # UPDATED: For whole_unit dorms, set available_beds to 0 (making it unavailable)
+            if reservation.dorm.accommodation_type == 'whole_unit':
+                reservation.dorm.available_beds = 0
+                reservation.dorm.save()
+            else:
+                # Decrement available_beds if greater than 0 (existing logic for other types)
+                dorm = reservation.dorm
+                if dorm.available_beds > 0:
+                    dorm.available_beds -= 1
+                    dorm.save()
+            
             # Set room as unavailable if assigned
             if reservation.room is not None:
                 reservation.room.is_available = False
                 reservation.room.save()
+            
             reservation.save()  # Save the reservation status change
             
-            success_message = f"Reservation for {reservation.dorm.name} has been confirmed."
             messages.success(request, success_message)
-            
-            # Create a system message
-            Message.objects.create(
-                sender=request.user,
-                receiver=reservation.tenant,
-                content="Your reservation has been confirmed! You may proceed with the payment if you wish to secure your slot.",
-                dorm=reservation.dorm,
-                reservation=reservation
-            )
-            notify_user(
-                user=reservation.tenant,
-                message=f"Your reservation for {reservation.dorm.name} was confirmed.",
-                related_object_id=reservation.id
-            )
             
             # Return JSON response for AJAX requests
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success', 'message': success_message})
+        
         elif action == 'verify_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can verify payments.")
@@ -1074,6 +1224,7 @@ class UpdateReservationStatusView(View):
                 
             if reservation.payment_proof:
                 reservation.has_paid_reservation = True
+                reservation.status = 'confirmed'  # Change status to confirmed after payment verification
                 messages.success(request, f"Payment for {reservation.dorm.name} has been verified.")
                 # Create a system message
                 Message.objects.create(
@@ -1091,6 +1242,7 @@ class UpdateReservationStatusView(View):
             else:
                 messages.error(request, "No payment proof found for this reservation.")
                 return redirect('dormitory:landlord_reservations')
+        
         elif action == 'reject_payment':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can reject payments.")
@@ -1102,6 +1254,7 @@ class UpdateReservationStatusView(View):
                 reservation.payment_proof = None
                 reservation.payment_submitted_at = None
                 reservation.has_paid_reservation = False
+                reservation.status = 'pending_payment'  # Reset to pending_payment
                 messages.warning(request, f"Payment proof for {reservation.dorm.name} has been rejected.")
                 # Create a system message
                 Message.objects.create(
@@ -1118,6 +1271,7 @@ class UpdateReservationStatusView(View):
                 )
             else:
                 messages.error(request, "No payment proof found for this reservation.")
+        
         elif action == 'decline':
             if request.user.user_type != 'landlord':
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1160,6 +1314,7 @@ class UpdateReservationStatusView(View):
             # Return JSON response for AJAX requests
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success', 'message': success_message})
+        
         elif action == 'cancel':
             if request.user.user_type != 'tenant':
                 messages.error(request, "Only tenants can cancel their reservations.")
@@ -1169,10 +1324,17 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "You cannot cancel this reservation at this stage.")
                 return redirect('dormitory:tenant_reservations')
             
-            # Get cancellation reason from form
-            cancellation_reason = request.POST.get('cancellation_reason')
-            if not cancellation_reason:
-                messages.error(request, "Please provide a reason for cancellation.")
+            # Get cancellation reason from form (dropdown or text input)
+            cancellation_reason_select = request.POST.get('cancellation_reason_select')
+            cancellation_reason_other = request.POST.get('cancellation_reason_other', '').strip()
+            
+            # Determine final cancellation reason
+            if cancellation_reason_select == 'Other' and cancellation_reason_other:
+                cancellation_reason = f"Other: {cancellation_reason_other}"
+            elif cancellation_reason_select:
+                cancellation_reason = cancellation_reason_select
+            else:
+                messages.error(request, "Please select a reason for cancellation.")
                 return redirect('dormitory:tenant_reservations')
             
             reservation.status = 'cancelled'
@@ -1181,6 +1343,12 @@ class UpdateReservationStatusView(View):
             if reservation.room is not None:
                 reservation.room.is_available = True
                 reservation.room.save()
+            
+            # UPDATED: For whole_unit dorms, restore available_beds when cancelled
+            if reservation.dorm.accommodation_type == 'whole_unit':
+                reservation.dorm.available_beds = reservation.dorm.max_occupants
+                reservation.dorm.save()
+            
             messages.warning(request, f"Your reservation for {reservation.dorm.name} has been cancelled.")
             
             # Create first system message about cancellation
@@ -1205,6 +1373,74 @@ class UpdateReservationStatusView(View):
                 message=f"{reservation.tenant.get_full_name() or reservation.tenant.username} cancelled their reservation for {reservation.dorm.name}.",
                 related_object_id=reservation.id
             )
+        
+        elif action == 'complete_visit':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can mark visits as completed.")
+                return redirect('dormitory:tenant_reservations')
+            
+            if reservation.visit_scheduled and reservation.visit_status == 'scheduled':
+                reservation.visit_status = 'completed'
+                reservation.visit_completed_at = timezone.now()
+                reservation.save()
+                
+                messages.success(request, "Visit marked as completed. Tenant can now access the move-in checklist.")
+                
+                # Notify tenant
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.tenant,
+                    content="Your property visit has been marked as completed. You can now access the move-in checklist to proceed with check-in.",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.tenant,
+                    message=f"Visit to {reservation.dorm.name} completed! Check-in checklist is now available.",
+                    related_object_id=reservation.id
+                )
+            else:
+                messages.error(request, "This visit cannot be marked as completed.")
+        
+        elif action == 'mark_moved_out':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can mark tenants as moved out.")
+                return redirect('dormitory:tenant_reservations')
+            
+            if reservation.status == 'occupied':
+                reservation.status = 'completed'
+                
+                # Make dorm available again - restore the bed/unit
+                if reservation.dorm.accommodation_type == 'whole_unit':
+                    reservation.dorm.available_beds = reservation.dorm.max_occupants
+                else:
+                    if reservation.dorm.available_beds < reservation.dorm.total_beds:
+                        reservation.dorm.available_beds += 1
+                reservation.dorm.save()
+                
+                # Set room as available if assigned
+                if reservation.room is not None:
+                    reservation.room.is_available = True
+                    reservation.room.save()
+                
+                messages.success(request, f"Tenant has been marked as moved out. {reservation.dorm.name} is now available again.")
+                
+                # Notify tenant
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.tenant,
+                    content="Your move-out has been confirmed. Thank you for staying with us!",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.tenant,
+                    message=f"Your move-out from {reservation.dorm.name} has been confirmed.",
+                    related_object_id=reservation.id
+                )
+            else:
+                messages.error(request, "Only occupied reservations can be marked as moved out.")
+        
         elif action == 'complete':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can complete transactions.")
@@ -1227,6 +1463,7 @@ class UpdateReservationStatusView(View):
                 )
             else:
                 messages.error(request, "Only confirmed reservations can be marked as complete.")
+        
         elif action == 'make_available':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can manage room availability.")
@@ -1238,21 +1475,95 @@ class UpdateReservationStatusView(View):
                 if hasattr(dorm, 'available_beds'):
                     dorm.available_beds = (dorm.available_beds or 0) + 1
                     dorm.save()
-                messages.success(request, f"Room set to available for {reservation.dorm.name}.")
+                
+                # Get termination reason from form
+                termination_reason = request.POST.get('termination_reason', 'Room made available by landlord')
+                
+                # CRITICAL: Update reservation status to 'completed'
+                reservation.status = 'completed'
+                reservation.cancellation_reason = termination_reason
+                
+                messages.success(request, f"Room set to available for {reservation.dorm.name}. Reservation marked as completed.")
+                
+                # UPDATED: Clear notification message for tenant
                 Message.objects.create(
                     sender=request.user,
                     receiver=reservation.tenant,
-                    content="The room you reserved has been marked available by the landlord.",
+                    content=f"""🚨 RESERVATION COMPLETED - VACATE NOTICE 🚨
+
+Your room reservation at {reservation.dorm.name} has been marked as COMPLETED.
+
+This means your stay has ENDED and you need to VACATE your room.
+
+Reason: {termination_reason}
+
+⚠️ PLEASE VACATE YOUR ROOM IMMEDIATELY ⚠️
+
+The room will now be available for new reservations.
+
+If you have any questions, please contact your landlord.""",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
                     user=reservation.tenant,
-                    message=f"The room for {reservation.dorm.name} is available again.",
+                    message=f"ACTION REQUIRED: Please vacate your room at {reservation.dorm.name} - Your stay has ended",
                     related_object_id=reservation.id
                 )
             else:
                 messages.error(request, "No room is assigned to this reservation.")
+                
+        # NEW ACTION: Make whole dorm available again
+        elif action == 'make_dorm_available':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can make dorms available.")
+                return redirect('dormitory:tenant_reservations')
+            
+            # Get termination reason (default if not provided)
+            termination_reason = request.POST.get('termination_reason', 'Dorm made available by landlord')
+            
+            # For whole_unit: Reset available_beds to max_occupants
+            if reservation.dorm.accommodation_type == 'whole_unit':
+                # 1. Make dorm available
+                reservation.dorm.available_beds = reservation.dorm.max_occupants
+                reservation.dorm.save()
+                
+                # 2. CRITICAL: Mark reservation as 'completed' (tenant moved out)
+                reservation.status = 'completed'
+                reservation.cancellation_reason = termination_reason
+                
+                messages.success(request, f"{reservation.dorm.name} is now available. Reservation marked as completed.")
+                
+                # UPDATED: Clear notification message for tenant
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.tenant,
+                    content=f"""🚨 RESERVATION COMPLETED - VACATE NOTICE 🚨
+
+Your reservation for {reservation.dorm.name} has been marked as COMPLETED.
+
+This means your stay has ENDED and you need to VACATE the dorm.
+
+Reason: {termination_reason}
+
+⚠️ PLEASE VACATE IMMEDIATELY ⚠️
+
+The dorm will now be available for new reservations.
+
+If you have any questions, please contact your landlord.""",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.tenant,
+                    message=f"ACTION REQUIRED: Please vacate {reservation.dorm.name} - Your stay has ended",
+                    related_object_id=reservation.id
+                )
+            else:
+                # For bedspace/room_sharing: Just increment available_beds by 1
+                reservation.dorm.available_beds += 1
+                reservation.dorm.save()
+                messages.success(request, f"One bed in {reservation.dorm.name} is now available.")
         
         reservation.save()
         
@@ -1353,20 +1664,27 @@ class tenantReservationsView(ListView):
                 payment_proof = request.FILES['payment_proof']
                 reservation.payment_proof = payment_proof
                 reservation.payment_submitted_at = timezone.now()
-                reservation.has_paid_reservation = True
                 reservation.payment_amount = reservation.dorm.price  # Set amount to dorm price
+                # Keep status as pending_payment until landlord verifies
                 reservation.save()
 
                 # Create a message about the payment submission
                 Message.objects.create(
                     sender=request.user,
                     receiver=reservation.dorm.landlord,
-                    content="Payment proof has been submitted.",
+                    content="Payment proof has been submitted and is awaiting verification.",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
+                
+                # Notify landlord
+                notify_user(
+                    user=reservation.dorm.landlord,
+                    message=f"Payment proof submitted for {reservation.dorm.name}. Please verify.",
+                    related_object_id=reservation.id
+                )
 
-                messages.success(request, "Payment proof uploaded successfully!")
+                messages.success(request, "Payment proof uploaded successfully! Waiting for landlord verification.")
             elif 'cancellation_reason' in request.POST:
                 # If cancelling, set the cancellation reason
                 cancellation_reason = request.POST.get('cancellation_reason')
@@ -1431,6 +1749,7 @@ class MessagesView(ListView):
         return context
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(ratelimit(key='user', rate='30/m', method='POST', block=True), name='post')
 class SendMessageView(View):
     def post(self, request, *args, **kwargs):
         if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -1796,6 +2115,25 @@ class ManageRoomsView(View):
         # ✅ Add new room
         room_form = RoomForm(request.POST, request.FILES)
         if room_form.is_valid():
+            # Check if dorm is bedspace or room_sharing type
+            if dorm.accommodation_type in ['bedspace', 'room_sharing']:
+                current_room_count = dorm.rooms.count()
+                max_rooms = dorm.available_beds  # Use available_beds as the limit
+                
+                if current_room_count >= max_rooms:
+                    messages.error(
+                        request, 
+                        f"Cannot add more rooms. You've set the available beds to {max_rooms}. "
+                        f"You currently have {current_room_count} rooms. "
+                        f"Please increase the 'Available Beds' in the dorm settings or delete existing rooms."
+                    )
+                    rooms = dorm.rooms.all().prefetch_related("images")
+                    return render(request, 'dormitory/manage_rooms.html', {
+                        'dorm': dorm,
+                        'rooms': rooms,
+                        'room_form': room_form,
+                    })
+            
             room = room_form.save(commit=False)
             room.dorm = dorm
             room.save()
@@ -1871,3 +2209,349 @@ class HomePageView(TemplateView):
         })
         
         return context
+
+
+# ========================
+# VISIT SCHEDULING SYSTEM
+# ========================
+
+class ScheduleVisitView(LoginRequiredMixin, CreateView):
+    """Student schedules a visit to a dorm"""
+    model = DormVisit
+    form_class = DormVisitForm
+    template_name = 'dormitory/schedule_visit.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != 'tenant':
+            messages.error(request, "Only students can schedule visits.")
+            return redirect('accounts:dashboard')
+        
+        self.dorm = get_object_or_404(Dorm, pk=kwargs['dorm_id'], 
+                                     approval_status='approved')
+        
+        # Check if student already has a pending/confirmed visit
+        existing_visit = DormVisit.objects.filter(
+            dorm=self.dorm,
+            student=request.user,
+            status__in=['pending', 'confirmed']
+        ).first()
+        
+        if existing_visit:
+            messages.info(request, f"You already have a visit scheduled for {self.dorm.name}.")
+            return redirect('dormitory:student_visits')
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dorm'] = self.dorm
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dorm'] = self.dorm
+        
+        # Get already booked time slots for next 7 days
+        from datetime import timedelta
+        today = timezone.now().date()
+        booked_slots = {}
+        
+        for day in range(8):
+            date = today + timedelta(days=day)
+            booked = list(DormVisit.objects.filter(
+                dorm=self.dorm,
+                visit_date=date,
+                status__in=['pending', 'confirmed']
+            ).values_list('time_slot', flat=True))
+            if booked:
+                booked_slots[date.isoformat()] = booked
+        
+        context['booked_slots'] = booked_slots
+        return context
+    
+    def form_valid(self, form):
+        form.instance.dorm = self.dorm
+        form.instance.student = self.request.user
+        
+        try:
+            self.object = form.save()
+            
+            # Notify landlord
+            notify_user(
+                user=self.dorm.landlord,
+                message=f"{self.request.user.get_full_name() or self.request.user.username} requested a visit to {self.dorm.name} on {form.instance.visit_date} ({form.instance.get_time_slot_display()})",
+                related_object_id=self.object.id
+            )
+            
+            messages.success(
+                self.request, 
+                f"Visit request sent successfully! Wait for {self.dorm.landlord.get_full_name() or self.dorm.landlord.username} to confirm your visit."
+            )
+            return redirect('dormitory:student_visits')
+            
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+            return self.form_invalid(form)
+
+
+class StudentVisitsView(LoginRequiredMixin, ListView):
+    """Student views their scheduled visits"""
+    model = DormVisit
+    template_name = 'dormitory/student_visits.html'
+    context_object_name = 'visits'
+    paginate_by = 20
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != 'tenant':
+            messages.error(request, "Only students can access this page.")
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        return DormVisit.objects.filter(
+            student=self.request.user
+        ).select_related('dorm', 'dorm__landlord').order_by('-visit_date', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()
+        
+        # Count by status
+        context['pending_count'] = queryset.filter(status='pending').count()
+        context['confirmed_count'] = queryset.filter(status='confirmed').count()
+        context['completed_count'] = queryset.filter(status='completed').count()
+        
+        return context
+
+
+class LandlordVisitsView(LoginRequiredMixin, ListView):
+    """Landlord manages visit requests"""
+    model = DormVisit
+    template_name = 'dormitory/landlord_visits.html'
+    context_object_name = 'visits'
+    paginate_by = 20
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != 'landlord':
+            messages.error(request, "Only landlords can access this page.")
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        return DormVisit.objects.filter(
+            dorm__landlord=self.request.user
+        ).select_related('dorm', 'student').order_by('-visit_date', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()
+        
+        # Count by status
+        context['pending_count'] = queryset.filter(status='pending').count()
+        context['confirmed_count'] = queryset.filter(status='confirmed').count()
+        context['completed_count'] = queryset.filter(status='completed').count()
+        
+        return context
+
+
+@login_required
+@require_POST
+def update_visit_status(request, visit_id):
+    """Landlord or student updates visit status"""
+    visit = get_object_or_404(DormVisit, id=visit_id)
+    
+    # Check permissions
+    is_landlord = request.user == visit.dorm.landlord
+    is_student = request.user == visit.student
+    
+    if not (is_landlord or is_student):
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    action = request.POST.get('action')
+    
+    # Landlord actions
+    if is_landlord:
+        if action == 'confirm':
+            visit.status = 'confirmed'
+            visit.confirmed_at = timezone.now()
+            visit.save()
+            
+            notify_user(
+                user=visit.student,
+                message=f"Your visit to {visit.dorm.name} on {visit.visit_date} ({visit.get_time_slot_display()}) has been confirmed!",
+                related_object_id=visit.id
+            )
+            messages.success(request, f"Visit confirmed for {visit.student.get_full_name()}!")
+            
+        elif action == 'decline':
+            decline_reason = request.POST.get('decline_reason', 'No reason provided')
+            visit.status = 'declined'
+            visit.landlord_notes = f"Declined: {decline_reason}"
+            visit.save()
+            
+            notify_user(
+                user=visit.student,
+                message=f"Your visit request to {visit.dorm.name} was declined. Reason: {decline_reason}",
+                related_object_id=visit.id
+            )
+            messages.info(request, "Visit request declined.")
+            
+        elif action == 'complete':
+            visit.status = 'completed'
+            visit.completed_at = timezone.now()
+            visit.save()
+            messages.success(request, "Visit marked as completed!")
+            
+        elif action == 'no_show':
+            visit.status = 'no_show'
+            visit.save()
+            messages.warning(request, "Visit marked as no-show.")
+    
+    # Student actions
+    elif is_student:
+        if action == 'cancel':
+            if visit.status in ['pending', 'confirmed']:
+                visit.status = 'cancelled'
+                visit.save()
+                
+                notify_user(
+                    user=visit.dorm.landlord,
+                    message=f"{visit.student.get_full_name()} cancelled their visit to {visit.dorm.name} on {visit.visit_date}",
+                    related_object_id=visit.id
+                )
+                messages.success(request, "Visit cancelled successfully.")
+            else:
+                messages.error(request, "Cannot cancel this visit.")
+    
+    # Return JSON for AJAX or redirect for form submission
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success', 'new_status': visit.status})
+    
+    # Redirect based on user type
+    if is_landlord:
+        return redirect('dormitory:landlord_visits')
+    else:
+        return redirect('dormitory:student_visits')
+
+
+class ConvertVisitToReservationView(LoginRequiredMixin, CreateView):
+    """Student converts completed visit into actual reservation"""
+    model = Reservation
+    form_class = ReservationForm
+    template_name = 'dormitory/convert_to_reservation.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != 'tenant':
+            messages.error(request, "Only students can make reservations.")
+            return redirect('accounts:dashboard')
+        
+        self.visit = get_object_or_404(DormVisit, pk=kwargs['visit_id'], 
+                                       student=request.user)
+        
+        # Validate visit can be converted
+        if not self.visit.can_convert_to_reservation:
+            messages.error(request, "This visit cannot be converted to a reservation. The visit must be completed first.")
+            return redirect('dormitory:student_visits')
+        
+        # Check if dorm is still reservable
+        if not self.visit.dorm.is_reservable():
+            messages.error(request, "This dorm is no longer available for reservations.")
+            return redirect('dormitory:student_visits')
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dorm'] = self.visit.dorm
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['visit'] = self.visit
+        context['dorm'] = self.visit.dorm
+        return context
+    
+    def form_valid(self, form):
+        from datetime import timedelta
+        
+        form.instance.dorm = self.visit.dorm
+        form.instance.tenant = self.request.user
+        form.instance.status = 'pending_payment'
+        form.instance.visit = self.visit
+        form.instance.payment_deadline = timezone.now() + timedelta(hours=48)
+        
+        self.object = form.save()
+        
+        # Notify landlord
+        notify_user(
+            user=self.visit.dorm.landlord,
+            message=f"{self.request.user.get_full_name() or self.request.user.username} made a reservation for {self.visit.dorm.name} after their visit. Payment deadline: 48 hours.",
+            related_object_id=self.object.id
+        )
+        
+        messages.success(
+            self.request, 
+            "Reservation created! Please upload payment proof within 48 hours or your reservation will be automatically cancelled."
+        )
+        
+        base_url = reverse('dormitory:tenant_reservations')
+        return redirect(f"{base_url}?selected_reservation={self.object.pk}")
+    
+    def get_success_url(self):
+        base_url = reverse('dormitory:tenant_reservations')
+        return f"{base_url}?selected_reservation={self.object.pk}"
+
+
+@login_required
+@require_POST
+def update_checklist(request, reservation_id):
+    """Update move-in checklist items"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # Only landlord or tenant can update checklist
+    if request.user not in [reservation.tenant, reservation.dorm.landlord]:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    # Get checklist item to update
+    item = request.POST.get('item')
+    checked = request.POST.get('checked') == 'true'
+    
+    if item == 'keys_received':
+        reservation.checklist_keys_received = checked
+    elif item == 'property_inspected':
+        reservation.checklist_property_inspected = checked
+    elif item == 'inventory_checked':
+        reservation.checklist_inventory_checked = checked
+    elif item == 'rules_acknowledged':
+        reservation.checklist_rules_acknowledged = checked
+    else:
+        return JsonResponse({'error': 'Invalid checklist item'}, status=400)
+    
+    # Check if all items are completed
+    all_completed = all([
+        reservation.checklist_keys_received,
+        reservation.checklist_property_inspected,
+        reservation.checklist_inventory_checked,
+        reservation.checklist_rules_acknowledged
+    ])
+    
+    if all_completed and not reservation.checklist_completed_at:
+        reservation.checklist_completed_at = timezone.now()
+        reservation.status = 'occupied'  # Tenant has moved in and is now occupying the dorm
+        
+        # Notify both parties
+        Message.objects.create(
+            sender=request.user,
+            receiver=reservation.dorm.landlord if request.user == reservation.tenant else reservation.tenant,
+            content="✅ Move-in checklist completed! Tenant has officially moved in and is now occupying the dorm.",
+            dorm=reservation.dorm,
+            reservation=reservation
+        )
+        
+    reservation.save()
+    
+    return JsonResponse({
+        'success': True,
+        'all_completed': all_completed,
+        'completed_at': reservation.checklist_completed_at.isoformat() if reservation.checklist_completed_at else None
+    })

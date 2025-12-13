@@ -4,10 +4,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, FormView, UpdateView ,ListView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, ResolveReportForm
-from django.shortcuts import redirect, get_object_or_404
+from .forms import CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, ResolveReportForm, IdentityVerificationForm, VerificationReviewForm
+from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib import messages
-from dormitory.models import Dorm, Review, Reservation, Message
+from dormitory.models import Dorm, Review, Reservation, Message, TransactionLog
 from django.views import View
 from .models import Notification, CustomUser, UserReport
 from user_profile.models import UserProfile, UserInteraction
@@ -33,6 +33,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q, DecimalField
 import logging
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 
 
 class RegisterView(CreateView):
@@ -134,6 +136,8 @@ class RegisterView(CreateView):
         return super().form_invalid(form)
 
 # ✅ Login View (CBV)
+@method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True), name='post')
+@method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=False), name='post')
 class LoginView(FormView):
     form_class = AuthenticationForm
     template_name = "accounts/login.html"
@@ -145,6 +149,15 @@ class LoginView(FormView):
         if next_url and next_url.startswith('/'):
             return next_url
         return super().get_success_url()
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests with rate limit check."""
+        if getattr(request, 'limited', False):
+            messages.error(request, "Too many login attempts. Please wait a minute before trying again.")
+            return render(request, '429.html', {
+                'error_message': 'Too many login attempts. Please wait before trying again.'
+            }, status=429)
+        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         """Log in the user after successful authentication."""
@@ -427,6 +440,50 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
             context['monthly_sales'] = monthly_sales or 0
             context['total_income'] = total_income or 0
+            
+            # Calculate month-over-month sales growth
+            from datetime import timedelta
+            if month_start.month == 1:
+                last_month_start = month_start.replace(year=month_start.year - 1, month=12)
+            else:
+                last_month_start = month_start.replace(month=month_start.month - 1)
+            
+            last_month_sales = reservations.filter(
+                created_at__gte=last_month_start,
+                created_at__lt=month_start,
+                has_paid_reservation=True
+            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total'] or 0
+            
+            if last_month_sales > 0:
+                sales_growth = round(((float(monthly_sales) - float(last_month_sales)) / float(last_month_sales)) * 100, 1)
+            else:
+                sales_growth = 100 if monthly_sales > 0 else 0
+            context['sales_growth'] = sales_growth
+            
+            # Calculate week-over-week views growth
+            week_ago = now - timedelta(days=7)
+            two_weeks_ago = now - timedelta(days=14)
+            
+            recent_views_count = landlord_dorms.filter(
+                reservations__created_at__gte=week_ago
+            ).aggregate(total=Coalesce(Sum('recent_views'), 0))['total']
+            
+            previous_views_count = landlord_dorms.filter(
+                reservations__created_at__gte=two_weeks_ago,
+                reservations__created_at__lt=week_ago
+            ).aggregate(total=Coalesce(Sum('recent_views'), 0))['total']
+            
+            if previous_views_count > 0:
+                views_growth = round(((recent_views_count - previous_views_count) / previous_views_count) * 100, 1)
+            else:
+                views_growth = 100 if recent_views_count > 0 else 0
+            context['views_growth'] = views_growth
+            
+            # Calculate unread inquiries percentage
+            unread_count = messages_qs.filter(receiver=user, is_read=False).count()
+            total_inquiries = messages_qs.count()
+            context['unread_inquiries'] = unread_count
+            context['unread_percentage'] = round((unread_count / total_inquiries * 100) if total_inquiries > 0 else 0, 1)
 
             # Popularity: most viewed dorm and top list
             popular_dorm = landlord_dorms.order_by('-recent_views').first()
@@ -435,16 +492,173 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 'id', 'name', 'recent_views'
             )[:5]
 
-            # Monthly reservations (last 6 months)
-            last_six_months = Reservation.objects.filter(dorm__landlord=user).annotate(
+            # Monthly reservations and revenue (last 6 months)
+            from datetime import timedelta
+            # Calculate 6 months ago (approximately 180 days)
+            six_months_ago = now - timedelta(days=180)
+            
+            last_six_months = Reservation.objects.filter(
+                dorm__landlord=user,
+                created_at__gte=six_months_ago
+            ).annotate(
                 month=TruncMonth('created_at')
-            ).values('month').annotate(count=Count('id')).order_by('month')
+            ).values('month').annotate(
+                count=Count('id'),
+                revenue=Coalesce(Sum('payment_amount', filter=Q(has_paid_reservation=True)), Value(0), output_field=DecimalField())
+            ).order_by('month')
 
-            reservations_chart = []
-            for entry in last_six_months:
-                label = entry['month'].strftime('%b %Y') if entry['month'] else ''
-                reservations_chart.append({'label': label, 'value': entry['count']})
-            context['reservations_chart'] = reservations_chart
+            # Generate last 6 months labels using calendar
+            import calendar
+            chart_months = []
+            for i in range(5, -1, -1):
+                # Calculate month offset
+                target_month = now.month - i
+                target_year = now.year
+                
+                # Handle year boundary
+                while target_month <= 0:
+                    target_month += 12
+                    target_year -= 1
+                
+                month_name = calendar.month_abbr[target_month]
+                chart_months.append(f"{month_name} {target_year}")
+            
+            # Map data to months
+            reservations_data = {entry['month'].strftime('%b %Y'): entry['count'] for entry in last_six_months if entry['month']}
+            revenue_data = {entry['month'].strftime('%b %Y'): float(entry['revenue']) for entry in last_six_months if entry['month']}
+            
+            reservations_counts = [reservations_data.get(m, 0) for m in chart_months]
+            revenue_values = [revenue_data.get(m, 0) for m in chart_months]
+            
+            context['chart_months'] = json.dumps(chart_months)
+            context['chart_reservations'] = json.dumps(reservations_counts)
+            context['chart_revenue'] = json.dumps(revenue_values)
+            
+            # Reservation status breakdown for pie chart
+            context['status_pending'] = reservations.filter(status='pending').count()
+            context['status_pending_payment'] = reservations.filter(status='pending_payment').count()
+            context['status_confirmed'] = reservations.filter(status='confirmed').count()
+            context['status_occupied'] = reservations.filter(status='occupied').count()
+            context['status_completed'] = reservations.filter(status='completed').count()
+            context['status_declined'] = reservations.filter(status='declined').count()
+            context['status_cancelled'] = reservations.filter(status='cancelled').count()
+            
+            # Top performing dorms (by revenue and bookings)
+            top_dorms_list = []
+            top_dorms_revenue = landlord_dorms.annotate(
+                total_revenue=Coalesce(
+                    Sum('reservations__payment_amount', filter=Q(reservations__has_paid_reservation=True)),
+                    Value(0),
+                    output_field=DecimalField()
+                ),
+                total_bookings=Count('reservations', filter=Q(reservations__status__in=['confirmed', 'occupied', 'completed']))
+            ).order_by('-total_revenue')[:5]
+            
+            # Calculate occupancy percentage for each dorm
+            for dorm in top_dorms_revenue:
+                occupied_beds = dorm.total_beds - dorm.available_beds
+                occupancy_pct = round((occupied_beds / dorm.total_beds * 100) if dorm.total_beds > 0 else 0, 1)
+                top_dorms_list.append({
+                    'dorm': dorm,
+                    'occupancy_pct': occupancy_pct
+                })
+            
+            context['top_dorms'] = top_dorms_list
+
+            # Calendar data for current month
+            from datetime import datetime, timedelta
+            import calendar as cal
+            
+            today = now.date()
+            current_month = today.month
+            current_year = today.year
+            
+            # Get all reservations for the current month (timezone-aware)
+            from django.utils.timezone import make_aware
+            month_start = make_aware(datetime(current_year, current_month, 1))
+            if current_month == 12:
+                month_end = make_aware(datetime(current_year + 1, 1, 1))
+            else:
+                month_end = make_aware(datetime(current_year, current_month + 1, 1))
+            
+            current_month_reservations = reservations.filter(
+                created_at__gte=month_start,
+                created_at__lt=month_end
+            )
+            
+            # Prepare calendar events grouped by date
+            calendar_events = {}
+            for reservation in reservations.select_related('dorm', 'tenant'):
+                # Visit dates
+                if reservation.visit_date:
+                    visit_day = reservation.visit_date.day
+                    if visit_day not in calendar_events:
+                        calendar_events[visit_day] = []
+                    calendar_events[visit_day].append({
+                        'type': 'visit',
+                        'status': reservation.visit_status,
+                        'dorm': reservation.dorm.name,
+                        'tenant': reservation.tenant.get_full_name(),
+                        'time': reservation.visit_time_slot
+                    })
+                
+                # Move-in dates
+                if reservation.move_in_date:
+                    move_day = reservation.move_in_date.day
+                    if move_day not in calendar_events:
+                        calendar_events[move_day] = []
+                    calendar_events[move_day].append({
+                        'type': 'move_in',
+                        'status': reservation.status,
+                        'dorm': reservation.dorm.name,
+                        'tenant': reservation.tenant.get_full_name()
+                    })
+            
+            # Prepare calendar structure
+            month_calendar = cal.monthcalendar(current_year, current_month)
+            context['calendar_month_name'] = cal.month_name[current_month]
+            context['calendar_year'] = current_year
+            context['calendar_weeks'] = month_calendar
+            context['calendar_events'] = calendar_events
+            context['today_day'] = today.day
+            
+            # Occupancy rate
+            total_beds = landlord_dorms.aggregate(
+                total=Coalesce(Sum('total_beds'), 0)
+            )['total']
+            
+            # Count occupied beds: for whole_unit dorms, count all beds if occupied
+            # for bedspace dorms, count the number of occupied reservations
+            occupied_beds = 0
+            for dorm in landlord_dorms:
+                active_reservations = reservations.filter(
+                    dorm=dorm,
+                    status__in=['confirmed', 'occupied']
+                )
+                if dorm.accommodation_type == 'whole_unit':
+                    # If any reservation is active for whole unit, all beds are occupied
+                    if active_reservations.exists():
+                        occupied_beds += dorm.total_beds
+                else:
+                    # For bedspace, count individual reservations
+                    occupied_beds += active_reservations.count()
+            
+            context['occupancy_rate'] = round((occupied_beds / total_beds * 100) if total_beds > 0 else 0, 1)
+            context['occupied_beds'] = occupied_beds
+            context['total_beds'] = total_beds
+            
+            # Upcoming events
+            context['upcoming_visits'] = reservations.filter(
+                visit_date__gte=today,
+                visit_status__in=['pending', 'confirmed']
+            ).count()
+            context['upcoming_move_ins'] = reservations.filter(
+                move_in_date__gte=today,
+                status__in=['confirmed', 'pending_payment']
+            ).count()
+            
+            # Active tenants
+            context['active_tenants'] = reservations.filter(status='occupied').count()
         
         return context
 
@@ -538,16 +752,75 @@ class NotificationListView(LoginRequiredMixin, ListView):
     model = Notification
     template_name = "accounts/notifications.html"
     context_object_name = "notifications"
+    paginate_by = 20
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by("-created_at").all()
+        queryset = Notification.objects.filter(user=self.request.user).order_by("-created_at")
+        
+        # Filter by read/unread status
+        filter_type = self.request.GET.get('filter', 'all')
+        if filter_type == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif filter_type == 'read':
+            queryset = queryset.filter(is_read=True)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_type'] = self.request.GET.get('filter', 'all')
+        context['unread_count'] = Notification.objects.filter(user=self.request.user, is_read=False).count()
+        context['read_count'] = Notification.objects.filter(user=self.request.user, is_read=True).count()
+        context['total_count'] = Notification.objects.filter(user=self.request.user).count()
+        return context
 
 class MarkNotificationAsReadView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
+        from django.core.cache import cache
+        
         notification = get_object_or_404(Notification, pk=pk, user=request.user)
         notification.is_read = True
         notification.save()
+        
+        # Clear notification cache for this user
+        cache_key = f'notification_count_{request.user.id}'
+        cache.delete(cache_key)
+        
         return JsonResponse({"success": True})
+
+class NotificationAPIView(LoginRequiredMixin, View):
+    """API endpoint for fetching notifications as JSON"""
+    def get(self, request, *args, **kwargs):
+        from django.utils.timesince import timesince
+        
+        filter_type = request.GET.get('filter', 'all')
+        
+        # Build queryset
+        queryset = Notification.objects.filter(user=request.user).order_by('-created_at')
+        
+        if filter_type == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif filter_type == 'read':
+            queryset = queryset.filter(is_read=True)
+        
+        # Limit to most recent 50 notifications
+        notifications = queryset[:50]
+        
+        # Serialize notifications
+        notifications_data = []
+        for notif in notifications:
+            notifications_data.append({
+                'id': notif.id,
+                'message': notif.message,
+                'is_read': notif.is_read,
+                'created_at': notif.created_at.strftime('%b %d, %Y at %I:%M %p'),
+                'time_ago': timesince(notif.created_at) + ' ago',
+            })
+        
+        return JsonResponse({
+            'notifications': notifications_data,
+            'filter': filter_type
+        })
 
 class CreateAdminView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = CustomUser
@@ -1123,3 +1396,292 @@ class EnhancedToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View
             messages.success(request, f"User {user.username} has been unbanned.")
         
         return redirect('accounts:manage_users')
+
+
+# Transaction Log View for Landlords and Admins
+@method_decorator(login_required, name='dispatch')
+class TransactionLogView(LoginRequiredMixin, ListView):
+    """
+    Display transaction log with filtering options
+    - Landlords: see all their transactions
+    - Admins: see only payment and reservation transactions across all landlords
+    """
+    model = TransactionLog
+    template_name = 'accounts/transaction_log.html'
+    context_object_name = 'transactions'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        """Filter transactions based on user type"""
+        user = self.request.user
+        
+        # Admin sees payment and reservation transactions from all landlords
+        if user.user_type == 'admin':
+            queryset = TransactionLog.objects.filter(
+                transaction_type__in=[
+                    'reservation_created',
+                    'reservation_confirmed', 
+                    'reservation_cancelled',
+                    'payment_received',
+                    'payment_verified',
+                    'payment_rejected',
+                ]
+            ).select_related('landlord', 'dorm', 'reservation', 'tenant')
+        
+        # Landlords see only their own transactions
+        elif user.user_type == 'landlord':
+            queryset = TransactionLog.objects.filter(
+                landlord=user
+            ).select_related('dorm', 'reservation', 'tenant')
+        
+        else:
+            return TransactionLog.objects.none()
+        
+        # Filter by transaction type
+        transaction_type = self.request.GET.get('type')
+        if transaction_type:
+            queryset = queryset.filter(transaction_type=transaction_type)
+        
+        # Filter by dorm
+        dorm_id = self.request.GET.get('dorm')
+        if dorm_id:
+            queryset = queryset.filter(dorm_id=dorm_id)
+        
+        # Filter by landlord (admin only)
+        if user.user_type == 'admin':
+            landlord_id = self.request.GET.get('landlord')
+            if landlord_id:
+                queryset = queryset.filter(landlord_id=landlord_id)
+        
+        # Filter by date range
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                queryset = queryset.filter(created_at__gte=start_date)
+            except ValueError:
+                pass
+        
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                # Add one day to include the entire end date
+                end_date = end_date + timedelta(days=1)
+                queryset = queryset.filter(created_at__lt=end_date)
+            except ValueError:
+                pass
+        
+        # Search by description or tenant
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(description__icontains=search) |
+                Q(tenant__first_name__icontains=search) |
+                Q(tenant__last_name__icontains=search) |
+                Q(tenant__email__icontains=search) |
+                Q(dorm__name__icontains=search)
+            )
+            
+            # Admin can also search by landlord
+            if user.user_type == 'admin':
+                queryset = queryset | TransactionLog.objects.filter(
+                    Q(landlord__first_name__icontains=search) |
+                    Q(landlord__last_name__icontains=search) |
+                    Q(landlord__email__icontains=search)
+                ).filter(transaction_type__in=[
+                    'reservation_created', 'reservation_confirmed', 'reservation_cancelled',
+                    'payment_received', 'payment_verified', 'payment_rejected'
+                ])
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Admin sees all dorms and landlords, landlord sees only their dorms
+        if user.user_type == 'admin':
+            context['user_dorms'] = Dorm.objects.all().select_related('landlord')
+            context['all_landlords'] = CustomUser.objects.filter(user_type='landlord')
+            # Filter transaction types to only show payment/reservation related
+            context['transaction_types'] = [
+                ('reservation_created', 'Reservation Created'),
+                ('reservation_confirmed', 'Reservation Confirmed'),
+                ('reservation_cancelled', 'Reservation Cancelled'),
+                ('payment_received', 'Payment Received'),
+                ('payment_verified', 'Payment Verified'),
+                ('payment_rejected', 'Payment Rejected'),
+            ]
+        else:
+            context['user_dorms'] = Dorm.objects.filter(landlord=user)
+            context['transaction_types'] = TransactionLog.TRANSACTION_TYPES
+        
+        # Get filter values to maintain state
+        context['selected_type'] = self.request.GET.get('type', '')
+        context['selected_dorm'] = self.request.GET.get('dorm', '')
+        context['selected_landlord'] = self.request.GET.get('landlord', '')
+        context['start_date'] = self.request.GET.get('start_date', '')
+        context['end_date'] = self.request.GET.get('end_date', '')
+        context['search_query'] = self.request.GET.get('search', '')
+        
+        # Statistics
+        queryset = self.get_queryset()
+        context['total_transactions'] = queryset.count()
+        context['total_revenue'] = queryset.filter(
+            transaction_type__in=['payment_received', 'payment_verified']
+        ).aggregate(total=Coalesce(Sum('amount'), Value(0), output_field=DecimalField()))['total']
+        
+        # Transaction type breakdown
+        context['transaction_breakdown'] = queryset.values('transaction_type').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        return context
+
+
+# ============== IDENTITY VERIFICATION VIEWS ==============
+
+@method_decorator(login_required, name='dispatch')
+class SubmitVerificationView(View):
+    """View for landlords to submit identity verification documents"""
+    
+    def get(self, request):
+        """Display verification submission form"""
+        if request.user.user_type != 'landlord':
+            messages.error(request, "Only landlords can submit verification requests.")
+            return redirect('accounts:dashboard')
+        
+        # Check if already verified
+        if request.user.is_identity_verified:
+            messages.info(request, "Your identity is already verified!")
+            return redirect('accounts:dashboard')
+        
+        # Check if already pending
+        if request.user.verification_status == 'pending':
+            messages.warning(request, "Your verification request is already pending review.")
+            return redirect('accounts:dashboard')
+        
+        form = IdentityVerificationForm()
+        return render(request, 'accounts/submit_verification.html', {'form': form})
+    
+    def post(self, request):
+        """Handle verification submission"""
+        if request.user.user_type != 'landlord':
+            messages.error(request, "Only landlords can submit verification requests.")
+            return redirect('accounts:dashboard')
+        
+        form = IdentityVerificationForm(request.POST, request.FILES)
+        if form.is_valid():
+            user = request.user
+            user.government_id = form.cleaned_data['government_id']
+            user.proof_of_ownership = form.cleaned_data['proof_of_ownership']
+            user.selfie_with_id = form.cleaned_data['selfie_with_id']
+            user.verification_status = 'pending'
+            user.verification_submitted_at = timezone.now()
+            user.save()
+            
+            messages.success(request, "Verification documents submitted successfully! An admin will review your request shortly.")
+            return redirect('accounts:dashboard')
+        
+        return render(request, 'accounts/submit_verification.html', {'form': form})
+
+
+@method_decorator(login_required, name='dispatch')
+class VerificationRequestsView(UserPassesTestMixin, ListView):
+    """View for admins to see all pending verification requests"""
+    model = CustomUser
+    template_name = 'accounts/verification_requests.html'
+    context_object_name = 'verification_requests'
+    
+    def test_func(self):
+        return self.request.user.user_type == 'admin'
+    
+    def get_queryset(self):
+        return CustomUser.objects.filter(
+            user_type='landlord',
+            verification_status='pending'
+        ).order_by('-verification_submitted_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add verified and rejected landlords for logs
+        context['verified_landlords'] = CustomUser.objects.filter(
+            user_type='landlord',
+            verification_status='approved',
+            is_identity_verified=True
+        ).order_by('-verification_reviewed_at')
+        
+        context['rejected_landlords'] = CustomUser.objects.filter(
+            user_type='landlord',
+            verification_status='rejected'
+        ).order_by('-verification_reviewed_at')
+        
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class ReviewVerificationView(UserPassesTestMixin, View):
+    """View for admins to review a specific verification request"""
+    
+    def test_func(self):
+        return self.request.user.user_type == 'admin'
+    
+    def get(self, request, user_id):
+        """Display verification review page"""
+        landlord = get_object_or_404(CustomUser, id=user_id, user_type='landlord')
+        form = VerificationReviewForm()
+        
+        return render(request, 'accounts/review_verification.html', {
+            'landlord': landlord,
+            'form': form
+        })
+    
+    def post(self, request, user_id):
+        """Handle verification approval/rejection"""
+        landlord = get_object_or_404(CustomUser, id=user_id, user_type='landlord')
+        form = VerificationReviewForm(request.POST)
+        
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            rejection_reason = form.cleaned_data.get('rejection_reason')
+            
+            if action == 'approve':
+                landlord.is_identity_verified = True
+                landlord.verification_status = 'approved'
+                landlord.verification_reviewed_at = timezone.now()
+                landlord.verification_rejection_reason = None
+                landlord.save()
+                
+                messages.success(request, f"Verification approved for {landlord.username}. They now have a verified badge!")
+                
+                # Notify landlord
+                from dormitory.views import notify_user
+                notify_user(
+                    user=landlord,
+                    message="Congratulations! Your identity verification has been approved. You now have a verified landlord badge!"
+                )
+                
+            elif action == 'reject':
+                landlord.is_identity_verified = False
+                landlord.verification_status = 'rejected'
+                landlord.verification_reviewed_at = timezone.now()
+                landlord.verification_rejection_reason = rejection_reason
+                landlord.save()
+                
+                messages.warning(request, f"Verification rejected for {landlord.username}.")
+                
+                # Notify landlord
+                from dormitory.views import notify_user
+                notify_user(
+                    user=landlord,
+                    message=f"Your identity verification was rejected. Reason: {rejection_reason}"
+                )
+            
+            return redirect('accounts:verification_requests')
+        
+        return render(request, 'accounts/review_verification.html', {
+            'landlord': landlord,
+            'form': form
+        })

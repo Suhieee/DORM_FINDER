@@ -18,162 +18,262 @@
         main {
             flex-grow: 1;
         }
-        /* Enhanced hover for nav links and active state */
-        nav a {
+        
+        /* Modern Nav Styles */
+        .nav-link {
             position: relative;
-            transition: color 0.2s;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
-        nav a.active, nav a[aria-current="page"] {
-            color: #2563eb !important; /* Tailwind blue-600 */
+        
+        .nav-link.active {
+            color: #2563eb !important;
+            font-weight: 600;
         }
-        nav a.active::after, nav a[aria-current="page"]::after {
+        
+        .nav-link::after {
             content: '';
             position: absolute;
-            left: 0; right: 0; bottom: 0;
-            height: 3px;
-            background: #2563eb; /* Tailwind blue-600 */
-            border-radius: 2px;
+            left: 50%;
+            bottom: -2px;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            transform: translateX(-50%);
+            transition: width 0.3s ease;
         }
-        nav a:hover::after {
-            content: '';
-            position: absolute;
-            left: 0; right: 0; bottom: 0;
-            height: 3px;
-            background: #2563eb; /* Tailwind blue-600 */
-            border-radius: 2px;
+        
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
         }
-        nav a:hover, nav a:focus {
+        
+        .nav-link:hover {
             color: #2563eb !important;
         }
-        /* Enhanced hover for all buttons */
-        button, .btn {
-            transition: background 0.2s, color 0.2s;
+        
+        /* Mobile menu animation */
+        #navbar-default {
+            transition: max-height 0.3s ease;
         }
-        button:hover, .btn:hover {
-            background-color: #2563eb !important; /* Tailwind's blue-600 */
-            color: #fff !important;
+        
+        /* Profile dropdown animation */
+        #user-dropdown {
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Badge pulse animation */
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Navbar shadow on scroll */
+        .nav-scrolled {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
     </style>
 <body class="bg-gray-100 flex flex-col min-h-screen">
-<br><br><br>
-    <nav class="fixed top-0 left-0 w-full bg-gray-200 border-gray-200 z-50">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-            <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-                <img src="{% static 'images/bg.png' %}" class="h-16 w-auto max-w-[160px]" alt="Logo" />
-            </a>
+    <!-- Modern Fixed Navbar -->
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50 transition-shadow duration-300" id="main-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2 flex-shrink-0">
+                    <img src="{% static 'images/bg.png' %}" class="h-12 w-auto" alt="Dorm Finder Logo" />
+                </a>
     
-            <!-- Burger Button for Mobile -->
-            <button data-collapse-toggle="navbar-default" type="button" 
-                    class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200" 
-                    aria-controls="navbar-default" aria-expanded="false">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M4 6h16M4 12h16m-7 6h7"></path>
-                </svg>
-            </button>
-    
-            <!-- Navigation Links -->
-            <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-                <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-200 rounded-lg bg-gray-20 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-gray-200">
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-1">
                     {% if request.user.is_authenticated %}
                         {% if request.user.user_type == "admin" %}
                             {% url 'accounts:dashboard' as dashboard_url %}
                             {% url 'accounts:manage_users' as manage_users_url %}
+                            {% url 'accounts:verification_requests' as verification_requests_url %}
+                            {% url 'accounts:manage_reports' as manage_reports_url %}
                             {% url 'accounts:transaction_log' as transaction_log_url %}
-                            {% url 'dormitory:my_dorms' as my_dorms_url %}
-                            {% url 'dormitory:add_dorm' as add_dorm_url %}
-                            {% url 'dormitory:landlord_reservations' as landlord_reservations_url %}
-                            {% url 'dormitory:dorm_list' as dorm_list_url %}
-                            {% url 'dormitory:roommate_list' as roommate_list_url %}
-                            {% url 'dormitory:tenant_reservations' as tenant_reservations_url %}
-                            {% url 'accounts:login' as login_url %}
-                            {% url 'accounts:register' as register_url %}
-                            <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Dashboard</a></li>
-                            <li><a href="{{ manage_users_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == manage_users_url %}active{% endif %}">Manage Users</a></li>
-                            <li><a href="{{ transaction_log_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == transaction_log_url %}active{% endif %}">Transaction Log</a></li>
-                            <li class="relative">
-                                {% include 'accounts/components/notification_dropdown.html' with button_id='adminNavNotificationButton' dropdown_id='adminNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
-                            </li>
+                            <a href="{{ dashboard_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == dashboard_url %}active{% endif %}">Dashboard</a>
+                            <a href="{{ manage_users_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == manage_users_url %}active{% endif %}">Manage Users</a>
+                            <a href="{{ verification_requests_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == verification_requests_url %}active{% endif %}">Verification Requests</a>
+                            <a href="{{ manage_reports_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == manage_reports_url %}active{% endif %}">Manage Reports</a>
+                            <a href="{{ transaction_log_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == transaction_log_url %}active{% endif %}">Transaction Log</a>
+                            
                         {% elif request.user.user_type == "landlord" %}
                             {% url 'accounts:dashboard' as dashboard_url %}
+                            {% url 'accounts:transaction_log' as transaction_log_url %}
                             {% url 'dormitory:my_dorms' as my_dorms_url %}
-                            {% url 'dormitory:add_dorm' as add_dorm_url %}
                             {% url 'dormitory:landlord_reservations' as landlord_reservations_url %}
-                            <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Home</a></li>
-                            <li><a href="{{ my_dorms_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == my_dorms_url %}active{% endif %}">My Properties</a></li>
-                            <li><a href="{{ add_dorm_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == add_dorm_url %}active{% endif %}">Add Dorm</a></li>
-                            <li><a href="{{ landlord_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == landlord_reservations_url %}active{% endif %}"><span>Manage Reservations</span>{% if pending_count > 0 %}<span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ pending_count }}</span>{% endif %}</a></li>
-
-                            <li class="relative">
-                                {% include 'accounts/components/notification_dropdown.html' with button_id='landlordNotificationButton' dropdown_id='landlordDropdownNotification' notifications=notifications header='Notifications' %}
-                            </li>
-                            
-
+                            <a href="{{ dashboard_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == dashboard_url %}active{% endif %}">Home</a>
+                            <a href="{{ my_dorms_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == my_dorms_url %}active{% endif %}">My Properties</a>
+                            <a href="{{ landlord_reservations_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 {% if request.path == landlord_reservations_url %}active{% endif %}">
+                                Manage Reservations
+                                {% if pending_count > 0 %}<span class="badge-pulse bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{{ pending_count }}</span>{% endif %}
+                            </a>
+                            <a href="{{ transaction_log_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == transaction_log_url %}active{% endif %}">Transaction Log</a>
 
                         {% else %}
                             {% url 'accounts:dashboard' as dashboard_url %}
                             {% url 'dormitory:dorm_list' as dorm_list_url %}
                             {% url 'dormitory:roommate_list' as roommate_list_url %}
                             {% url 'dormitory:tenant_reservations' as tenant_reservations_url %}
-                            {% url 'accounts:login' as login_url %}
-                            {% url 'accounts:register' as register_url %}
-                            <li><a href="{{ dashboard_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dashboard_url %}active{% endif %}">Home</a></li>
-                            <li><a href="{{ dorm_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == dorm_list_url %}active{% endif %}">Browse Dorms</a></li>
-                            <li><a href="{{ roommate_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == roommate_list_url %}active{% endif %}">Roommate Finder</a></li>
-                            <li><a href="{{ tenant_reservations_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 flex items-center {% if request.path == tenant_reservations_url %}active{% endif %}"><span>My Reservations</span>{% if user_pending_reservations %}<span class="ml-2 bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-1">{{ user_pending_reservations|length }}</span>{% endif %}</a></li>
-                            <li class="relative">
-                                {% include 'accounts/components/notification_dropdown.html' with button_id='tenantNavNotificationButton' dropdown_id='tenantNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-black hover:bg-gray-300 rounded-full focus:outline-none' %}
-                            </li>
-
+                            <a href="{{ dashboard_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == dashboard_url %}active{% endif %}">Home</a>
+                            <a href="{{ dorm_list_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == dorm_list_url %}active{% endif %}">Browse Dorms</a>
+                            <a href="{{ roommate_list_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == roommate_list_url %}active{% endif %}">Roommate Finder</a>
+                            <a href="{{ tenant_reservations_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 {% if request.path == tenant_reservations_url %}active{% endif %}">
+                                My Reservations
+                                {% if user_pending_reservations %}<span class="badge-pulse bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{{ user_pending_reservations|length }}</span>{% endif %}
+                            </a>
                         {% endif %}
-    
-                        <!-- Profile Dropdown -->
-                        <div class="relative flex items-center z-50">
-                            <button id="user-menu-button" class="flex items-center space-x-1 focus:outline-none">
-                                <img src="{% if request.user.userprofile.profile_picture %}{{ request.user.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
-                                alt="Profile" class="w-8 h-8 rounded-full">
-                            </button>
-    
-                            <div id="user-dropdown" class="absolute right-0 top-6 z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-white-700 dark:divide-gray-600">
-                                <div class="px-4 py-3">
-                                    <span class="block text-sm text-gray-900 dark:text-black">{{ request.user.username }}</span>
-                                    <span class="block text-sm text-gray-900 truncate dark:text-black">{{ request.user.email }}</span>
-                                </div>
-                                <ul class="py-2">
-                                    {% if request.user.user_type == "admin" %}
-                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a></li>
-                                    {% elif request.user.user_type == "landlord" %}
-                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a></li>
-                                    {% else %}
-                                        <li><a href="{% url 'user_profile:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a></li>
-                                    {% endif %}
-                                    <li><a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a></li>
-                                </ul>
-                            </div>
-                        </div>
                     {% else %}
-                        <!-- Public Navigation for non-authenticated users -->
+                        <!-- Public Navigation -->
                         {% url 'dormitory:home' as home_url %}
                         {% url 'dormitory:public_dorm_list' as public_dorm_list_url %}
                         {% url 'dormitory:public_roommate_list' as public_roommate_list_url %}
-                        
-                        <li><a href="{{ home_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == home_url %}active{% endif %}">Home</a></li>
-                        <li><a href="{{ public_dorm_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == public_dorm_list_url %}active{% endif %}">Browse Dorms</a></li>
-                        <li><a href="{{ public_roommate_list_url }}" class="block py-2 px-3 text-black rounded-sm hover:bg-gray-100 {% if request.path == public_roommate_list_url %}active{% endif %}">Find Roommates</a></li>
+                        <a href="{{ home_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == home_url %}active{% endif %}">Home</a>
+                        <a href="{{ public_dorm_list_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == public_dorm_list_url %}active{% endif %}">Browse Dorms</a>
+                        <a href="{{ public_roommate_list_url }}" class="nav-link px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-50 {% if request.path == public_roommate_list_url %}active{% endif %}">Find Roommates</a>
                     {% endif %}
-                </ul>
+                </div>
+    
+                <!-- Right Side Icons -->
+                <div class="flex items-center space-x-3 relative z-50">
+                    {% if request.user.is_authenticated %}
+                        <!-- Notification Bell -->
+                        <div class="relative z-50">
+                            {% if request.user.user_type == "admin" %}
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='adminNavNotificationButton' dropdown_id='adminNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors z-50' %}
+                            {% elif request.user.user_type == "landlord" %}
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='landlordNotificationButton' dropdown_id='landlordDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors z-50' %}
+                            {% else %}
+                                {% include 'accounts/components/notification_dropdown.html' with button_id='tenantNavNotificationButton' dropdown_id='tenantNavDropdownNotification' notifications=notifications header='Notifications' button_class='relative p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors z-50' %}
+                            {% endif %}
+                        </div>
+    
+                        <!-- Profile Dropdown -->
+                        <div class="relative z-50">
+                            <button id="user-menu-button" class="flex items-center space-x-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-50">
+                                <img src="{% if request.user.userprofile.profile_picture %}{{ request.user.userprofile.profile_picture.url }}{% else %}{{ MEDIA_URL }}profile_pictures/default.jpg{% endif %}" 
+                                     alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-gray-200">
+                            </button>
+    
+                            <div id="user-dropdown" class="absolute right-0 top-14 z-[200] hidden w-56 bg-white divide-y divide-gray-100 rounded-lg shadow-lg border border-gray-200">
+                                <div class="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50">
+                                    <p class="text-sm font-semibold text-gray-900">{{ request.user.get_full_name|default:request.user.username }}</p>
+                                    <p class="text-xs text-gray-600 truncate">{{ request.user.email }}</p>
+                                </div>
+                                <ul class="py-2">
+                                    <li><a href="{% url 'user_profile:profile' %}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        My Profile
+                                    </a></li>
+                                    <li><a href="{% url 'accounts:logout' %}" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                        Sign out
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" type="button" 
+                            class="md:hidden inline-flex items-center p-2 text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-50" 
+                            aria-controls="mobile-menu" aria-expanded="false">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="hamburger" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                            <path id="close" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Mobile Menu -->
+        <div class="hidden md:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200 shadow-lg">
+                {% if request.user.is_authenticated %}
+                    {% if request.user.user_type == "admin" %}
+                        {% url 'accounts:dashboard' as dashboard_url %}
+                        {% url 'accounts:manage_users' as manage_users_url %}
+                        {% url 'accounts:verification_requests' as verification_requests_url %}
+                        {% url 'accounts:manage_reports' as manage_reports_url %}
+                        {% url 'accounts:transaction_log' as transaction_log_url %}
+                        <a href="{{ dashboard_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == dashboard_url %}bg-blue-50 text-blue-600{% endif %}">Dashboard</a>
+                        <a href="{{ manage_users_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == manage_users_url %}bg-blue-50 text-blue-600{% endif %}">Manage Users</a>
+                        <a href="{{ verification_requests_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == verification_requests_url %}bg-blue-50 text-blue-600{% endif %}">Verification Requests</a>
+                        <a href="{{ manage_reports_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == manage_reports_url %}bg-blue-50 text-blue-600{% endif %}">Manage Reports</a>
+                        <a href="{{ transaction_log_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == transaction_log_url %}bg-blue-50 text-blue-600{% endif %}">Transaction Log</a>
+                        
+                    {% elif request.user.user_type == "landlord" %}
+                        {% url 'accounts:dashboard' as dashboard_url %}
+                        {% url 'accounts:transaction_log' as transaction_log_url %}
+                        {% url 'dormitory:my_dorms' as my_dorms_url %}
+                        {% url 'dormitory:landlord_reservations' as landlord_reservations_url %}
+                        <a href="{{ dashboard_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == dashboard_url %}bg-blue-50 text-blue-600{% endif %}">Home</a>
+                        <a href="{{ my_dorms_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == my_dorms_url %}bg-blue-50 text-blue-600{% endif %}">My Properties</a>
+                        <a href="{{ landlord_reservations_url }}" class="flex items-center justify-between px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == landlord_reservations_url %}bg-blue-50 text-blue-600{% endif %}">
+                            Manage Reservations
+                            {% if pending_count > 0 %}<span class="badge-pulse bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{{ pending_count }}</span>{% endif %}
+                        </a>
+                        <a href="{{ transaction_log_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == transaction_log_url %}bg-blue-50 text-blue-600{% endif %}">Transaction Log</a>
+
+                    {% else %}
+                        {% url 'accounts:dashboard' as dashboard_url %}
+                        {% url 'dormitory:dorm_list' as dorm_list_url %}
+                        {% url 'dormitory:roommate_list' as roommate_list_url %}
+                        {% url 'dormitory:tenant_reservations' as tenant_reservations_url %}
+                        <a href="{{ dashboard_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == dashboard_url %}bg-blue-50 text-blue-600{% endif %}">Home</a>
+                        <a href="{{ dorm_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == dorm_list_url %}bg-blue-50 text-blue-600{% endif %}">Browse Dorms</a>
+                        <a href="{{ roommate_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == roommate_list_url %}bg-blue-50 text-blue-600{% endif %}">Roommate Finder</a>
+                        <a href="{{ tenant_reservations_url }}" class="flex items-center justify-between px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == tenant_reservations_url %}bg-blue-50 text-blue-600{% endif %}">
+                            My Reservations
+                            {% if user_pending_reservations %}<span class="badge-pulse bg-yellow-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{{ user_pending_reservations|length }}</span>{% endif %}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <!-- Public Mobile Navigation -->
+                    {% url 'dormitory:home' as home_url %}
+                    {% url 'dormitory:public_dorm_list' as public_dorm_list_url %}
+                    {% url 'dormitory:public_roommate_list' as public_roommate_list_url %}
+                    <a href="{{ home_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == home_url %}bg-blue-50 text-blue-600{% endif %}">Home</a>
+                    <a href="{{ public_dorm_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == public_dorm_list_url %}bg-blue-50 text-blue-600{% endif %}">Browse Dorms</a>
+                    <a href="{{ public_roommate_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == public_roommate_list_url %}bg-blue-50 text-blue-600{% endif %}">Find Roommates</a>
+                {% endif %}
             </div>
         </div>
     </nav>
     
+    <!-- Spacer for fixed navbar -->
+    <div class="h-32"><br><br><br><br></div>
+
 <script>
-    
 document.addEventListener("DOMContentLoaded", function () {
+    // Profile Dropdown
     const userMenuButton = document.getElementById("user-menu-button");
     const userDropdown = document.getElementById("user-dropdown");
 
     if (userMenuButton && userDropdown) {
-        userMenuButton.addEventListener("click", function () {
+        userMenuButton.addEventListener("click", function (event) {
+            event.stopPropagation();
             userDropdown.classList.toggle("hidden");
         });
 
@@ -184,6 +284,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Mobile Menu Toggle
+    const mobileMenuButton = document.getElementById("mobile-menu-button");
+    const mobileMenu = document.getElementById("mobile-menu");
+    const hamburgerIcon = document.getElementById("hamburger");
+    const closeIcon = document.getElementById("close");
+
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            mobileMenu.classList.toggle("hidden");
+            if (hamburgerIcon && closeIcon) {
+                hamburgerIcon.classList.toggle("hidden");
+                closeIcon.classList.toggle("hidden");
+            }
+        });
+    }
+
+    // Navbar shadow on scroll
+    const navbar = document.getElementById("main-nav");
+    if (navbar) {
+        window.addEventListener("scroll", function () {
+            if (window.scrollY > 10) {
+                navbar.classList.add("nav-scrolled");
+            } else {
+                navbar.classList.remove("nav-scrolled");
+            }
+        });
+    }
+
+    // Initialize notification widgets
     initNotificationWidgets();
     initReservationsDropdown();
 });
@@ -223,10 +353,20 @@ function initNotificationWidgets() {
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.success) {
-                            this.classList.add("opacity-50", "transition-opacity", "duration-300");
-                            setTimeout(() => {
-                                this.remove();
-                            }, 300);
+                            // Fade out but don't remove - just mark as read visually
+                            this.classList.add("opacity-40", "bg-gray-50");
+                            this.style.pointerEvents = "none";
+                            
+                            // Update badge counter
+                            const badge = button.querySelector("span");
+                            if (badge) {
+                                const currentCount = parseInt(badge.textContent) || 0;
+                                const newCount = Math.max(0, currentCount - 1);
+                                badge.textContent = newCount;
+                                if (newCount === 0) {
+                                    badge.style.display = "none";
+                                }
+                            }
                         }
                     })
                     .catch((error) => console.error("Error:", error));
@@ -280,8 +420,8 @@ function getCSRFToken() {
 </script>
 
 <!-- Page Content Wrapper -->
-<main class="flex-1 w-full">
-    <div class="w-full pb-8 md:p-12 lg:pl-10"> 
+<main class="flex-1 w-full pt-8 relative z-0">
+    <div class="w-full pb-8 px-4 md:px-6 lg:px-10"> 
 
         {% block content %}
         

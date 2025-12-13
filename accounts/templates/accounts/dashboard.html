@@ -58,6 +58,28 @@
                     <div class="row">
                         <div class="col-8">
                             <div class="numbers">
+                                <p class="text-sm mb-0 text-uppercase font-weight-bold">Visit Requests</p>
+                                <a href="{% url 'dormitory:landlord_visits' %}" class="btn btn-outline-info btn-sm mt-3">
+                                    View Visits <i class="fas fa-calendar-check ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <div class="icon icon-shape bg-info shadow-info text-center rounded-circle">
+                                <i class="fas fa-calendar-day text-lg opacity-10" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="numbers">
                                 <p class="text-sm mb-0 text-uppercase font-weight-bold">My Dorms</p>
                                 <a href="{% url 'dormitory:my_dorms' %}" class="btn btn-outline-success btn-sm mt-3">
                                     Manage <i class="fas fa-home ms-1"></i>

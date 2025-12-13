@@ -70,25 +70,174 @@
     </div>
 </div>
 
-<div class="container-fluid h-screen bg-gray-100">
-    <div id="main-layout" class="flex h-[calc(100vh-4rem)]" style="margin-right: 20rem;">
-        <!-- Mobile Details Toggle Button -->
-        <button id="mobile-details-toggle" class="fixed top-20 right-4 z-40 bg-white p-2 rounded-lg shadow-lg hidden">
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
-            </svg>
-        </button>
-        <!-- Left Sidebar - Reservations List -->
-        <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
-            <!-- Mobile Header for Reservations -->
-            <div class="p-4 border-b bg-white sticky top-0 z-20 block md:hidden">
-                <h2 class="text-lg font-semibold text-gray-800">My Reservations</h2>
+<div class="h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden p-4">
+    <!-- Mobile Reservations Toggle Button -->
+    <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+        </svg>
+    </button>
+
+    <!-- Mobile Reservations Sidebar (Overlay) -->
+    <div id="mobile-reservations-sidebar" class="fixed inset-0 hidden md:hidden" style="z-index: 9999; padding-top: 4rem;">
+        <div class="absolute inset-0 bg-black/50" onclick="hideMobileReservations()" style="pointer-events: auto; top: 4rem;"></div>
+        <div class="absolute left-0 w-80 bg-white shadow-xl transform transition-transform duration-300 -translate-x-full" style="pointer-events: auto; top: 4rem; bottom: 0; height: calc(100vh - 4rem);">
+            <!-- Mobile Header -->
+            <div class="sticky top-0 p-4 bg-gradient-to-r from-blue-500 to-blue-600 z-10">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white">My Reservations</h2>
+                    <button id="close-mobile-sidebar" class="text-white p-2 hover:bg-white/20 rounded-lg transition-colors" style="pointer-events: auto;">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
+            
+            <!-- Mobile Search Bar -->
+            <div class="p-4 border-b">
+                <div class="relative">
+                    <input type="text" id="reservation-search-mobile" placeholder="Search reservations" 
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           style="pointer-events: auto;">
+                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Mobile Status Filters -->
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
+                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters-mobile" style="pointer-events: auto;">Clear</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending_payment" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Payment</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                            {{ pending_payment_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Pending</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                            {{ pending_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span class="text-xs font-medium text-gray-700">Confirmed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                            {{ confirmed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Completed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {{ completed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Declined</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                            {{ declined_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Reservations List -->
+            <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 400px); pointer-events: auto;">
+                {% for reservation in reservations %}
+                <div class="reservation-item reservation-item-mobile p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors duration-200 {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-500{% endif %}"
+                     data-reservation-id="{{ reservation.id }}"
+                     data-dorm-name="{{ reservation.dorm.name|lower }}"
+                     data-landlord-name="{{ reservation.dorm.landlord.get_full_name|lower }}"
+                     data-status="{{ reservation.status }}"
+                     onclick="selectReservation('{{ reservation.id }}')">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity onclick-prevent"
+                                 onclick="previewImage(this)">
+                                {% if reservation.dorm.landlord.userprofile.profile_picture %}
+                                    <img src="{{ reservation.dorm.landlord.userprofile.profile_picture.url }}" 
+                                         alt="Profile" 
+                                         class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" 
+                                         alt="Default Profile" 
+                                         class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {% if reservation.dorm.landlord.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} ring-2 ring-white"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-gray-900 truncate text-sm">{{ reservation.dorm.name }}</h3>
+                                <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.landlord.get_full_name }}</p>
+                            <div class="flex items-center mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
+                                    {% if reservation.status == 'pending_payment' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'confirmed' %}
+                                        bg-green-100 text-green-800
+                                    {% elif reservation.status == 'completed' %}
+                                        bg-blue-100 text-blue-800
+                                    {% elif reservation.status == 'declined' %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                                {% if reservation.unread_messages_count %}
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                                    {{ reservation.unread_messages_count }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-gray-500">
+                    No reservations yet
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-full gap-4">
+        <!-- Left Sidebar - Reservations List (Desktop) -->
+        <div id="reservations-sidebar" class="hidden md:flex flex-col w-80 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Desktop Header -->
+            <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600">
+                <h2 class="text-lg font-bold text-white">My Reservations</h2>
+            </div>
+            
             <!-- Search Bar -->
-            <div class="p-4 border-b flex-shrink-0 bg-white sticky top-0 z-20">
+            <div class="p-4 border-b">
                 <div class="relative">
                     <input type="text" id="reservation-search" placeholder="Search reservations" 
-                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -96,172 +245,214 @@
             </div>
 
             <!-- Status Filters -->
-            <div class="p-4 border-b flex-shrink-0">
-                <h3 class="text-sm font-semibold text-gray-600 mb-2">Filter by Status</h3>
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Pending Payment</span>
-                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ pending_payment_count }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Pending</span>
-                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ pending_count }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Confirmed</span>
-                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{{ confirmed_count }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Completed</span>
-                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ completed_count }}</span>
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
+                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters">Clear</span>
                 </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Declined</span>
-                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">{{ declined_count }}</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending_payment">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Payment</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                            {{ pending_payment_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Pending</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                            {{ pending_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span class="text-xs font-medium text-gray-700">Confirmed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                            {{ confirmed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Completed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {{ completed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Declined</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                            {{ declined_count }}
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
 
             <!-- Reservations List -->
-            <div class="flex-1 overflow-hidden">
-                <div class="h-full overflow-y-auto">
-                    {% for reservation in reservations %}
-                <div class="reservation-item p-3 cursor-pointer transition-colors border-b {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-600{% else %}hover:bg-gray-50 border-l-4 border-transparent{% endif %}"
-                         data-reservation-id="{{ reservation.id }}">
+            <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 380px);">
+                {% for reservation in reservations %}
+                <div class="reservation-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors duration-200 {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-500{% endif %}"
+                     data-reservation-id="{{ reservation.id }}"
+                     data-dorm-name="{{ reservation.dorm.name|lower }}"
+                     data-landlord-name="{{ reservation.dorm.landlord.get_full_name|lower }}"
+                     data-status="{{ reservation.status }}"
+                     onclick="selectReservation('{{ reservation.id }}')">
                     <div class="flex items-center space-x-3">
                         <div class="relative">
-                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                            <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity onclick-prevent"
                                  onclick="previewImage(this)">
                                 {% if reservation.dorm.landlord.userprofile.profile_picture %}
-                                    <img src="{{ reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                    <img src="{{ reservation.dorm.landlord.userprofile.profile_picture.url }}" 
+                                         alt="Profile" 
+                                         class="w-full h-full object-cover">
                                 {% else %}
-                                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                                    <img src="{% static 'images/default_profile.jpg' %}" 
+                                         alt="Default Profile" 
+                                         class="w-full h-full object-cover">
                                 {% endif %}
                             </div>
-                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if reservation.dorm.landlord.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} border-2 border-white"></div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {% if reservation.dorm.landlord.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} ring-2 ring-white"></div>
                         </div>
                         <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start">
-                                <h3 class="font-semibold text-sm truncate">{{ reservation.dorm.name }}</h3>
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-gray-900 truncate text-sm">{{ reservation.dorm.name }}</h3>
                                 <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
                             </div>
                             <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.landlord.get_full_name }}</p>
                             <div class="flex items-center mt-1">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
-                                {% if reservation.status == 'pending_payment' %}
+                                    {% if reservation.status == 'pending_payment' %}
                                         bg-yellow-100 text-yellow-800
-                                {% elif reservation.status == 'pending' %}
+                                    {% elif reservation.status == 'pending' %}
                                         bg-yellow-100 text-yellow-800
-                                {% elif reservation.status == 'confirmed' %}
+                                    {% elif reservation.status == 'confirmed' %}
                                         bg-green-100 text-green-800
-                                {% elif reservation.status == 'completed' %}
+                                    {% elif reservation.status == 'completed' %}
                                         bg-blue-100 text-blue-800
-                                {% elif reservation.status == 'declined' %}
+                                    {% elif reservation.status == 'declined' %}
                                         bg-red-100 text-red-800
                                     {% endif %}">
                                     {{ reservation.get_status_display }}
                                 </span>
                                 {% if reservation.unread_messages_count %}
-                                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
-                                        {{ reservation.unread_messages_count }}
-                                    </span>
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                                    {{ reservation.unread_messages_count }}
+                                </span>
                                 {% endif %}
-                            </div>
                             </div>
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="p-4 text-center text-gray-500">
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-gray-500">
                     No reservations yet
                 </div>
                 {% endfor %}
-                </div>
             </div>
         </div>
 
         <!-- Main Chat Area -->
-        <div class="flex-1 flex flex-col h-screen bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden min-h-0">
             {% if selected_reservation %}
                 <!-- Chat Header -->
-                <div class="p-4 bg-white border-b flex items-center justify-between z-10 flex-shrink-0">
+                <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                             onclick="previewImage(this)">
-                            {% if selected_reservation.dorm.landlord.userprofile.profile_picture %}
-                                <img src="{{ selected_reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
-                            {% else %}
-                                <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
-                            {% endif %}
+                        <!-- Mobile burger menu -->
+                        <button id="mobile-menu-toggle" class="md:hidden p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                            </svg>
+                        </button>
+                        <div class="relative">
+                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ring-2 ring-white/50"
+                                 onclick="previewImage(this)">
+                                {% if selected_reservation.dorm.landlord.userprofile.profile_picture %}
+                                    <img src="{{ selected_reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if selected_reservation.dorm.landlord.is_online %}bg-green-400{% else %}bg-gray-400{% endif %} ring-2 ring-blue-600"></div>
                         </div>
                         <div>
-                            <h2 class="font-semibold">{{ selected_reservation.dorm.landlord.get_full_name }}</h2>
-                            <p class="text-xs text-gray-500">Last active {{ selected_reservation.dorm.landlord.last_login|timesince }} ago</p>
+                            <h2 class="font-bold">{{ selected_reservation.dorm.landlord.get_full_name }}</h2>
+                            <p class="text-xs opacity-90">Last active {{ selected_reservation.dorm.landlord.last_login|timesince }} ago</p>
                         </div>
                     </div>
 
                     <div class="flex items-center space-x-2">
                         {% if selected_reservation.status == 'pending_payment' %}
-                            <span class="bg-yellow-100 text-yellow-800 px-2 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium">
-                                <span class="hidden sm:inline">Payment Required</span>
-                                <span class="sm:hidden">Pay</span>
-                            </span>
+                        <span class="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-semibold animate-pulse">
+                            💳 Payment Required
+                        </span>
                         {% endif %}
-                        <button id="toggle-details-btn" class="p-2 hover:bg-gray-100 rounded-full">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                        <button id="toggle-details-btn" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </button>
                     </div>
                 </div>
 
-                <!-- Chat Messages Container -->
-                <div class="flex-1 overflow-hidden bg-gray-50">
-                    <div id="messages-container" class="h-full overflow-y-auto p-3 md:p-5 space-y-3">
-                        {% for message in selected_reservation.chat_messages.all %}
-                        <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
-                            {% if message.sender != request.user %}
-                            <div class="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                                 onclick="previewImage(this)">
-                                {% if message.sender.userprofile.profile_picture %}
-                                    <img src="{{ message.sender.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
-                                {% else %}
-                                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                            <div class="relative {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-2 shadow-sm max-w-[85%] md:max-w-[75%]">
-                                <button onclick="deleteMessage({{ message.id }})" 
-                                        class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
-                                        {% if message.sender != request.user %}style="display: none;"{% endif %}>
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                                <p class="text-sm break-words">{{ message.content }}</p>
-                                
-                                {% if message.image %}
-                                <div class="mt-2">
-                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-[200px] md:max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
-                                </div>
-                                {% elif message.attachment %}
-                                <div class="mt-2">
-                                    <a href="{{ message.attachment.url }}" target="_blank" class="flex items-center {% if message.sender == request.user %}text-blue-100 hover:text-white{% else %}text-blue-500 hover:text-blue-700{% endif %}">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                                        </svg>
-                                        {{ message.get_file_name }}
-                                    </a>
-                                </div>
-                                {% endif %}
-                                
-                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-100{% else %}text-gray-500{% endif %} block mt-0.5">
-                                    {{ message.timestamp|date:"g:i A" }}
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+              <!-- Chat Messages Container -->
+<div class="flex-1 overflow-hidden bg-gray-50">
+    <div id="messages-container" class="h-full overflow-y-auto p-3 md:p-5 space-y-3" style="max-height: calc(100vh - 300px);">
+        {% for message in selected_reservation.chat_messages.all %}
+        <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
+            {% if message.sender != request.user %}
+            <div class="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                 onclick="previewImage(this)">
+                {% if message.sender.userprofile.profile_picture %}
+                    <img src="{{ message.sender.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="relative {% if message.sender == request.user %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-2 shadow-sm max-w-[85%] md:max-w-[75%]">
+                <button onclick="deleteMessage({{ message.id }})" 
+                        class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
+                        {% if message.sender != request.user %}style="display: none;"{% endif %}>
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <p class="text-sm break-words">{{ message.content }}</p>
+                
+                {% if message.image %}
+                <div class="mt-2">
+                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-[200px] md:max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
                 </div>
+                {% elif message.attachment %}
+                <div class="mt-2">
+                    <a href="{{ message.attachment.url }}" target="_blank" class="flex items-center {% if message.sender == request.user %}text-blue-100 hover:text-white{% else %}text-blue-500 hover:text-blue-700{% endif %}">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                        </svg>
+                        {{ message.get_file_name }}
+                    </a>
+                </div>
+                {% endif %}
+                
+                <span class="text-[10px] {% if message.sender == request.user %}text-blue-100{% else %}text-gray-500{% endif %} block mt-0.5">
+                    {{ message.timestamp|date:"g:i A" }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 
                 <!-- Chat Input Area -->
                 <div class="border-t bg-white flex-shrink-0">
@@ -321,22 +512,32 @@
             {% else %}
                 <div class="flex-1 flex items-center justify-center bg-gray-50">
                     <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                        <h3 class="mt-4 text-lg font-medium text-gray-900">No reservation selected</h3>
-                        <p class="mt-2 text-sm text-gray-500">Choose a reservation from the list to start messaging</p>
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6 mx-auto">
+                            <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Dorm Chat</h3>
+                        <p class="text-gray-600 text-center max-w-md mb-8">Select a reservation from the list to start messaging with landlords about your dorm stay.</p>
+                        <button 
+                            id="mobile-show-reservations" 
+                            onclick="showMobileReservations(); return false;"
+                            class="md:hidden bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                            style="position: relative; z-index: 100; pointer-events: auto;">
+                            Show Reservations
+                        </button>
                     </div>
                 </div>
             {% endif %}
         </div>
 
         <!-- Right Sidebar - Dorm Details -->
-        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto z-30" style="top: 4rem; height: calc(100vh - 4rem);">
-            <div class="sticky top-2 bg-white p-4 mt-4 border-b flex justify-between items-center z-40">
-                <h3 class="font-semibold text-lg">Dorm Details</h3>
-                <button id="close-details" class="p-2 hover:bg-gray-100 rounded-full">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {% if selected_reservation %}
+        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
+            <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
+                <h3 class="font-bold text-lg text-white">Dorm Details</h3>
+                <button id="close-details" class="p-2 hover:bg-white/20 rounded-lg transition-colors text-white" style="pointer-events: auto;">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -353,10 +554,10 @@
                         {% empty %}
                         <div class="col-span-2 bg-gray-100 rounded-lg flex items-center justify-center" style="height: 140px;">
                             <span class="text-gray-400">No images available</span>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
-            </div>
 
                 <!-- User Profiles -->
                 <div class="flex justify-between items-center border-t pt-4">
@@ -369,8 +570,8 @@
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                             {% endif %}
-                            </div>
-                            <div>
+                        </div>
+                        <div>
                             <p class="font-semibold text-sm">{{ request.user.get_full_name }}</p>
                             <p class="text-xs text-gray-500">tenant</p>
                         </div>
@@ -380,23 +581,23 @@
                         <div>
                             <p class="font-semibold text-sm text-right">{{ selected_reservation.dorm.landlord.get_full_name }}</p>
                             <p class="text-xs text-gray-500 text-right">Landlord</p>
-                                </div>
+                        </div>
                         <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="previewImage(this)">
                             {% if selected_reservation.dorm.landlord.userprofile.profile_picture %}
                                 <img src="{{ selected_reservation.dorm.landlord.userprofile.profile_picture.url }}" alt="Landlord Profile" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
-                                {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <!-- Dorm Info -->
                 <div class="flex-1 min-w-0">
-                    <h4 class="font-semibold truncate">{{ selected_reservation.dorm.name }}</h4>
+                    <h4 class="font-bold truncate">{{ selected_reservation.dorm.name }}</h4>
                     <p class="text-sm text-gray-600 truncate">{{ selected_reservation.dorm.address }}</p>
-                    <p class="text-sm font-semibold">₱{{ selected_reservation.dorm.price|floatformat:2 }}/month</p>
+                    <p class="text-xl font-bold text-blue-600">₱{{ selected_reservation.dorm.price|floatformat:2 }}/month</p>
                     
                     <!-- Accommodation Type -->
                     <div class="mt-2">
@@ -419,7 +620,7 @@
                     </div>
 
                     <!-- Amenities -->
-                                    <div class="mt-4">
+                    <div class="mt-4">
                         <h5 class="text-sm font-semibold text-gray-700 mb-2">Amenities</h5>
                         <div class="flex flex-wrap gap-2">
                             {% if selected_reservation.dorm.has_aircon %}
@@ -434,7 +635,7 @@
                             {% if selected_reservation.dorm.has_bathroom %}
                             <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Private Bathroom</span>
                             {% endif %}
-                            </div>
+                        </div>
                     </div>
 
                     <!-- Utilities -->
@@ -449,7 +650,7 @@
                             {% endif %}
                             {% if selected_reservation.dorm.internet_included %}
                             <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Internet</span>
-                    {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -471,30 +672,48 @@
                                 bg-gray-100 text-gray-800
                             {% endif %}">
                             {{ selected_reservation.get_status_display }}
-                    </div>
+                        </div>
 
-                        <!-- Cancel Button - Only show for confirmed but unpaid reservations -->
-                        {% if selected_reservation.status == 'confirmed' and not selected_reservation.has_paid_reservation %}
+                        <!-- Cancel Button - Only show for confirmed/pending_payment but unpaid reservations -->
+                        {% if selected_reservation.status in 'confirmed,pending_payment' and not selected_reservation.has_paid_reservation %}
                         <button type="button" onclick="openCancelModal()"
                                 class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
                             Cancel Reservation
                         </button>
 
                         <!-- Cancellation Modal -->
-                        <div id="cancelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-                            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div id="cancelModal" class="fixed inset-0 bg-gray-600/50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+                            <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                                 <div class="mt-3">
                                     <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Cancel Reservation</h3>
                                     <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="cancel">
                                         <div class="mb-4">
-                                            <label for="cancellation_reason" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Please provide a reason for cancellation
+                                            <label for="cancellation_reason_select" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Select cancellation reason <span class="text-red-500">*</span>
                                             </label>
-                                            <textarea name="cancellation_reason" id="cancellation_reason" rows="4"
+                                            <select name="cancellation_reason_select" id="cancellation_reason_select" 
                                                     class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    required></textarea>
+                                                    onchange="toggleOtherReason()" required>
+                                                <option value="">-- Select a reason --</option>
+                                                <option value="Found a better option">Found a better option</option>
+                                                <option value="Change of plans">Change of plans</option>
+                                                <option value="Too expensive">Too expensive</option>
+                                                <option value="Location not suitable">Location not suitable</option>
+                                                <option value="Dorm conditions not as expected">Dorm conditions not as expected</option>
+                                                <option value="Financial reasons">Financial reasons</option>
+                                                <option value="Personal reasons">Personal reasons</option>
+                                                <option value="Other">Other (Please specify)</option>
+                                            </select>
+                                        </div>
+                                        <div id="otherReasonDiv" class="mb-4 hidden">
+                                            <label for="cancellation_reason_other" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Please specify your reason
+                                            </label>
+                                            <textarea name="cancellation_reason_other" id="cancellation_reason_other" rows="3"
+                                                    class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Type your reason here..."></textarea>
                                         </div>
                                         <div class="flex justify-end space-x-3">
                                             <button type="button" onclick="closeCancelModal()"
@@ -515,16 +734,51 @@
                 </div>
 
                 <!-- Payment Section -->
-                {% if selected_reservation.status == 'confirmed' and not selected_reservation.has_paid_reservation %}
+                {% if selected_reservation.status in 'confirmed,pending_payment' and not selected_reservation.has_paid_reservation and not selected_reservation.payment_proof %}
                 <div class="border-t pt-4">
-                    <h4 class="font-semibold mb-4">Optional Payment</h4>
+                    <!-- Payment Deadline Alert (for pending_payment) -->
+                    {% if selected_reservation.status == 'pending_payment' and selected_reservation.payment_deadline %}
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            <div>
+                                <h4 class="font-semibold text-red-900 mb-1">⏰ Payment Required Within 48 Hours</h4>
+                                <p class="text-sm text-red-800 mb-2">
+                                    Your reservation will be <strong>automatically cancelled</strong> if payment is not received by:
+                                </p>
+                                <p class="text-lg font-bold text-red-900">
+                                    {{ selected_reservation.payment_deadline|date:"F j, Y - g:i A" }}
+                                </p>
+                                {% if selected_reservation.hours_until_payment_deadline %}
+                                <p class="text-sm text-red-700 mt-2">
+                                    ⏱️ Time remaining: <strong>{{ selected_reservation.hours_until_payment_deadline|floatformat:0 }} hours</strong>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <h4 class="font-semibold mb-4">
+                        {% if selected_reservation.status == 'pending_payment' %}
+                            Payment Required
+                        {% else %}
+                            Optional Payment
+                        {% endif %}
+                    </h4>
                     
                     <!-- Payment Details -->
                     <div class="bg-gray-50 rounded-lg p-4 mb-4">
                         <div class="space-y-2">
                             <p><span class="text-gray-600">Amount:</span> ₱{{ selected_reservation.dorm.price }}</p>
                             <p><span class="text-gray-600">Reservation ID:</span> {{ selected_reservation.id }}</p>
+                            {% if selected_reservation.status == 'pending_payment' %}
+                            <p class="text-sm text-red-600 font-semibold">⚠️ Payment is REQUIRED to confirm your reservation.</p>
+                            {% else %}
                             <p class="text-sm text-gray-500">Payment is optional but recommended to secure your slot.</p>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -585,12 +839,148 @@
                     <h4 class="font-semibold">Reservation Information</h4>
                     <div class="text-sm">
                         <p><span class="text-gray-600">Reserved on:</span> {{ selected_reservation.reservation_date|date:"F j, Y" }}</p>
-                        <p><span class="text-gray-600">Landlord:</span> {{ selected_reservation.dorm.landlord.get_full_name }}</p>
+                        
+                        <!-- Visit Information (New Integrated System) -->
+                        {% if selected_reservation.visit_scheduled %}
+                        <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="font-semibold text-blue-900 mb-2 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Visit Scheduled
+                            </p>
+                            <p><span class="text-gray-600">📅 Date:</span> <span class="font-medium">{{ selected_reservation.visit_date|date:"F j, Y" }}</span></p>
+                            <p><span class="text-gray-600">🕐 Time:</span> <span class="font-medium">{{ selected_reservation.get_visit_time_slot_display }}</span></p>
+                            <p><span class="text-gray-600">Status:</span> 
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if selected_reservation.visit_status == 'completed' %}bg-green-100 text-green-800
+                                    {% elif selected_reservation.visit_status == 'scheduled' %}bg-yellow-100 text-yellow-800
+                                    {% elif selected_reservation.visit_status == 'cancelled' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ selected_reservation.get_visit_status_display }}
+                                </span>
+                            </p>
+                            {% if selected_reservation.visit_notes %}
+                            <div class="mt-2 p-2 bg-white rounded border border-blue-100">
+                                <p class="text-xs text-gray-600 mb-1">Landlord's Notes:</p>
+                                <p class="text-sm text-gray-800">{{ selected_reservation.visit_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Move-in Information -->
+                        {% if selected_reservation.move_in_date %}
+                        <div class="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p class="font-semibold text-green-900 mb-2 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                Move-in Date Set
+                            </p>
+                            <p><span class="text-gray-600">📅 Move-in:</span> <span class="font-medium text-lg">{{ selected_reservation.move_in_date|date:"F j, Y" }}</span></p>
+                            {% if selected_reservation.move_in_notes %}
+                            <div class="mt-2 p-2 bg-white rounded border border-green-100">
+                                <p class="text-xs text-gray-600 mb-1">Move-in Instructions:</p>
+                                <p class="text-sm text-gray-800 whitespace-pre-wrap">{{ selected_reservation.move_in_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Move-in Checklist -->
+                        {% if selected_reservation.status == 'confirmed' and selected_reservation.has_paid_reservation %}
+                            {% if not selected_reservation.visit_scheduled or selected_reservation.visit_status == 'completed' %}
+                            <!-- Show checklist if: no visit scheduled OR visit completed -->
+                            <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                <p class="font-semibold text-purple-900 mb-3 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                    </svg>
+                                    Move-in Checklist
+                                </p>
+                                <div class="space-y-2">
+                                <label class="flex items-center cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                                    <input type="checkbox" 
+                                           class="checklist-item w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                                           data-reservation="{{ selected_reservation.id }}"
+                                           data-item="keys_received"
+                                           {% if selected_reservation.checklist_keys_received %}checked{% endif %}>
+                                    <span class="ml-3 text-sm text-gray-800">🔑 Keys Received</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                                    <input type="checkbox" 
+                                           class="checklist-item w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                                           data-reservation="{{ selected_reservation.id }}"
+                                           data-item="property_inspected"
+                                           {% if selected_reservation.checklist_property_inspected %}checked{% endif %}>
+                                    <span class="ml-3 text-sm text-gray-800">🏠 Property Inspected</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                                    <input type="checkbox" 
+                                           class="checklist-item w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                                           data-reservation="{{ selected_reservation.id }}"
+                                           data-item="inventory_checked"
+                                           {% if selected_reservation.checklist_inventory_checked %}checked{% endif %}>
+                                    <span class="ml-3 text-sm text-gray-800">📋 Inventory Checked</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                                    <input type="checkbox" 
+                                           class="checklist-item w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                                           data-reservation="{{ selected_reservation.id }}"
+                                           data-item="rules_acknowledged"
+                                           {% if selected_reservation.checklist_rules_acknowledged %}checked{% endif %}>
+                                    <span class="ml-3 text-sm text-gray-800">📜 House Rules Acknowledged</span>
+                                </label>
+                            </div>
+                            {% if selected_reservation.checklist_completed_at %}
+                            <div class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-center">
+                                <p class="text-sm font-semibold text-green-800">✅ Checklist Completed!</p>
+                                <p class="text-xs text-green-700">{{ selected_reservation.checklist_completed_at|date:"M d, Y g:i A" }}</p>
+                            </div>
+                            {% endif %}
+                            </div>
+                            {% else %}
+                            <!-- Visit must be completed first -->
+                            <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p class="font-semibold text-yellow-900 mb-2 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Visit Scheduled First
+                                </p>
+                                <p class="text-sm text-yellow-800">
+                                    Please complete your scheduled visit before accessing the move-in checklist. 
+                                    The landlord will mark the visit as completed after you've seen the property.
+                                </p>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <!-- Old Visit System (Backward Compatibility) -->
+                        {% if selected_reservation.visit and not selected_reservation.visit_scheduled %}
+                        <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <p class="font-semibold text-purple-900 mb-2">✓ Property Visit Details</p>
+                            <p><span class="text-gray-600">Visit Date:</span> {{ selected_reservation.visit.visit_date|date:"F j, Y" }}</p>
+                            <p><span class="text-gray-600">Time Slot:</span> {{ selected_reservation.visit.get_time_slot_display }}</p>
+                            <p><span class="text-gray-600">Visit Status:</span> 
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if selected_reservation.visit.status == 'completed' %}bg-green-100 text-green-800
+                                    {% elif selected_reservation.visit.status == 'confirmed' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ selected_reservation.visit.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                        {% endif %}
+                        
+                        <p class="mt-3"><span class="text-gray-600">Landlord:</span> {{ selected_reservation.dorm.landlord.get_full_name }}</p>
                         <p><span class="text-gray-600">Contact:</span> {{ selected_reservation.dorm.landlord.email }}</p>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
@@ -611,6 +1001,53 @@
         return cookieValue;
     }
 
+    // SIMPLE RESERVATION SELECTION FUNCTION
+    function selectReservation(reservationId) {
+        if (!reservationId) return;
+        
+        // On mobile, hide sidebar after selection
+        if (window.innerWidth < 768) {
+            hideMobileReservations();
+        }
+        
+        // Reload the page with the selected reservation
+        window.location.href = `?selected_reservation=${reservationId}`;
+    }
+
+    // SIMPLE MOBILE RESERVATIONS SHOW FUNCTION
+    function showMobileReservations() {
+        console.log('showMobileReservations called');
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        if (mobileReservationsSidebar) {
+            console.log('Sidebar found, showing...');
+            mobileReservationsSidebar.classList.remove('hidden');
+            setTimeout(function() {
+                const sidebarContent = mobileReservationsSidebar.querySelector('.absolute.left-0');
+                if (sidebarContent) {
+                    sidebarContent.classList.remove('-translate-x-full');
+                }
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        } else {
+            console.log('Sidebar not found!');
+        }
+    }
+
+    // SIMPLE MOBILE RESERVATIONS HIDE FUNCTION
+    function hideMobileReservations() {
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        if (mobileReservationsSidebar) {
+            const sidebarContent = mobileReservationsSidebar.querySelector('.absolute.left-0');
+            if (sidebarContent) {
+                sidebarContent.classList.add('-translate-x-full');
+            }
+            setTimeout(() => {
+                mobileReservationsSidebar.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+    }
+
     // Auto-scroll to bottom of messages
     function scrollToBottom() {
         const messagesContainer = document.getElementById('messages-container');
@@ -619,14 +1056,6 @@
         }
     }
     scrollToBottom();
-
-    // Handle reservation selection
-    document.querySelectorAll('.reservation-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const reservationId = this.dataset.reservationId;
-            window.location.href = `?selected_reservation=${reservationId}`;
-        });
-    });
 
     // Handle chat form submission
     const chatForm = document.getElementById('chat-form');
@@ -756,7 +1185,7 @@
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': getCookie('csrftoken')
             }
         })
         .then(response => response.json())
@@ -897,7 +1326,7 @@
 
     // Keyboard navigation
     document.addEventListener('keydown', function(e) {
-        if (document.getElementById('imagePreviewModal').classList.contains('hidden')) return;
+        if (document.getElementById('imagePreviewModal').style.display === 'none') return;
         
         switch(e.key) {
             case 'ArrowLeft':
@@ -931,8 +1360,7 @@
     const detailsPanel = document.getElementById('details-panel');
     const toggleDetailsBtn = document.getElementById('toggle-details-btn');
     const closeDetailsBtn = document.getElementById('close-details');
-    const mainContainer = document.getElementById('main-layout');
-    const mobileDetailsToggle = document.getElementById('mobile-details-toggle');
+    const mainContainer = document.querySelector('.flex.h-full.gap-4');
     let detailsVisible = true;
 
     function toggleDetails() {
@@ -956,11 +1384,9 @@
             if (detailsVisible) {
                 detailsPanel.classList.remove('translate-x-full', 'shadow-none');
                 detailsPanel.classList.add('shadow-lg');
-                mainContainer.style.marginRight = '20rem';
             } else {
                 detailsPanel.classList.add('translate-x-full', 'shadow-none');
                 detailsPanel.classList.remove('shadow-lg');
-                mainContainer.style.marginRight = '0';
             }
         }
     }
@@ -970,20 +1396,16 @@
         const isMobile = window.innerWidth < 768; // md breakpoint
         
         if (isMobile) {
-            // On mobile: hide panel by default, show toggle button
+            // On mobile: hide panel by default
             detailsVisible = false;
             detailsPanel.classList.add('translate-x-full', 'shadow-none');
             detailsPanel.classList.remove('shadow-lg');
-            mainContainer.style.marginRight = '0';
-            mobileDetailsToggle.classList.remove('hidden');
             document.body.style.overflow = '';
         } else {
-            // On desktop: show panel, hide toggle button
+            // On desktop: show panel
             detailsVisible = true;
             detailsPanel.classList.remove('translate-x-full', 'shadow-none');
             detailsPanel.classList.add('shadow-lg');
-            mainContainer.style.marginRight = '20rem';
-            mobileDetailsToggle.classList.add('hidden');
             document.body.style.overflow = '';
         }
     }
@@ -991,10 +1413,11 @@
     // Event listeners
     if (toggleDetailsBtn) toggleDetailsBtn.addEventListener('click', toggleDetails);
     if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', toggleDetails);
-    if (mobileDetailsToggle) mobileDetailsToggle.addEventListener('click', toggleDetails);
 
     // Initialize on load
-    initializePanelState();
+    if (detailsPanel) {
+        initializePanelState();
+    }
 
     // Handle window resize
     let resizeTimeout;
@@ -1032,6 +1455,25 @@
 
     function closeCancelModal() {
         document.getElementById('cancelModal').classList.add('hidden');
+        // Reset form
+        document.getElementById('cancellation_reason_select').value = '';
+        document.getElementById('otherReasonDiv').classList.add('hidden');
+        document.getElementById('cancellation_reason_other').value = '';
+    }
+
+    function toggleOtherReason() {
+        const select = document.getElementById('cancellation_reason_select');
+        const otherDiv = document.getElementById('otherReasonDiv');
+        const otherTextarea = document.getElementById('cancellation_reason_other');
+        
+        if (select.value === 'Other') {
+            otherDiv.classList.remove('hidden');
+            otherTextarea.required = true;
+        } else {
+            otherDiv.classList.add('hidden');
+            otherTextarea.required = false;
+            otherTextarea.value = '';
+        }
     }
 
     // Close modal when clicking outside
@@ -1041,9 +1483,312 @@
             closeCancelModal();
         }
     }
+
+    // ====================
+    // MOBILE FUNCTIONALITY
+    // ====================
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile Reservations Sidebar
+        const mobileToggle = document.getElementById('mobile-reservations-toggle');
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileShowReservations = document.getElementById('mobile-show-reservations');
+        const closeMobileSidebar = document.getElementById('close-mobile-sidebar');
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        
+        // Event listeners for mobile sidebar
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showMobileReservations();
+            });
+        }
+        
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showMobileReservations();
+            });
+        }
+        
+        if (mobileShowReservations) {
+            console.log('Mobile show button found, attaching listener');
+            mobileShowReservations.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('Mobile show button clicked via listener');
+                showMobileReservations();
+            });
+        } else {
+            console.log('Mobile show button NOT found');
+        }
+        
+        if (closeMobileSidebar) {
+            closeMobileSidebar.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hideMobileReservations();
+            });
+        }
+        
+        // Close when clicking overlay
+        if (mobileReservationsSidebar) {
+            const overlay = mobileReservationsSidebar.querySelector('.absolute.inset-0.bg-black\\/50');
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    hideMobileReservations();
+                });
+            }
+        }
+        
+        // Search Functionality
+        const reservationSearch = document.getElementById('reservation-search');
+        const reservationSearchMobile = document.getElementById('reservation-search-mobile');
+        
+        function setupSearch(searchInput, itemsSelector) {
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    const reservationItems = document.querySelectorAll(itemsSelector);
+                    
+                    reservationItems.forEach(item => {
+                        const dormName = item.dataset.dormName || '';
+                        const landlordName = item.dataset.landlordName || '';
+                        const text = item.textContent.toLowerCase();
+                        
+                        if (searchTerm === '' || 
+                            dormName.includes(searchTerm) || 
+                            landlordName.includes(searchTerm) ||
+                            text.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        }
+        
+        setupSearch(reservationSearch, '.reservation-item');
+        setupSearch(reservationSearchMobile, '.reservation-item-mobile');
+        
+        // Filter Functionality
+        function setupFilter(filterButtonsSelector, clearFilterBtnId, itemsSelector) {
+            let activeFilter = null;
+            const filterButtons = document.querySelectorAll(filterButtonsSelector);
+            const clearFiltersBtn = document.getElementById(clearFilterBtnId);
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const status = this.dataset.status;
+                    
+                    if (activeFilter === status) {
+                        activeFilter = null;
+                        this.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                        showAllReservations(itemsSelector);
+                    } else {
+                        filterButtons.forEach(btn => {
+                            btn.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                        });
+                        
+                        activeFilter = status;
+                        this.classList.add('bg-blue-50', 'border', 'border-blue-200');
+                        filterReservationsByStatus(status, itemsSelector);
+                    }
+                });
+            });
+            
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', function() {
+                    activeFilter = null;
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                    });
+                    showAllReservations(itemsSelector);
+                });
+            }
+            
+            function filterReservationsByStatus(status, selector) {
+                const reservationItems = document.querySelectorAll(selector);
+                reservationItems.forEach(item => {
+                    if (item.dataset.status === status) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+            
+            function showAllReservations(selector) {
+                const reservationItems = document.querySelectorAll(selector);
+                reservationItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+        }
+        
+        setupFilter('.filter-status', 'clear-filters', '.reservation-item');
+        setupFilter('.filter-status-mobile', 'clear-filters-mobile', '.reservation-item-mobile');
+        
+        // Scroll to bottom after everything is loaded
+        setTimeout(scrollToBottom, 500);
+    });
+
+    // Close message alerts
+    document.querySelectorAll('.close-message').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.message-alert').remove();
+        });
+    });
+    
+    // Handle checklist item updates
+    document.querySelectorAll('.checklist-item').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const reservationId = this.dataset.reservation;
+            const item = this.dataset.item;
+            const checked = this.checked;
+            
+            fetch(`/dormitory/reservation/${reservationId}/update-checklist/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `item=${item}&checked=${checked}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.all_completed) {
+                        // Show completion message
+                        alert('🎉 Move-in checklist completed! The reservation is now marked as completed.');
+                        location.reload(); // Reload to show updated status
+                    }
+                } else {
+                    alert('Error updating checklist: ' + (data.error || 'Unknown error'));
+                    this.checked = !checked; // Revert checkbox
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update checklist');
+                this.checked = !checked; // Revert checkbox
+            });
+        });
+    });
 </script>
 
 <style>
+    /* RESPONSIVE STYLES */
+    
+    /* Mobile sidebars */
+    #mobile-reservations-sidebar {
+        display: none;
+        z-index: 9999 !important;
+    }
+    
+    #mobile-reservations-sidebar:not(.hidden) {
+        display: block;
+    }
+    
+    /* Smooth transitions */
+    .absolute.left-0 {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    /* Ensure burger buttons are visible on mobile */
+    @media (max-width: 767px) {
+        #mobile-reservations-toggle,
+        #mobile-menu-toggle {
+            display: flex !important;
+        }
+        
+        #reservations-sidebar {
+            display: none !important;
+        }
+        
+        #details-panel {
+            width: 100vw !important;
+            top: 4rem !important;
+            height: calc(100vh - 4rem) !important;
+            z-index: 100 !important;
+            border-radius: 0 !important;
+        }
+        
+        #details-panel .sticky {
+            top: 0 !important;
+        }
+        
+        #close-details {
+            pointer-events: auto !important;
+            z-index: 102 !important;
+        }
+        
+        #mobile-show-reservations {
+            position: relative;
+            z-index: 10;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        #mobile-reservations-toggle,
+        #mobile-menu-toggle,
+        #mobile-show-reservations {
+            display: none !important;
+        }
+        
+        #reservations-sidebar {
+            display: flex !important;
+        }
+    }
+
+    /* Textarea auto-resize */
+    #message-input {
+        min-height: 44px;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    /* Make reservation items obviously clickable */
+    .reservation-item, .reservation-item-mobile {
+        cursor: pointer !important;
+        transition: all 0.2s ease;
+    }
+
+    .reservation-item:hover, .reservation-item-mobile:hover {
+        background-color: #eff6ff !important;
+        transform: translateY(-1px);
+    }
+
+    .reservation-item:active, .reservation-item-mobile:active {
+        transform: translateY(0);
+    }
+    
+    /* Image Preview Modal */
+    #imagePreviewModal {
+        background-color: black !important;
+        z-index: 9999 !important;
+    }
+    
+    #prevImage, #nextImage {
+        transform: translateY(-50%);
+        transition: opacity 0.2s;
+    }
+    
+    #prevImage:hover, #nextImage:hover {
+        opacity: 0.8;
+    }
+
+    /* New message toast */
+    .opacity-0 { opacity: 0; }
+    .opacity-100 { opacity: 1; }
+    .translate-y-3 { transform: translateY(0.75rem); }
+    .translate-y-0 { transform: translateY(0); }
+    .transition-base {
+        transition: opacity .2s ease, transform .2s ease;
+    }
+
     /* Smooth transitions for panel */
     .transform {
         --tw-translate-x: 0;
@@ -1066,57 +1811,30 @@
     .z-20 { z-index: 20; }
     .z-30 { z-index: 30; }
     .z-40 { z-index: 40; }
+    .z-50 { z-index: 50; }
 
-    #imagePreviewModal {
-        background-color: black !important;
-    }
+#messages-container {
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+}
 
-    #prevImage, #nextImage {
-        transform: translateY(-50%);
-        transition: opacity 0.2s;
-    }
+/* Make sure the scrollbar looks good */
+#messages-container::-webkit-scrollbar {
+    width: 6px;
+}
 
-    #prevImage:hover, #nextImage:hover {
-        opacity: 0.8;
-    }
+#messages-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
 
-    /* New message toast */
-    .opacity-0 { opacity: 0; }
-    .opacity-100 { opacity: 1; }
-    .translate-y-3 { transform: translateY(0.75rem); }
-    .translate-y-0 { transform: translateY(0); }
-    .transition-base {
-        transition: opacity .2s ease, transform .2s ease;
-    }
+#messages-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
 
-    /* Mobile responsive improvements */
-    @media (max-width: 767px) {
-        #details-panel {
-            width: 100vw !important;
-            top: 0 !important;
-            height: 100vh !important;
-            z-index: 50;
-        }
-        
-        .reservation-item {
-            padding: 0.75rem;
-        }
-        
-        /* Better touch targets on mobile */
-        button, .cursor-pointer {
-            min-height: 44px;
-        }
-        
-        /* Improve text readability */
-        .text-xs {
-            font-size: 0.75rem;
-        }
-    }
-
-    @media (min-width: 768px) {
-        #mobile-details-toggle {
-            display: none !important;
-        }
-    }
+#messages-container::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
 </style>
-{% endblock %} 
+{% endblock %}

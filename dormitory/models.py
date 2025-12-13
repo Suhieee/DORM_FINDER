@@ -66,7 +66,27 @@ class Dorm(models.Model):
     def get_average_rating(self):
         average = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
         return round(average, 1) if average else 0
-
+    # ADD THIS METHOD HERE:
+    def is_reservable(self):
+        """
+        Check if dorm can be reserved.
+        For whole_unit: Check if there's an active reservation (confirmed or occupied)
+        For other types: Use existing available_beds logic
+        """
+        if not self.available or self.approval_status != 'approved':
+            return False
+        
+        if self.accommodation_type == 'whole_unit':
+            # Check if there's any active reservation
+            # Active means: confirmed (payment verified) or occupied (tenant moved in)
+            # 'completed' means tenant moved out, so dorm is available again
+            active_reservation = self.reservations.filter(
+                status__in=['confirmed', 'occupied']  # Check for both active statuses
+            ).exists()
+            return not active_reservation
+        else:
+            # For bedspace/room_sharing, use available_beds count
+            return self.available_beds > 0
 
     def __str__(self):
         return f"{self.name} - {self.landlord.username} ({self.landlord.contact_number})"
@@ -288,35 +308,172 @@ class Message(models.Model):
             return self.attachment.name.split('/')[-1]
         return None
 
+class DormVisit(models.Model):
+    """Visit scheduling system - students schedule visits before making reservations"""
+    STATUS_CHOICES = (
+        ('pending', 'Pending Landlord Confirmation'),
+        ('confirmed', 'Visit Confirmed'),
+        ('completed', 'Visit Completed'),
+        ('cancelled', 'Cancelled'),
+        ('declined', 'Declined by Landlord'),
+        ('no_show', 'Student Did Not Show Up'),
+    )
+    
+    TIME_SLOT_CHOICES = (
+        ('09:00-11:00', '9:00 AM - 11:00 AM'),
+        ('11:00-13:00', '11:00 AM - 1:00 PM'),
+        ('13:00-15:00', '1:00 PM - 3:00 PM'),
+        ('15:00-17:00', '3:00 PM - 5:00 PM'),
+        ('17:00-19:00', '5:00 PM - 7:00 PM'),
+    )
+    
+    dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='visits')
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, 
+                                limit_choices_to={'user_type': 'tenant'},
+                                related_name='dorm_visits')
+    visit_date = models.DateField()
+    time_slot = models.CharField(max_length=20, choices=TIME_SLOT_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    student_message = models.TextField(blank=True, null=True, 
+                                       help_text="Message from student to landlord")
+    landlord_notes = models.TextField(blank=True, null=True,
+                                      help_text="Internal notes from landlord")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        db_table = 'dormitory_visit'
+    
+    def clean(self):
+        from datetime import timedelta
+        
+        # Only validate if we have the required fields
+        if not self.visit_date:
+            return
+        
+        # Validate visit date is within next 7 days
+        today = timezone.now().date()
+        max_date = today + timedelta(days=7)
+        
+        if self.visit_date < today:
+            raise ValidationError("Visit date cannot be in the past.")
+        
+        if self.visit_date > max_date:
+            raise ValidationError("Visit date must be within the next 7 days.")
+        
+        # Check if time slot is already booked (only if dorm is set)
+        if self.dorm_id and self.time_slot:
+            conflicting_visits = DormVisit.objects.filter(
+                dorm=self.dorm,
+                visit_date=self.visit_date,
+                time_slot=self.time_slot,
+                status__in=['pending', 'confirmed']
+            ).exclude(pk=self.pk if self.pk else None)
+            
+            if conflicting_visits.exists():
+                raise ValidationError("This time slot is already booked.")
+    
+    def save(self, *args, **kwargs):
+        # Only run validation if we have the minimum required fields
+        if self.dorm_id and self.visit_date and self.time_slot:
+            self.full_clean()  # Run validation
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.student.username} visiting {self.dorm.name} on {self.visit_date}"
+    
+    @property
+    def can_convert_to_reservation(self):
+        """Check if this visit can be converted to a reservation"""
+        return self.status == 'completed' and not hasattr(self, 'reservation')
+    
+    @property
+    def is_upcoming(self):
+        """Check if visit is in the future"""
+        return self.visit_date >= timezone.now().date() and self.status in ['pending', 'confirmed']
+
+
 class Reservation(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending Confirmation'),
+        ('pending_payment', 'Awaiting Payment'),
         ('confirmed', 'Confirmed'),
-        ('completed', 'Transaction Completed'),
+        ('occupied', 'Tenant Checked In'),
+        ('completed', 'Tenant Moved Out'),
         ('declined', 'Declined'),
         ('cancelled', 'Cancelled'),
+    )
+    
+    VISIT_STATUS_CHOICES = (
+        ('not_scheduled', 'Not Scheduled'),
+        ('scheduled', 'Visit Scheduled'),
+        ('completed', 'Visit Completed'),
+        ('cancelled', 'Visit Cancelled'),
+    )
+    
+    TIME_SLOT_CHOICES = (
+        ('09:00-11:00', '9:00 AM - 11:00 AM'),
+        ('11:00-13:00', '11:00 AM - 1:00 PM'),
+        ('13:00-15:00', '1:00 PM - 3:00 PM'),
+        ('15:00-17:00', '3:00 PM - 5:00 PM'),
+        ('17:00-19:00', '5:00 PM - 7:00 PM'),
     )
 
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='reservations')
     tenant = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'tenant'})
     room = models.ForeignKey('Room', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    visit = models.OneToOneField('DormVisit', on_delete=models.SET_NULL, 
+                                  null=True, blank=True,
+                                  related_name='reservation',
+                                  help_text="The visit that led to this reservation")
     reservation_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_proof = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
     payment_submitted_at = models.DateTimeField(null=True, blank=True)
+    payment_deadline = models.DateTimeField(null=True, blank=True,
+                                           help_text="Deadline for payment (48 hours from reservation)")
+    is_payment_overdue = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True)
     has_paid_reservation = models.BooleanField(default=False)
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True, help_text='Reason for cancellation if the reservation was cancelled')
+    
+    # Visit scheduling fields
+    visit_scheduled = models.BooleanField(default=False, help_text="Whether landlord scheduled a visit")
+    visit_status = models.CharField(max_length=20, choices=VISIT_STATUS_CHOICES, default='not_scheduled')
+    visit_date = models.DateField(null=True, blank=True, help_text="Scheduled visit date")
+    visit_time_slot = models.CharField(max_length=20, choices=TIME_SLOT_CHOICES, null=True, blank=True)
+    visit_notes = models.TextField(blank=True, help_text="Landlord notes about the visit")
+    visit_completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Move-in fields
+    move_in_date = models.DateField(null=True, blank=True, help_text="Scheduled move-in date")
+    move_in_notes = models.TextField(blank=True, help_text="Move-in instructions from landlord")
+    
+    # Move-in checklist
+    checklist_keys_received = models.BooleanField(default=False)
+    checklist_property_inspected = models.BooleanField(default=False)
+    checklist_inventory_checked = models.BooleanField(default=False)
+    checklist_rules_acknowledged = models.BooleanField(default=False)
+    checklist_completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'dormitory_reservation'
 
     def save(self, *args, **kwargs):
+        from datetime import timedelta
+        
         if not self.id:
             self.created_at = timezone.now()
+            # Set payment deadline for pending_payment status
+            if self.status == 'pending_payment' and not self.payment_deadline:
+                self.payment_deadline = timezone.now() + timedelta(hours=48)
+        
         if self.status == 'completed' and not self.completed_at:
             self.completed_at = timezone.now()
         super().save(*args, **kwargs)
@@ -331,6 +488,23 @@ class Reservation(models.Model):
             self.status in ['confirmed', 'completed'] and
             not hasattr(self, 'review')
         )
+    
+    @property
+    def hours_until_payment_deadline(self):
+        """Calculate hours remaining until payment deadline"""
+        if not self.payment_deadline:
+            return None
+        
+        remaining = self.payment_deadline - timezone.now()
+        return max(0, remaining.total_seconds() / 3600)  # Convert to hours
+    
+    @property
+    def payment_deadline_passed(self):
+        """Check if payment deadline has passed"""
+        if not self.payment_deadline:
+            return False
+        
+        return timezone.now() > self.payment_deadline
 
 class Review(models.Model):
     RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]  # Rating from 1 to 5
@@ -484,3 +658,133 @@ class RoomImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.room.name} in {self.room.dorm.name}"
+
+
+# ============================================
+# Transaction Log Model
+# ============================================
+class TransactionLog(models.Model):
+    """
+    Tracks all transactions and activities for landlords
+    """
+    TRANSACTION_TYPES = (
+        ('reservation_created', 'Reservation Created'),
+        ('reservation_confirmed', 'Reservation Confirmed'),
+        ('reservation_cancelled', 'Reservation Cancelled'),
+        ('payment_received', 'Payment Received'),
+        ('payment_verified', 'Payment Verified'),
+        ('payment_rejected', 'Payment Rejected'),
+        ('visit_scheduled', 'Visit Scheduled'),
+        ('visit_completed', 'Visit Completed'),
+        ('visit_cancelled', 'Visit Cancelled'),
+        ('tenant_moved_in', 'Tenant Checked In'),
+        ('tenant_moved_out', 'Tenant Moved Out'),
+        ('review_received', 'Review Received'),
+        ('dorm_created', 'Dorm Listed'),
+        ('dorm_updated', 'Dorm Updated'),
+        ('message_received', 'Message Received'),
+    )
+    
+    STATUS_CHOICES = (
+        ('success', 'Success'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    landlord = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='transaction_logs',
+        limit_choices_to={'user_type': 'landlord'}
+    )
+    transaction_type = models.CharField(max_length=30, choices=TRANSACTION_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='success')
+    dorm = models.ForeignKey('Dorm', on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_logs')
+    reservation = models.ForeignKey('Reservation', on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_logs')
+    tenant = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tenant_transaction_logs',
+        limit_choices_to={'user_type': 'tenant'}
+    )
+    
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Transaction amount if applicable")
+    description = models.TextField(help_text="Description of the transaction")
+    metadata = models.JSONField(default=dict, blank=True, help_text="Additional transaction details")
+    
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['landlord', '-created_at']),
+            models.Index(fields=['transaction_type', '-created_at']),
+            models.Index(fields=['dorm', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.landlord.get_full_name()} - {self.get_transaction_type_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def icon(self):
+        """Return icon class based on transaction type"""
+        icons = {
+            'reservation_created': 'bi-calendar-plus',
+            'reservation_confirmed': 'bi-check-circle',
+            'reservation_cancelled': 'bi-x-circle',
+            'payment_received': 'bi-cash-coin',
+            'payment_verified': 'bi-check2-circle',
+            'payment_rejected': 'bi-x-octagon',
+            'visit_scheduled': 'bi-calendar-event',
+            'visit_completed': 'bi-calendar-check',
+            'visit_cancelled': 'bi-calendar-x',
+            'tenant_moved_in': 'bi-house-door',
+            'tenant_moved_out': 'bi-house-door-fill',
+            'review_received': 'bi-star-fill',
+            'dorm_created': 'bi-building-add',
+            'dorm_updated': 'bi-pencil-square',
+            'message_received': 'bi-chat-dots',
+        }
+        return icons.get(self.transaction_type, 'bi-info-circle')
+    
+    @property
+    def color_class(self):
+        """Return color class based on transaction type"""
+        colors = {
+            'reservation_created': 'text-blue-600 bg-blue-50',
+            'reservation_confirmed': 'text-green-600 bg-green-50',
+            'reservation_cancelled': 'text-red-600 bg-red-50',
+            'payment_received': 'text-green-600 bg-green-50',
+            'payment_verified': 'text-green-700 bg-green-100',
+            'payment_rejected': 'text-red-600 bg-red-50',
+            'visit_scheduled': 'text-blue-600 bg-blue-50',
+            'visit_completed': 'text-green-600 bg-green-50',
+            'visit_cancelled': 'text-gray-600 bg-gray-50',
+            'tenant_moved_in': 'text-purple-600 bg-purple-50',
+            'tenant_moved_out': 'text-orange-600 bg-orange-50',
+            'review_received': 'text-yellow-600 bg-yellow-50',
+            'dorm_created': 'text-indigo-600 bg-indigo-50',
+            'dorm_updated': 'text-blue-600 bg-blue-50',
+            'message_received': 'text-blue-600 bg-blue-50',
+        }
+        return colors.get(self.transaction_type, 'text-gray-600 bg-gray-50')
+    
+    @classmethod
+    def log_transaction(cls, landlord, transaction_type, description, dorm=None, reservation=None, tenant=None, amount=None, status='success', metadata=None):
+        """
+        Helper method to create a transaction log entry
+        """
+        return cls.objects.create(
+            landlord=landlord,
+            transaction_type=transaction_type,
+            status=status,
+            dorm=dorm,
+            reservation=reservation,
+            tenant=tenant,
+            amount=amount,
+            description=description,
+            metadata=metadata or {}
+        )

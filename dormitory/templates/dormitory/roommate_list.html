@@ -260,7 +260,7 @@
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 relative mx-2 my-8">
         <button onclick="closeReportModal()" class="absolute top-4 right-6 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
         <h2 class="text-2xl font-bold mb-6">Report User</h2>
-        <form id="reportUserForm" method="post" action="#" class="space-y-6">
+        <form id="reportUserForm" method="post" action="#" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             <div>
                 <label for="id_reason" class="block font-semibold text-blue-700 mb-1">What are you reporting about?</label>
@@ -281,6 +281,11 @@
             <div>
                 <label for="id_evidence" class="block font-semibold text-blue-700 mb-1">Additional Evidence (Optional)</label>
                 <textarea name="evidence" id="id_evidence" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Any additional evidence or context (optional)" rows="3"></textarea>
+            </div>
+            <div>
+                <label for="id_evidence_image" class="block font-semibold text-blue-700 mb-1">Upload Screenshot (Optional)</label>
+                <input type="file" name="evidence_image" accept="image/*" id="id_evidence_image" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Upload a screenshot or image as evidence (PNG, JPG, max 5MB)</p>
             </div>
             <input type="hidden" name="reported_user_id" id="reported_user_id" value="">
             <button type="submit" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold text-lg">Submit Report</button>

@@ -57,6 +57,11 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # ← ADD THIS LI
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Session timeout settings (15 minutes of inactivity)
+SESSION_COOKIE_AGE = 900  # 15 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request to reset timeout
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session ends when browser closes
 # Application definition
 
 INSTALLED_APPS = [
@@ -84,9 +89,14 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.SessionTimeoutMiddleware',  # Session timeout warning
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Rate limiting cache (for django-ratelimit)
+RATELIMIT_ENABLE = True  # Can be disabled in testing
+RATELIMIT_USE_CACHE = 'default'  # Use default cache for rate limiting
 
 ROOT_URLCONF = 'smart_dorm_finder.urls'
 

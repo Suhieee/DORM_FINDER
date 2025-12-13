@@ -18,3 +18,4 @@ urlpatterns = [
 ]
 
 handler404 = 'smart_dorm_finder.views.handler404'
+handler429 = 'smart_dorm_finder.views.handler429'  # Rate limit exceeded

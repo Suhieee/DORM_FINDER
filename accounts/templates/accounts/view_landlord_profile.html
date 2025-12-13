@@ -48,22 +48,31 @@
             </div>
             <div class="flex-1 flex flex-col md:flex-row md:items-end md:justify-between w-full">
                 <div class="mt-4 md:mt-0">
-                    <h1 class="text-3xl font-bold text-blue-900 mb-2 flex items-center gap-3">
+                    <h1 class="text-3xl font-bold text-blue-900 mb-2 flex items-center gap-2 flex-wrap">
                         {{ profile_user.get_full_name|default:profile_user.username }}
                         {% if profile_user.user_type == 'landlord' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 ml-2">Landlord</span>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">Landlord</span>
                         {% elif profile_user.user_type == 'tenant' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 ml-2">tenant</span>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">Tenant</span>
                         {% endif %}
+                        
+                        <!-- Email Verification Badge -->
                         {% if user_profile and user_profile.is_verified %}
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300 ml-2">
-                                <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Verified
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300">
+                                <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                Email Verified
                             </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-300 ml-2">
-                                <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
-                                Not Verified
+                        {% endif %}
+                        
+                        <!-- Identity Verification Badge (for landlords only) -->
+                        {% if profile_user.user_type == 'landlord' and profile_user.is_identity_verified %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                Verified Landlord
                             </span>
                         {% endif %}
                     </h1>
@@ -137,7 +146,7 @@
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 relative mx-2 my-8">
         <button onclick="closeReportModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
         <h2 class="text-2xl font-bold mb-6">Report User</h2>
-        <form id="reportUserForm" method="post" action="{% url 'accounts:report_user' profile_user.id %}" class="space-y-6">
+        <form id="reportUserForm" method="post" action="{% url 'accounts:report_user' profile_user.id %}" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             <div>
                 <label for="id_reason" class="block font-semibold text-blue-700 mb-1">What are you reporting about?</label>
@@ -159,6 +168,11 @@
                 {% if report_form.evidence.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ report_form.evidence.errors.0 }}</p>
                 {% endif %}
+            </div>
+            <div>
+                <label for="id_evidence_image" class="block font-semibold text-blue-700 mb-1">Upload Screenshot (Optional)</label>
+                <input type="file" name="evidence_image" accept="image/*" id="id_evidence_image" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Upload a screenshot or image as evidence (PNG, JPG, max 5MB)</p>
             </div>
             <button type="submit" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold text-lg">Submit Report</button>
         </form>

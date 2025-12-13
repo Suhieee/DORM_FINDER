@@ -19,9 +19,13 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- New message toast -->
+<div id="newMessageToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white rounded-full px-3 py-1 shadow-lg transition-base opacity-0 translate-y-3 z-40">
+    <span id="newMessageCount" class="text-sm font-semibold">+1</span>
+    <span class="text-sm ml-1">new message</span>
+</div>
 {% endif %}
-<!-- Toast Notification -->
-<div id="reservationToast" class="fixed top-6 right-6 z-50 hidden px-6 py-4 rounded-xl shadow-lg text-white text-lg font-semibold transition-all duration-300 transform translate-x-full"></div>
 
 <!-- Image Preview Modal -->
 <div id="imagePreviewModal" class="fixed inset-0 bg-black/100 z-50 hidden flex items-center justify-center">
@@ -50,12 +54,6 @@
             </div>
         </div>
 
-<!-- New message toast -->
-<div id="newMessageToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white rounded-full px-3 py-1 shadow-lg transition-base opacity-0 translate-y-3 z-40">
-    <span id="newMessageCount" class="text-sm font-semibold">+1</span>
-    <span class="text-sm ml-1">new message</span>
-    </div>
-
         <!-- Close Button -->
         <button onclick="closeImagePreview()" class="absolute top-4 right-4 p-2 text-white hover:text-gray-300">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,15 +70,163 @@
     </div>
 </div>
 
-<div class="container-fluid h-screen bg-gray-100">
-    <div id="main-layout" class="flex h-[calc(100vh-4rem)]" style="margin-right: 20rem;">
-        <!-- Left Sidebar - Reservations List -->
-        <div class="w-1/4 bg-white border-r flex-shrink-0 z-20 flex flex-col h-screen">
+<div class="h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden p-4">
+    <!-- Mobile Reservations Toggle Button -->
+    <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+        </svg>
+    </button>
+
+    <!-- Mobile Reservations Sidebar (Overlay) -->
+    <div id="mobile-reservations-sidebar" class="fixed inset-0 hidden md:hidden" style="z-index: 9999; padding-top: 4rem;">
+        <div class="absolute inset-0 bg-black/50" onclick="hideMobileReservations()" style="pointer-events: auto; top: 4rem;"></div>
+        <div class="absolute left-0 w-80 bg-white shadow-xl transform transition-transform duration-300 -translate-x-full" style="pointer-events: auto; top: 4rem; bottom: 0; height: calc(100vh - 4rem);">
+            <!-- Mobile Header -->
+            <div class="sticky top-0 p-4 bg-gradient-to-r from-blue-500 to-blue-600 z-10">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white">Reservations</h2>
+                    <button id="close-mobile-sidebar" class="text-white p-2 hover:bg-white/20 rounded-lg transition-colors" style="pointer-events: auto;">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile Search Bar -->
+            <div class="p-4 border-b">
+                <div class="relative">
+                    <input type="text" id="reservation-search-mobile" placeholder="Search reservations" 
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           style="pointer-events: auto;">
+                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Mobile Status Filters -->
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
+                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters-mobile" style="pointer-events: auto;">Clear</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Pending</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                            {{ pending_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Confirmed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                            {{ confirmed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Completed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {{ completed_count }}
+                        </span>
+                    </div>
+                    <div class="filter-status-mobile col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined" style="pointer-events: auto;">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Declined</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                            {{ declined_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Reservations List -->
+            <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 400px); pointer-events: auto;">
+                {% for reservation in reservations %}
+                <div class="reservation-item reservation-item-mobile p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors duration-200 {% if selected_reservation and selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-500{% endif %}"
+                     data-reservation-id="{{ reservation.id }}"
+                     data-tenant-name="{{ reservation.tenant.get_full_name|lower }}"
+                     data-dorm-name="{{ reservation.dorm.name|lower }}"
+                     data-status="{{ reservation.status }}"
+                     onclick="selectReservation('{{ reservation.id }}')">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity onclick-prevent"
+                                 onclick="previewImage(this)">
+                                {% if reservation.tenant.userprofile.profile_picture %}
+                                    <img src="{{ reservation.tenant.userprofile.profile_picture.url }}" 
+                                         alt="Profile" 
+                                         class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" 
+                                         alt="Default Profile" 
+                                         class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {% if reservation.tenant.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} ring-2 ring-white"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-gray-900 truncate text-sm">{{ reservation.tenant.get_full_name }}</h3>
+                                <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
+                            <div class="flex items-center mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
+                                    {% if reservation.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'confirmed' %}
+                                        bg-green-100 text-green-800
+                                    {% elif reservation.status == 'completed' %}
+                                        bg-blue-100 text-blue-800
+                                    {% elif reservation.status == 'declined' %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ reservation.status|title }}
+                                </span>
+                                {% if reservation.unread_messages_count %}
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                                    {{ reservation.unread_messages_count }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-gray-500">
+                    No reservations yet
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-full gap-4">
+        <!-- Left Sidebar - Reservations List (Desktop) -->
+        <div id="reservations-sidebar" class="hidden md:flex flex-col w-80 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Desktop Header -->
+            <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600">
+                <h2 class="text-lg font-bold text-white">Reservations</h2>
+            </div>
+            
             <!-- Search Bar -->
-            <div class="p-4 border-b flex-shrink-0 bg-white sticky top-0 z-20">
+            <div class="p-4 border-b">
                 <div class="relative">
                     <input type="text" id="reservation-search" placeholder="Search reservations" 
-                           class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -88,153 +234,212 @@
             </div>
 
             <!-- Status Filters -->
-            <div class="p-4 border-b flex-shrink-0">
-                <h3 class="text-sm font-semibold text-gray-600 mb-2">Filter by Status</h3>
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Pending</span>
-                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ pending_count }}</span>
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
+                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters">Clear</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Pending</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                            {{ pending_count }}
+                        </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Confirmed</span>
-                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{{ confirmed_count }}</span>
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Confirmed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                            {{ confirmed_count }}
+                        </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Completed</span>
-                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ completed_count }}</span>
+                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Completed</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {{ completed_count }}
+                        </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Declined</span>
-                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">{{ declined_count }}</span>
+                    <div class="filter-status col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span class="text-xs font-medium text-gray-700">Declined</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                            {{ declined_count }}
+                        </span>
                     </div>
                 </div>
             </div>
 
             <!-- Reservations List -->
-            <div class="flex-1 overflow-hidden">
-                <div class="h-full overflow-y-auto">
-                    {% for reservation in reservations %}
-                    <div class="reservation-item p-3 cursor-pointer transition-colors border-b {% if selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-600{% else %}hover:bg-gray-50 border-l-4 border-transparent{% endif %}"
-                         data-reservation-id="{{ reservation.id }}">
-                        <div class="flex items-center space-x-3">
-                            <div class="relative">
-                                <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                                     onclick="previewImage(this)">
-                                    {% if reservation.tenant.userprofile.profile_picture %}
-                                        <img src="{{ reservation.tenant.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
-                                    {% else %}
-                                        <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
-                                    {% endif %}
-                                </div>
-                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if reservation.tenant.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} border-2 border-white"></div>
+            <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 380px);">
+                {% for reservation in reservations %}
+                <div class="reservation-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors duration-200 {% if selected_reservation and selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-500{% endif %}"
+                     data-reservation-id="{{ reservation.id }}"
+                     data-tenant-name="{{ reservation.tenant.get_full_name|lower }}"
+                     data-dorm-name="{{ reservation.dorm.name|lower }}"
+                     data-status="{{ reservation.status }}"
+                     onclick="selectReservation('{{ reservation.id }}')">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity onclick-prevent"
+                                 onclick="previewImage(this)">
+                                {% if reservation.tenant.userprofile.profile_picture %}
+                                    <img src="{{ reservation.tenant.userprofile.profile_picture.url }}" 
+                                         alt="Profile" 
+                                         class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="{% static 'images/default_profile.jpg' %}" 
+                                         alt="Default Profile" 
+                                         class="w-full h-full object-cover">
+                                {% endif %}
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-semibold text-sm truncate">{{ reservation.tenant.get_full_name }}</h3>
-                                    <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
-                                </div>
-                                <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
-                                <div class="flex items-center mt-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
-                                        {% if reservation.status == 'pending' %}
-                                            bg-yellow-100 text-yellow-800
-                                        {% elif reservation.status == 'confirmed' %}
-                                            bg-green-100 text-green-800
-                                        {% elif reservation.status == 'completed' %}
-                                            bg-blue-100 text-blue-800
-                                        {% elif reservation.status == 'declined' %}
-                                            bg-red-100 text-red-800
-                                        {% endif %}">
-                                        {{ reservation.status|title }}
-                                    </span>
-                                    {% if reservation.unread_messages_count %}
-                                        <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
-                                            {{ reservation.unread_messages_count }}
-                                        </span>
-                                    {% endif %}
-                                </div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {% if reservation.tenant.is_online %}bg-green-500{% else %}bg-gray-400{% endif %} ring-2 ring-white"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-gray-900 truncate text-sm">{{ reservation.tenant.get_full_name }}</h3>
+                                <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
+                            <div class="flex items-center mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
+                                    {% if reservation.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'confirmed' %}
+                                        bg-green-100 text-green-800
+                                    {% elif reservation.status == 'completed' %}
+                                        bg-blue-100 text-blue-800
+                                    {% elif reservation.status == 'declined' %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ reservation.status|title }}
+                                </span>
+                                {% if reservation.unread_messages_count %}
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                                    {{ reservation.unread_messages_count }}
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="p-4 text-center text-gray-500">
-                        No reservations yet
-                    </div>
-                    {% endfor %}
                 </div>
+                {% empty %}
+                <div class="p-4 text-center text-gray-500">
+                    No reservations yet
+                </div>
+                {% endfor %}
             </div>
         </div>
 
         <!-- Main Chat Area -->
-        <div class="flex-1 flex flex-col h-screen">
+        <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden min-h-0">
             {% if selected_reservation %}
                 <!-- Chat Header -->
-                <div class="p-4 bg-white border-b flex items-center justify-between z-10 flex-shrink-0">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                             onclick="previewImage(this)">
-                            {% if selected_reservation.tenant.userprofile.profile_picture %}
-                                <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
-                            {% else %}
-                                <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h2 class="font-semibold">{{ selected_reservation.tenant.get_full_name }}</h2>
-                            <p class="text-xs text-gray-500">Last active {{ selected_reservation.tenant.last_login|timesince }} ago</p>
-                        </div>
-                    </div>
+ <!-- Chat Header -->
+<div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-between flex-shrink-0">
+    <!-- LEFT SIDE: User Info -->
+    <div class="flex items-center space-x-3">
+        <!-- Mobile burger menu -->
+        <button id="mobile-menu-toggle" class="md:hidden p-2 hover:bg-white/20 rounded-lg transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+            </svg>
+        </button>
 
-                    <div class="flex items-center space-x-2">
-                        {% if selected_reservation.status == 'pending' %}
-                        <form id="confirmForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="confirm">
-                            <button type="submit" class="bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
-                                Confirm
-                            </button>
-                        </form>
-                        <form id="declineForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="decline">
-                            <input type="hidden" id="decline_reason_input" name="decline_reason">
-                            <button type="button" onclick="openDeclineModal()" class="bg-red-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-red-600 transition-colors">
-                                Decline
-                            </button>
-                        </form>
-                        <!-- Decline Reason Modal (global, outside form) -->
-                        <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                                <h3 class="text-lg font-semibold mb-4">Decline Reservation</h3>
-                                <label for="decline_reason" class="block text-sm font-medium text-gray-700 mb-2">Reason for Decline <span class="text-red-500">*</span></label>
-                                <textarea id="decline_reason" rows="3" required class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                                <div class="flex justify-end space-x-2">
-                                    <button type="button" onclick="closeDeclineModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
-                                    <button type="button" onclick="submitDeclineForm()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Submit</button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if selected_reservation.status == 'confirmed' and selected_reservation.room %}
-                        <form id="makeAvailableForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="make_available">
-                            <button type="submit" class="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-yellow-600 transition-colors">
-                                Make Room Available
-                            </button>
-                        </form>
-                        {% endif %}
-                        <button id="toggle-details-btn" class="p-2 hover:bg-gray-100 rounded-full">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+        <!-- User Profile -->
+        <div class="relative">
+            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ring-2 ring-white/50"
+                 onclick="previewImage(this)">
+                {% if selected_reservation.tenant.userprofile.profile_picture %}
+                    <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
+                {% endif %}
+            </div>
+            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if selected_reservation.tenant.is_online %}bg-green-400{% else %}bg-gray-400{% endif %} ring-2 ring-blue-600"></div>
+        </div>
+        
+        <!-- User Info -->
+        <div>
+            <h2 class="font-bold">{{ selected_reservation.tenant.get_full_name }}</h2>
+            <p class="text-xs opacity-90">Last active {{ selected_reservation.tenant.last_login|timesince }} ago</p>
+        </div>
+    </div>
 
+    <!-- RIGHT SIDE: Action Buttons + Details Toggle -->
+    <div class="flex items-center space-x-4">
+        <!-- Action Buttons Container -->
+        <div class="flex items-center space-x-2">
+            {% if selected_reservation.status == 'pending' %}
+            <!-- Confirm/Decline for PENDING reservations -->
+            <button type="button" onclick="openConfirmModal()" 
+                    class="bg-white text-blue-600 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm hover:shadow-md">
+                Confirm Reservation
+            </button>
+            
+            <form id="declineForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decline">
+                <input type="hidden" id="decline_reason_input" name="decline_reason">
+                <button type="button" onclick="openDeclineModal()" 
+                        class="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-red-700 transition-colors shadow-sm hover:shadow-md">
+                    Decline
+                </button>
+            </form>
+            
+            {% elif selected_reservation.status == 'confirmed' %}
+            <!-- Make Available buttons for CONFIRMED reservations -->
+            {% if selected_reservation.room %}
+            <!-- Make Room Available (for bed space reservations) -->
+            <button type="button" onclick="openMakeRoomAvailableModal()" 
+                    class="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-yellow-600 transition-colors shadow-sm hover:shadow-md">
+                Make Room Available
+            </button>
+            {% endif %}
+            
+            {% if selected_reservation.dorm.accommodation_type == 'whole_unit' %}
+            <!-- Make Dorm Available (for whole unit reservations) -->
+            <button type="button" onclick="openMakeDormAvailableModal()" 
+                    class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
+                Make Dorm Available
+            </button>
+            {% endif %}
+            
+            {% elif selected_reservation.status == 'occupied' %}
+            <!-- Mark as Moved Out button for OCCUPIED reservations -->
+            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_moved_out">
+                <button type="submit" onclick="return confirm('Are you sure the tenant has moved out? This will make the dorm available again.')"
+                        class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
+                    🏠 Mark as Moved Out
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Details Toggle Button -->
+        <div class="border-l border-white/30 pl-4">
+            <button id="toggle-details-btn" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
                 <!-- Chat Messages Container -->
                 <div class="flex-1 overflow-hidden bg-gray-50">
-                    <div id="messages-container" class="h-full overflow-y-auto p-5 space-y-3">
+                    <div id="messages-container" class="h-full overflow-y-auto p-3 md:p-5 space-y-3" style="max-height: calc(100vh - 300px);">
                         {% for message in selected_reservation.chat_messages.all %}
                         <div class="flex {% if message.sender == request.user %}justify-end{% endif %} items-end space-x-2 group">
                             {% if message.sender != request.user %}
@@ -247,7 +452,7 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            <div class="relative px-3 py-2 shadow-sm {% if message.sender == request.user %}bg-blue-600 text-white rounded-2xl rounded-br-none{% else %}bg-white rounded-2xl rounded-bl-none{% endif %}" style="max-width: 72%;">
+                            <div class="relative {% if message.sender == request.user %}bg-blue-600 text-white{% else %}bg-white{% endif %} rounded-lg px-3 py-2 shadow-sm max-w-[85%] md:max-w-[75%]">
                                 <button onclick="deleteMessage({{ message.id }})" 
                                         class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
                                         {% if message.sender != request.user %}style="display: none;"{% endif %}>
@@ -255,15 +460,15 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
-                                <p class="text-sm">{{ message.content }}</p>
+                                <p class="text-sm break-words">{{ message.content }}</p>
                                 
                                 {% if message.image %}
                                 <div class="mt-2">
-                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
+                                    <img src="{{ message.image.url }}" alt="Uploaded image" class="max-w-[200px] md:max-w-xs rounded-lg cursor-pointer" onclick="previewImage(this)">
                                 </div>
                                 {% elif message.attachment %}
                                 <div class="mt-2">
-                                    <a href="{{ message.attachment.url }}" target="_blank" class="{% if message.sender == request.user %}text-blue-100{% else %}text-blue-500{% endif %} hover:text-{% if message.sender == request.user %}white{% else %}blue-700{% endif %} flex items-center">
+                                    <a href="{{ message.attachment.url }}" target="_blank" class="flex items-center {% if message.sender == request.user %}text-blue-100 hover:text-white{% else %}text-blue-500 hover:text-blue-700{% endif %}">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                                         </svg>
@@ -272,7 +477,7 @@
                                 </div>
                                 {% endif %}
                                 
-                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-200{% else %}text-gray-500{% endif %} block mt-1 text-right">
+                                <span class="text-[10px] {% if message.sender == request.user %}text-blue-100{% else %}text-gray-500{% endif %} block mt-0.5">
                                     {{ message.timestamp|date:"g:i A" }}
                                 </span>
                             </div>
@@ -280,15 +485,176 @@
                         {% endfor %}
                     </div>
                 </div>
+ <!-- Make Dorm Available Modal -->
+<div id="makeDormAvailableModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <!-- Warning Icon -->
+        <div class="flex justify-center mb-4">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <h3 class="text-xl font-bold text-center mb-4">Complete Reservation & Notify Tenant to Vacate</h3>
+        <!-- Important Notice -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Important:</strong> This action will notify the tenant that their stay is ended and they need to vacate the dorm.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-gray-600 mb-4">This will:</p>
+        <ul class="list-disc list-inside text-gray-600 mb-6 space-y-2">
+            <li>Mark <span class="font-semibold">{{ selected_reservation.tenant.get_full_name }}'s</span> reservation as <span class="font-semibold text-green-600">"completed"</span></li>
+            <li>Make <span class="font-semibold">{{ selected_reservation.dorm.name }}</span> available for new reservations</li>
+            <li>Send a notification to the tenant informing them to vacate the dorm</li>
+            <li>End the current rental agreement</li>
+        </ul>
+        
+        <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="make_dorm_available">
+            
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Reason for completing reservation:</label>
+                <select name="termination_reason" class="w-full border rounded-lg p-2 mb-2" required>
+                    <option value="">Select a reason...</option>
+                    <option value="Agreement period ended">Agreement period ended</option>
+                    <option value="Tenant moved out">Tenant moved out</option>
+                    <option value="Mutual agreement to end stay">Mutual agreement to end stay</option>
+                    <option value="Dorm renovation/maintenance">Dorm renovation/maintenance</option>
+                    <option value="Other">Other (specify below)</option>
+                </select>
+                <input type="text" name="custom_reason" 
+                       class="w-full border rounded-lg p-2 mt-2 hidden" 
+                       placeholder="Please specify other reason..."
+                       id="customReasonDorm">
+                <p class="text-sm text-gray-500 mt-1">This reason will be communicated to the tenant.</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" name="send_notification" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked required>
+                    <span class="ml-2 text-sm text-gray-700">Send notification to tenant about vacating the dorm</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeMakeDormAvailableModal()" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                    Complete Reservation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Make Room Available Modal -->
+<div id="makeRoomAvailableModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <!-- Warning Icon -->
+        <div class="flex justify-center mb-4">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <h3 class="text-xl font-bold text-center mb-4">Complete Reservation & Notify Tenant to Vacate</h3>
+        
+        <!-- Important Notice -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Important:</strong> This action will notify the tenant that their room is being made available and they need to vacate.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-gray-600 mb-4">This will:</p>
+        <ul class="list-disc list-inside text-gray-600 mb-6 space-y-2">
+            <li>Mark <span class="font-semibold">{{ selected_reservation.tenant.get_full_name }}'s</span> reservation as <span class="font-semibold text-green-600">"completed"</span></li>
+            <li>Make their room available for new reservations</li>
+            <li>Send a notification to the tenant about vacating the room</li>
+            <li>Update dorm bed availability</li>
+        </ul>
+        
+        <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="make_available">
+            
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Reason for completing reservation:</label>
+                <select name="termination_reason" class="w-full border rounded-lg p-2 mb-2" required>
+                    <option value="">Select a reason...</option>
+                    <option value="Room vacated">Room vacated</option>
+                    <option value="Tenant moved out">Tenant moved out</option>
+                    <option value="Agreement period ended">Agreement period ended</option>
+                    <option value="Room maintenance/cleaning">Room maintenance/cleaning</option>
+                    <option value="Other">Other (specify below)</option>
+                </select>
+                <input type="text" name="custom_reason" 
+                       class="w-full border rounded-lg p-2 mt-2 hidden" 
+                       placeholder="Please specify other reason..."
+                       id="customReasonRoom">
+                <p class="text-sm text-gray-500 mt-1">This reason will be communicated to the tenant.</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" name="send_notification" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked required>
+                    <span class="ml-2 text-sm text-gray-700">Send notification to tenant about vacating the room</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeMakeRoomAvailableModal()" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium">
+                    Complete Reservation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
                 <!-- Chat Input Area -->
                 <div class="border-t bg-white flex-shrink-0">
-                    <form id="chat-form" class="p-4" enctype="multipart/form-data" data-reservation-id="{{ selected_reservation.id }}">
+                    <form id="chat-form" class="p-3 md:p-4" enctype="multipart/form-data" data-reservation-id="{{ selected_reservation.id }}">
                         {% csrf_token %}
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-end space-x-2">
                             <div class="flex-1">
                                 <textarea id="message-input" name="content" rows="1" 
-                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    class="w-full px-3 md:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm md:text-base"
                                     placeholder="Type your message..."></textarea>
                             </div>
                             
@@ -314,8 +680,11 @@
                                 </button>
                             </div>
 
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                Send
+                            <button type="submit" class="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base">
+                                <span class="hidden sm:inline">Send</span>
+                                <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
                             </button>
                         </div>
 
@@ -336,40 +705,47 @@
             {% else %}
                 <div class="flex-1 flex items-center justify-center bg-gray-50">
                     <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                        <h3 class="mt-4 text-lg font-medium text-gray-900">No reservation selected</h3>
-                        <p class="mt-2 text-sm text-gray-500">Choose a reservation from the list to start messaging</p>
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6 mx-auto">
+                            <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Landlord Chat</h3>
+                        <p class="text-gray-600 text-center max-w-md mb-8">Select a reservation from the list to start messaging with tenants about their dorm stay.</p>
+                        <button 
+                            id="mobile-show-reservations" 
+                            onclick="showMobileReservations(); return false;"
+                            class="md:hidden bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                            style="position: relative; z-index: 100; pointer-events: auto;">
+                            Show Reservations
+                        </button>
                     </div>
                 </div>
             {% endif %}
         </div>
 
         <!-- Right Sidebar - Dorm Details -->
-        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto z-30" style="top: 4rem; height: calc(100vh - 4rem);">
-            <div class="sticky top-0 bg-white border-b z-10">
-                <div class="p-4 flex justify-between items-center">
-                    <h3 class="font-semibold text-lg">Dorm Details</h3>
-                    <button id="close-details" class="p-2 hover:bg-gray-100 rounded-full">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
+        {% if selected_reservation %}
+        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
+            <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
+                <h3 class="font-bold text-lg text-white">Dorm Details</h3>
+                <button id="close-details" class="p-2 hover:bg-white/20 rounded-lg transition-colors text-white" style="pointer-events: auto;">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
-            <div class="p-4">
+            <div class="p-4 space-y-4">
                 <!-- Dorm Images -->
                 <div class="space-y-2">
                     <h4 class="font-semibold text-lg">Dorm Images</h4>
                     <div class="grid grid-cols-2 gap-2" id="dormImages">
                         {% for image in selected_reservation.dorm.images.all %}
-                        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                             onclick="openImageGallery({{ forloop.counter0 }})">
+                        <div class="rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" style="height: 140px;" onclick="openImageGallery({{ forloop.counter0 }})">
                             <img src="{{ image.image.url }}" alt="Dorm Image" class="w-full h-full object-cover gallery-image">
                         </div>
                         {% empty %}
-                        <div class="col-span-2 aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="col-span-2 bg-gray-100 rounded-lg flex items-center justify-center" style="height: 140px;">
                             <span class="text-gray-400">No images available</span>
                         </div>
                         {% endfor %}
@@ -378,19 +754,19 @@
 
                 <!-- User Profiles -->
                 <div class="flex justify-between items-center border-t pt-4">
-                    <!-- tenant Profile -->
+                    <!-- Tenant Profile -->
                     <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="previewImage(this)">
                             {% if selected_reservation.tenant.userprofile.profile_picture %}
-                                <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="tenant Profile" class="w-full h-full object-cover">
+                                <img src="{{ selected_reservation.tenant.userprofile.profile_picture.url }}" alt="Tenant Profile" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="{% static 'images/default_profile.jpg' %}" alt="Default Profile" class="w-full h-full object-cover">
                             {% endif %}
                         </div>
                         <div>
                             <p class="font-semibold text-sm">{{ selected_reservation.tenant.get_full_name }}</p>
-                            <p class="text-xs text-gray-500">tenant</p>
+                            <p class="text-xs text-gray-500">Tenant</p>
                         </div>
                     </div>
                     <!-- Landlord Profile -->
@@ -412,9 +788,9 @@
 
                 <!-- Dorm Info -->
                 <div class="flex-1 min-w-0">
-                    <h4 class="font-semibold truncate">{{ selected_reservation.dorm.name }}</h4>
+                    <h4 class="font-bold truncate">{{ selected_reservation.dorm.name }}</h4>
                     <p class="text-sm text-gray-600 truncate">{{ selected_reservation.dorm.address }}</p>
-                    <p class="text-sm font-semibold">₱{{ selected_reservation.dorm.price|floatformat:2 }}/month</p>
+                    <p class="text-xl font-bold text-blue-600">₱{{ selected_reservation.dorm.price|floatformat:2 }}/month</p>
                     
                     <!-- Accommodation Type -->
                     <div class="mt-2">
@@ -441,16 +817,16 @@
                         <h5 class="text-sm font-semibold text-gray-700 mb-2">Amenities</h5>
                         <div class="flex flex-wrap gap-2">
                             {% if selected_reservation.dorm.has_aircon %}
-                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Air Conditioning</span>
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Air Conditioning</span>
                             {% endif %}
                             {% if selected_reservation.dorm.has_wifi %}
-                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">WiFi</span>
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">WiFi</span>
                             {% endif %}
                             {% if selected_reservation.dorm.has_kitchen %}
-                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Kitchen</span>
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Kitchen</span>
                             {% endif %}
                             {% if selected_reservation.dorm.has_bathroom %}
-                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Private Bathroom</span>
+                            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Private Bathroom</span>
                             {% endif %}
                         </div>
                     </div>
@@ -475,19 +851,25 @@
                 <!-- Reservation Status -->
                 <div class="border-t pt-4">
                     <h4 class="font-semibold mb-2">Status</h4>
-                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm
-                        {% if selected_reservation.status == 'pending' %}
-                            bg-yellow-100 text-yellow-800
-                        {% elif selected_reservation.status == 'confirmed' %}
-                            bg-green-100 text-green-800
-                        {% elif selected_reservation.status == 'completed' %}
-                            bg-blue-100 text-blue-800
-                        {% elif selected_reservation.status == 'declined' %}
-                            bg-red-100 text-red-800
-                        {% elif selected_reservation.status == 'cancelled' %}
-                            bg-gray-100 text-gray-800
-                        {% endif %}">
-                        {{ selected_reservation.status|title }}
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm
+                            {% if selected_reservation.status == 'pending' %}
+                                bg-yellow-100 text-yellow-800
+                            {% elif selected_reservation.status == 'confirmed' %}
+                                bg-green-100 text-green-800
+                            {% elif selected_reservation.status == 'occupied' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                🏠 Tenant Checked In
+                            </span>
+                            {% elif selected_reservation.status == 'completed' %}
+                                bg-blue-100 text-blue-800
+                            {% elif selected_reservation.status == 'declined' %}
+                                bg-red-100 text-red-800
+                            {% elif selected_reservation.status == 'cancelled' %}
+                                bg-gray-100 text-gray-800
+                            {% endif %}">
+                            {{ selected_reservation.status|title }}
+                        </div>
                     </div>
 
                     <!-- Display Cancellation Reason if status is cancelled -->
@@ -504,7 +886,7 @@
                     <h4 class="font-semibold">Reservation Information</h4>
                     <div class="text-sm">
                         <p><span class="text-gray-600">Reserved on:</span> {{ selected_reservation.reservation_date|date:"F j, Y" }}</p>
-                        <p><span class="text-gray-600">tenant:</span> {{ selected_reservation.tenant.get_full_name }}</p>
+                        <p><span class="text-gray-600">Tenant:</span> {{ selected_reservation.tenant.get_full_name }}</p>
                         <p><span class="text-gray-600">Contact:</span> {{ selected_reservation.tenant.email }}</p>
                     </div>
                 </div>
@@ -547,7 +929,7 @@
                         <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="verify_payment">
-                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                                 Verify Payment
                             </button>
                         </form>
@@ -558,23 +940,205 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                
+                <!-- Visit Information & Management -->
+                {% if selected_reservation.visit_scheduled %}
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="font-semibold mb-4">Visit Schedule</h4>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-600">Visit Date:</span>
+                                <p class="font-semibold">{{ selected_reservation.visit_date|date:"F j, Y" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Time Slot:</span>
+                                <p class="font-semibold">{{ selected_reservation.get_visit_time_slot_display }}</p>
+                            </div>
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if selected_reservation.visit_status == 'completed' %}bg-green-100 text-green-800
+                                    {% elif selected_reservation.visit_status == 'scheduled' %}bg-blue-100 text-blue-800
+                                    {% elif selected_reservation.visit_status == 'cancelled' %}bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ selected_reservation.get_visit_status_display }}
+                                </span>
+                            </div>
+                            {% if selected_reservation.visit_notes %}
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Notes:</span>
+                                <p class="text-sm">{{ selected_reservation.visit_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Mark Visit as Completed Button -->
+                        {% if selected_reservation.visit_status == 'scheduled' %}
+                        <div class="mt-4">
+                            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="complete_visit">
+                                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                    ✓ Mark Visit as Completed
+                                </button>
+                            </form>
+                            <p class="text-xs text-gray-600 mt-2 text-center">
+                                After marking as completed, tenant can access the move-in checklist
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Move-in Date Information -->
+                {% if selected_reservation.move_in_date %}
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="font-semibold mb-4">Move-in Information</h4>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="text-sm">
+                            <span class="text-gray-600">Move-in Date:</span>
+                            <p class="font-semibold text-lg">{{ selected_reservation.move_in_date|date:"F j, Y" }}</p>
+                            {% if selected_reservation.move_in_notes %}
+                            <div class="mt-2">
+                                <span class="text-gray-600">Instructions:</span>
+                                <p class="text-sm">{{ selected_reservation.move_in_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
 <!-- Place this at the very end of the file, after all other content and scripts -->
+<!-- Confirm Reservation Modal with Visit/Move-in Options -->
+{% if selected_reservation %}
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h3 class="text-2xl font-bold mb-6 text-gray-900">Confirm Reservation</h3>
+        
+        <form id="confirmForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="confirm_with_options">
+            
+            <!-- Option Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Next Step:</label>
+                
+                <!-- Option 1: Schedule Visit -->
+                <div class="mb-4 border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('visit')">
+                    <label class="flex items-start cursor-pointer">
+                        <input type="radio" name="confirmation_type" value="visit" id="option_visit" class="mt-1 mr-3">
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-900 mb-1">📅 Schedule Visit First</div>
+                            <p class="text-sm text-gray-600">Arrange a property viewing before move-in</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- Visit Details (Hidden by default) -->
+                <div id="visitDetails" class="ml-7 mb-4 hidden space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Visit Date *</label>
+                        <input type="date" name="visit_date" id="visit_date" 
+                               min="{{ today|date:'Y-m-d' }}"
+                               class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time Slot *</label>
+                        <select name="visit_time_slot" id="visit_time_slot" 
+                                class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select time slot</option>
+                            <option value="09:00-11:00">9:00 AM - 11:00 AM</option>
+                            <option value="11:00-13:00">11:00 AM - 1:00 PM</option>
+                            <option value="13:00-15:00">1:00 PM - 3:00 PM</option>
+                            <option value="15:00-17:00">3:00 PM - 5:00 PM</option>
+                            <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes for Tenant</label>
+                        <textarea name="visit_notes" id="visit_notes" rows="2" 
+                                  placeholder="Meeting point, what to bring, etc."
+                                  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Option 2: Set Move-in Date -->
+                <div class="border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('movein')">
+                    <label class="flex items-start cursor-pointer">
+                        <input type="radio" name="confirmation_type" value="movein" id="option_movein" class="mt-1 mr-3">
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-900 mb-1">🏠 Set Move-in Date (Skip Visit)</div>
+                            <p class="text-sm text-gray-600">Proceed directly to move-in without a visit</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- Move-in Details (Hidden by default) -->
+                <div id="moveinDetails" class="ml-7 mt-4 hidden space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Move-in Date *</label>
+                        <input type="date" name="move_in_date" id="move_in_date" 
+                               min="{{ today|date:'Y-m-d' }}"
+                               class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Move-in Instructions</label>
+                        <textarea name="move_in_notes" id="move_in_notes" rows="3" 
+                                  placeholder="Key pickup location, check-in time, what to bring, etc."
+                                  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="closeConfirmModal()" 
+                        class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg">
+                    Confirm Reservation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-semibold mb-4">Decline Reservation</h3>
-        <label for="decline_reason" class="block text-sm font-medium text-gray-700 mb-2">Reason for Decline <span class="text-red-500">*</span></label>
-        <textarea id="decline_reason" rows="3" required class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        <label for="decline_reason_select" class="block text-sm font-medium text-gray-700 mb-2">Reason for Decline <span class="text-red-500">*</span></label>
+        <select id="decline_reason_select" required class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-blue-500 focus:border-blue-500" onchange="toggleDeclineCustomReason()">
+            <option value="">Select a reason</option>
+            <option value="Property already rented">Property already rented</option>
+            <option value="Tenant does not meet requirements">Tenant does not meet requirements</option>
+            <option value="Incomplete documentation">Incomplete documentation</option>
+            <option value="Property undergoing maintenance">Property undergoing maintenance</option>
+            <option value="Tenant background check failed">Tenant background check failed</option>
+            <option value="Payment terms disagreement">Payment terms disagreement</option>
+            <option value="Multiple applications received">Multiple applications received</option>
+            <option value="Property no longer available">Property no longer available</option>
+            <option value="Other">Other (Please specify)</option>
+        </select>
+        <textarea id="decline_custom_reason" rows="3" class="hidden w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-blue-500 focus:border-blue-500" placeholder="Please specify the reason..."></textarea>
         <div class="flex justify-end space-x-2">
             <button type="button" onclick="closeDeclineModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
             <button type="button" onclick="submitDeclineForm()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Submit</button>
         </div>
     </div>
 </div>
+
 <script>
     // Add getCookie function at the top of your script
     function getCookie(name) {
@@ -592,6 +1156,53 @@
         return cookieValue;
     }
 
+    // SIMPLE RESERVATION SELECTION FUNCTION
+    function selectReservation(reservationId) {
+        if (!reservationId) return;
+        
+        // On mobile, hide sidebar after selection
+        if (window.innerWidth < 768) {
+            hideMobileReservations();
+        }
+        
+        // Reload the page with the selected reservation
+        window.location.href = `?selected_reservation=${reservationId}`;
+    }
+
+    // SIMPLE MOBILE RESERVATIONS SHOW FUNCTION
+    function showMobileReservations() {
+        console.log('showMobileReservations called');
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        if (mobileReservationsSidebar) {
+            console.log('Sidebar found, showing...');
+            mobileReservationsSidebar.classList.remove('hidden');
+            setTimeout(function() {
+                const sidebarContent = mobileReservationsSidebar.querySelector('.absolute.inset-y-0.left-0');
+                if (sidebarContent) {
+                    sidebarContent.classList.remove('-translate-x-full');
+                }
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        } else {
+            console.log('Sidebar not found!');
+        }
+    }
+
+    // SIMPLE MOBILE RESERVATIONS HIDE FUNCTION
+    function hideMobileReservations() {
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        if (mobileReservationsSidebar) {
+            const sidebarContent = mobileReservationsSidebar.querySelector('.absolute.inset-y-0.left-0');
+            if (sidebarContent) {
+                sidebarContent.classList.add('-translate-x-full');
+            }
+            setTimeout(() => {
+                mobileReservationsSidebar.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+    }
+
     // Auto-scroll to bottom of messages
     function scrollToBottom() {
         const messagesContainer = document.getElementById('messages-container');
@@ -599,32 +1210,9 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     }
-
-    // Call scrollToBottom on page load
     scrollToBottom();
 
-    // Call scrollToBottom after any new message is added
-    document.addEventListener('DOMContentLoaded', function() {
-        scrollToBottom();
-        
-        // Also scroll to bottom when new messages are added
-        const chatForm = document.getElementById('chat-form');
-        if (chatForm) {
-            chatForm.addEventListener('submit', function() {
-                setTimeout(scrollToBottom, 100); // Small delay to ensure content is rendered
-            });
-        }
-    });
-
-    // Handle reservation selection
-    document.querySelectorAll('.reservation-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const reservationId = this.dataset.reservationId;
-            window.location.href = `?selected_reservation=${reservationId}`;
-        });
-    });
-
-    // Update chat form event listener
+    // Handle chat form submission
     const chatForm = document.getElementById('chat-form');
     if (chatForm) {
         chatForm.addEventListener('submit', async function(e) {
@@ -645,10 +1233,10 @@
             
             // Handle image and attachment separately
             if (imageFile) {
-                formData.set('image', imageFile);  // Use set instead of append to avoid duplicate
+                formData.set('image', imageFile);
             }
             if (attachmentFile) {
-                formData.set('attachment', attachmentFile);  // Use set instead of append to avoid duplicate
+                formData.set('attachment', attachmentFile);
             }
             
             try {
@@ -667,7 +1255,7 @@
                     const messagesContainer = document.getElementById('messages-container');
                     let messageHtml = `
                         <div class="flex justify-end items-end space-x-2 group">
-                            <div class="relative max-w-[70%] bg-blue-500 text-white rounded-lg px-3 py-1.5 shadow-sm">
+                            <div class="relative bg-blue-600 text-white rounded-lg px-3 py-1.5 shadow-sm" style="max-width: 75%;">
                                 <p class="text-sm">${data.message.content}</p>`;
                     
                     // Add file/image preview if present
@@ -699,7 +1287,6 @@
                     // Clear form and file preview
                     this.reset();
                     document.getElementById('file-preview').classList.add('hidden');
-                    document.getElementById('image-preview').classList.add('hidden');
                 }
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -707,39 +1294,7 @@
         });
     }
 
-    // Handle file and image selection
-    function handleFileSelect(input, type) {
-        const file = input.files[0];
-        if (!file) return;
-
-        if (type === 'image') {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('preview-image').src = e.target.result;
-                document.getElementById('image-preview').classList.remove('hidden');
-                document.getElementById('file-preview').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            document.getElementById('file-name').textContent = file.name;
-            document.getElementById('file-preview').classList.remove('hidden');
-            document.getElementById('image-preview').classList.add('hidden');
-        }
-    }
-
-    // Clear file upload
-    function clearFileUpload() {
-        document.getElementById('file-upload').value = '';
-        document.getElementById('file-preview').classList.add('hidden');
-    }
-
-    // Clear image upload
-    function clearImageUpload() {
-        document.getElementById('image-upload').value = '';
-        document.getElementById('image-preview').classList.add('hidden');
-    }
-
-    // New message toast helpers
+    // Check for new messages periodically
     let newMsgCount = 0;
     let toastHideTimeout;
 
@@ -747,20 +1302,18 @@
         const toast = document.getElementById('newMessageToast');
         const badge = document.getElementById('newMessageCount');
         newMsgCount += incrementBy || 1;
-        if (badge) badge.textContent = `+${newMsgCount}`;
-        if (toast) {
-            toast.classList.remove('hidden', 'opacity-0', 'translate-y-3');
-            toast.classList.add('opacity-100', 'translate-y-0');
-            clearTimeout(toastHideTimeout);
-            toastHideTimeout = setTimeout(() => {
-                newMsgCount = 0;
-                toast.classList.add('opacity-0', 'translate-y-3');
-                setTimeout(() => toast.classList.add('hidden'), 200);
-            }, 4000);
-        }
+        badge.textContent = `+${newMsgCount}`;
+        toast.classList.remove('hidden', 'opacity-0', 'translate-y-3');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        clearTimeout(toastHideTimeout);
+        toastHideTimeout = setTimeout(() => {
+            newMsgCount = 0;
+            toast.classList.add('opacity-0', 'translate-y-3');
+            setTimeout(() => toast.classList.add('hidden'), 200);
+        }, 4000);
     }
 
-    // Check for new messages periodically
     function checkNewMessages() {
         const reservationId = new URLSearchParams(window.location.search).get('selected_reservation');
         if (!reservationId) return;
@@ -794,7 +1347,7 @@
         .then(data => {
             if (data.status === 'success') {
                 // Remove the message element from the DOM
-                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`).closest('.group');
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
                 if (messageElement) {
                     messageElement.remove();
                 } else {
@@ -813,13 +1366,24 @@
     function openImageGallery(index) {
         const modal = document.getElementById('imagePreviewModal');
         const images = Array.from(document.querySelectorAll('.gallery-image'));
-        galleryImages = images.map(img => img.src);
-        currentImageIndex = index;
-        isProfileImage = false;
-        updateGalleryView();
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        createThumbnails();
+        // If index is a number, open the gallery list; if it's a URL/string, open single image
+        if (typeof index === 'number') {
+            galleryImages = images.map(img => img.src);
+            currentImageIndex = index;
+            isProfileImage = false;
+            updateGalleryView();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            createThumbnails();
+        } else {
+            galleryImages = [String(index)];
+            currentImageIndex = 0;
+            isProfileImage = true;
+            updateGalleryView();
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            hideThumbnailsAndNavigation();
+        }
     }
 
     function previewImage(element) {
@@ -947,46 +1511,68 @@
         }
     });
 
-    // Handle details panel toggle
+    // Handle details panel toggle with proper initialization
     const detailsPanel = document.getElementById('details-panel');
     const toggleDetailsBtn = document.getElementById('toggle-details-btn');
     const closeDetailsBtn = document.getElementById('close-details');
-    const mainContainer = document.getElementById('main-layout');
+    const mainContainer = document.querySelector('.flex.h-full.gap-4');
     let detailsVisible = true;
 
     function toggleDetails() {
-        detailsVisible = !detailsVisible;
-        if (detailsVisible) {
-            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
-            detailsPanel.classList.add('shadow-lg');
-            mainContainer.style.marginRight = '20rem';
+        const isMobile = window.innerWidth < 768; // md breakpoint
+        
+        if (isMobile) {
+            // On mobile, toggle the panel visibility
+            detailsVisible = !detailsVisible;
+            if (detailsVisible) {
+                detailsPanel.classList.remove('translate-x-full');
+                detailsPanel.classList.add('shadow-lg');
+                document.body.style.overflow = 'hidden';
+            } else {
+                detailsPanel.classList.add('translate-x-full');
+                detailsPanel.classList.remove('shadow-lg');
+                document.body.style.overflow = '';
+            }
         } else {
-            detailsPanel.classList.add('translate-x-full', 'shadow-none');
-            detailsPanel.classList.remove('shadow-lg');
-            mainContainer.style.marginRight = '0';
+            // On desktop, toggle normally
+            detailsVisible = !detailsVisible;
+            if (detailsVisible) {
+                detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+                detailsPanel.classList.add('shadow-lg');
+            } else {
+                detailsPanel.classList.add('translate-x-full', 'shadow-none');
+                detailsPanel.classList.remove('shadow-lg');
+            }
         }
     }
-
-    toggleDetailsBtn.addEventListener('click', toggleDetails);
-    closeDetailsBtn.addEventListener('click', toggleDetails);
 
     // Initialize panel state based on screen size
     function initializePanelState() {
-        const isMobile = window.innerWidth < 1024;
-        detailsVisible = !isMobile;
-        if (detailsVisible) {
-            mainContainer.style.marginRight = '20rem';
-            detailsPanel.classList.add('shadow-lg');
-            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
-        } else {
+        const isMobile = window.innerWidth < 768; // md breakpoint
+        
+        if (isMobile) {
+            // On mobile: hide panel by default
+            detailsVisible = false;
             detailsPanel.classList.add('translate-x-full', 'shadow-none');
             detailsPanel.classList.remove('shadow-lg');
-            mainContainer.style.marginRight = '0';
+            document.body.style.overflow = '';
+        } else {
+            // On desktop: show panel
+            detailsVisible = true;
+            detailsPanel.classList.remove('translate-x-full', 'shadow-none');
+            detailsPanel.classList.add('shadow-lg');
+            document.body.style.overflow = '';
         }
     }
 
+    // Event listeners
+    if (toggleDetailsBtn) toggleDetailsBtn.addEventListener('click', toggleDetails);
+    if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', toggleDetails);
+
     // Initialize on load
-    initializePanelState();
+    if (detailsPanel) {
+        initializePanelState();
+    }
 
     // Handle window resize
     let resizeTimeout;
@@ -995,28 +1581,334 @@
         resizeTimeout = setTimeout(initializePanelState, 100);
     });
 
-    // Handle form submissions with AJAX
+    // Add this to your existing JavaScript
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-preview').classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('image-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-preview').classList.remove('hidden');
+        }
+    });
+
+    function clearFileUpload() {
+        document.getElementById('file-upload').value = '';
+        document.getElementById('image-upload').value = '';
+        document.getElementById('file-preview').classList.add('hidden');
+    }
+
+    // Confirmation Modal Functions
+    function openConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        // Reset form
+        document.getElementById('confirmForm').reset();
+        document.getElementById('visitDetails').classList.add('hidden');
+        document.getElementById('moveinDetails').classList.add('hidden');
+    }
+
+    function selectOption(type) {
+        const visitRadio = document.getElementById('option_visit');
+        const moveinRadio = document.getElementById('option_movein');
+        const visitDetails = document.getElementById('visitDetails');
+        const moveinDetails = document.getElementById('moveinDetails');
+        
+        if (type === 'visit') {
+            visitRadio.checked = true;
+            visitDetails.classList.remove('hidden');
+            moveinDetails.classList.add('hidden');
+            // Make visit fields required
+            document.getElementById('visit_date').required = true;
+            document.getElementById('visit_time_slot').required = true;
+            // Remove move-in required
+            document.getElementById('move_in_date').required = false;
+        } else {
+            moveinRadio.checked = true;
+            moveinDetails.classList.remove('hidden');
+            visitDetails.classList.add('hidden');
+            // Make move-in fields required
+            document.getElementById('move_in_date').required = true;
+            // Remove visit required
+            document.getElementById('visit_date').required = false;
+            document.getElementById('visit_time_slot').required = false;
+        }
+    }
+
+    // Validate confirmation form before submit
+    document.getElementById('confirmForm').addEventListener('submit', function(e) {
+        const confirmationType = document.querySelector('input[name="confirmation_type"]:checked');
+        
+        if (!confirmationType) {
+            e.preventDefault();
+            alert('Please select an option: Schedule Visit or Set Move-in Date');
+            return false;
+        }
+        
+        if (confirmationType.value === 'visit') {
+            const visitDate = document.getElementById('visit_date').value;
+            const visitTimeSlot = document.getElementById('visit_time_slot').value;
+            
+            if (!visitDate || !visitTimeSlot) {
+                e.preventDefault();
+                alert('Please fill in visit date and time slot');
+                return false;
+            }
+        } else if (confirmationType.value === 'movein') {
+            const moveInDate = document.getElementById('move_in_date').value;
+            
+            if (!moveInDate) {
+                e.preventDefault();
+                alert('Please fill in move-in date');
+                return false;
+            }
+        }
+    });
+
+    function openDeclineModal() {
+        document.getElementById('declineModal').classList.remove('hidden');
+    }
+
+    function closeDeclineModal() {
+        document.getElementById('declineModal').classList.add('hidden');
+    }
+
+    function submitDeclineForm() {
+        var reasonSelect = document.getElementById('decline_reason_select');
+        var customReason = document.getElementById('decline_custom_reason');
+        var finalReason = '';
+        
+        if (!reasonSelect.value) {
+            alert('Please select a reason for declining.');
+            reasonSelect.focus();
+            return;
+        }
+        
+        if (reasonSelect.value === 'Other') {
+            if (!customReason.value.trim()) {
+                alert('Please specify the reason.');
+                customReason.focus();
+                return;
+            }
+            finalReason = 'Other: ' + customReason.value.trim();
+        } else {
+            finalReason = reasonSelect.value;
+        }
+        
+        document.getElementById('decline_reason_input').value = finalReason;
+        closeDeclineModal();
+        // Trigger form submit which will be handled by the AJAX handler
+        document.getElementById('declineForm').dispatchEvent(new Event('submit'));
+    }
+    
+    function toggleDeclineCustomReason() {
+        var reasonSelect = document.getElementById('decline_reason_select');
+        var customReason = document.getElementById('decline_custom_reason');
+        
+        if (reasonSelect.value === 'Other') {
+            customReason.classList.remove('hidden');
+            customReason.required = true;
+        } else {
+            customReason.classList.add('hidden');
+            customReason.required = false;
+            customReason.value = '';
+        }
+    }
+
+    // Handle payment rejection
+    function rejectPayment(reservationId) {
+        if (!confirm('Are you sure you want to reject this payment proof? The tenant will need to submit a new one.')) {
+            return;
+        }
+
+        fetch(`/dormitory/reservation/${reservationId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'action': 'reject_payment',
+                'csrfmiddlewaretoken': getCookie('csrftoken')
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error processing your request. Please try again.');
+        });
+    }
+
+    // ====================
+    // MOBILE FUNCTIONALITY
+    // ====================
+
+    // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('reservationToast');
-            if (!toast) return;
+        // Mobile Reservations Sidebar
+        const mobileToggle = document.getElementById('mobile-reservations-toggle');
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileShowReservations = document.getElementById('mobile-show-reservations');
+        const closeMobileSidebar = document.getElementById('close-mobile-sidebar');
+        const mobileReservationsSidebar = document.getElementById('mobile-reservations-sidebar');
+        
+        // Event listeners for mobile sidebar
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showMobileReservations();
+            });
+        }
+        
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showMobileReservations();
+            });
+        }
+        
+        if (mobileShowReservations) {
+            console.log('Mobile show button found, attaching listener');
+            mobileShowReservations.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('Mobile show button clicked via listener');
+                showMobileReservations();
+            });
+        } else {
+            console.log('Mobile show button NOT found');
+        }
+        
+        if (closeMobileSidebar) {
+            closeMobileSidebar.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hideMobileReservations();
+            });
+        }
+        
+        // Close when clicking overlay
+        if (mobileReservationsSidebar) {
+            const overlay = mobileReservationsSidebar.querySelector('.absolute.inset-0.bg-black\\/50');
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    hideMobileReservations();
+                });
+            }
+        }
+        
+        // Search Functionality
+        const reservationSearch = document.getElementById('reservation-search');
+        const reservationSearchMobile = document.getElementById('reservation-search-mobile');
+        
+        function setupSearch(searchInput, itemsSelector) {
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    const reservationItems = document.querySelectorAll(itemsSelector);
+                    
+                    reservationItems.forEach(item => {
+                        const tenantName = item.dataset.tenantName || '';
+                        const dormName = item.dataset.dormName || '';
+                        const text = item.textContent.toLowerCase();
+                        
+                        if (searchTerm === '' || 
+                            tenantName.includes(searchTerm) || 
+                            dormName.includes(searchTerm) ||
+                            text.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        }
+        
+        setupSearch(reservationSearch, '.reservation-item');
+        setupSearch(reservationSearchMobile, '.reservation-item-mobile');
+        
+        // Filter Functionality
+        function setupFilter(filterButtonsSelector, clearFilterBtnId, itemsSelector) {
+            let activeFilter = null;
+            const filterButtons = document.querySelectorAll(filterButtonsSelector);
+            const clearFiltersBtn = document.getElementById(clearFilterBtnId);
             
-            // Set message and styling based on type
-            toast.textContent = message;
-            toast.className = `fixed top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-lg text-white text-lg font-semibold transition-all duration-300 transform translate-x-full`;
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const status = this.dataset.status;
+                    
+                    if (activeFilter === status) {
+                        activeFilter = null;
+                        this.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                        showAllReservations(itemsSelector);
+                    } else {
+                        filterButtons.forEach(btn => {
+                            btn.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                        });
+                        
+                        activeFilter = status;
+                        this.classList.add('bg-blue-50', 'border', 'border-blue-200');
+                        filterReservationsByStatus(status, itemsSelector);
+                    }
+                });
+            });
             
-            if (type === 'success') {
-                toast.classList.add('bg-green-600');
-            } else if (type === 'error') {
-                toast.classList.add('bg-red-600');
-            } else if (type === 'warning') {
-                toast.classList.add('bg-yellow-600');
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', function() {
+                    activeFilter = null;
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('bg-blue-50', 'border', 'border-blue-200');
+                    });
+                    showAllReservations(itemsSelector);
+                });
             }
             
-            // Show toast
-            toast.classList.remove('hidden', 'translate-x-full');
-            toast.classList.add('translate-x-0');
+            function filterReservationsByStatus(status, selector) {
+                const reservationItems = document.querySelectorAll(selector);
+                reservationItems.forEach(item => {
+                    if (item.dataset.status === status) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+            
+            function showAllReservations(selector) {
+                const reservationItems = document.querySelectorAll(selector);
+                reservationItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+        }
+        
+        setupFilter('.filter-status', 'clear-filters', '.reservation-item');
+        setupFilter('.filter-status-mobile', 'clear-filters-mobile', '.reservation-item-mobile');
+        
+        // Scroll to bottom after everything is loaded
+        setTimeout(scrollToBottom, 500);
+        
+        // Handle form submissions with AJAX (copied from old code)
+        function showToast(message, type = 'success') {
+            // You can add toast functionality here if needed
+            alert(message); // Simple alert for now
         }
 
         function handleFormSubmit(formId) {
@@ -1076,63 +1968,193 @@
         handleFormSubmit('declineForm');
     });
 
-    // Function to handle payment verification and rejection
-    function handlePaymentAction(action, reservationId) {
-        if (action === 'reject_payment' && !confirm('Are you sure you want to reject this payment proof? The tenant will need to submit a new one.')) {
-            return;
-        }
+    // Close message alerts
+    document.querySelectorAll('.close-message').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.message-alert').remove();
+        });
+    });
 
-        const formData = new FormData();
-        formData.append('action', action);
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-        
-        fetch(`/dormitory/reservation/${reservationId}/update-status/`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                window.location.reload();
+    // Make Dorm Available Modal Functions
+function openMakeDormAvailableModal() {
+    document.getElementById('makeDormAvailableModal').classList.remove('hidden');
+}
+
+function closeMakeDormAvailableModal() {
+    document.getElementById('makeDormAvailableModal').classList.add('hidden');
+}
+
+// Make Room Available Modal Functions
+function openMakeRoomAvailableModal() {
+    document.getElementById('makeRoomAvailableModal').classList.remove('hidden');
+}
+
+function closeMakeRoomAvailableModal() {
+    document.getElementById('makeRoomAvailableModal').classList.add('hidden');
+}
+
+// Close modals when clicking outside
+document.getElementById('makeDormAvailableModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeMakeDormAvailableModal();
+    }
+});
+
+document.getElementById('makeRoomAvailableModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeMakeRoomAvailableModal();
+    }
+});
+
+// Handle custom reason fields
+document.addEventListener('DOMContentLoaded', function() {
+    // For Dorm Available modal
+    const dormReasonSelect = document.querySelector('select[name="termination_reason"]');
+    const customReasonDorm = document.getElementById('customReasonDorm');
+    
+    if (dormReasonSelect) {
+        dormReasonSelect.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                customReasonDorm.classList.remove('hidden');
+                customReasonDorm.required = true;
             } else {
-                throw new Error('Network response was not ok');
+                customReasonDorm.classList.add('hidden');
+                customReasonDorm.required = false;
+                customReasonDorm.value = '';
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('There was an error processing your request. Please try again.');
         });
     }
-
-    // Update the rejectPayment function
-    function rejectPayment(reservationId) {
-        handlePaymentAction('reject_payment', reservationId);
+    
+    // For Room Available modal
+    const roomReasonSelect = document.querySelector('#makeRoomAvailableModal select[name="termination_reason"]');
+    const customReasonRoom = document.getElementById('customReasonRoom');
+    
+    if (roomReasonSelect) {
+        roomReasonSelect.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                customReasonRoom.classList.remove('hidden');
+                customReasonRoom.required = true;
+            } else {
+                customReasonRoom.classList.add('hidden');
+                customReasonRoom.required = false;
+                customReasonRoom.value = '';
+            }
+        });
     }
-
-    function openDeclineModal() {
-        document.getElementById('declineModal').classList.remove('hidden');
-    }
-
-    function closeDeclineModal() {
-        document.getElementById('declineModal').classList.add('hidden');
-    }
-
-    function submitDeclineForm() {
-        var reason = document.getElementById('decline_reason').value.trim();
-        if (!reason) {
-            document.getElementById('decline_reason').focus();
-            return;
-        }
-        document.getElementById('decline_reason_input').value = reason;
-        closeDeclineModal();
-        // Trigger form submit which will be handled by the AJAX handler
-        document.getElementById('declineForm').dispatchEvent(new Event('submit'));
-    }
+});
 </script>
 
 <style>
+    /* RESPONSIVE STYLES */
+    
+    /* Mobile sidebars */
+    #mobile-reservations-sidebar {
+        display: none;
+        z-index: 9999 !important;
+    }
+    
+    #mobile-reservations-sidebar:not(.hidden) {
+        display: block;
+    }
+    
+    /* Smooth transitions */
+    .absolute.inset-y-0.left-0 {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    /* Ensure burger buttons are visible on mobile */
+    @media (max-width: 767px) {
+        #mobile-reservations-toggle,
+        #mobile-menu-toggle {
+            display: flex !important;
+        }
+        
+        #reservations-sidebar {
+            display: none !important;
+        }
+        
+        #details-panel {
+            width: 100vw !important;
+            top: 4rem !important;
+            height: calc(100vh - 4rem) !important;
+            z-index: 100 !important;
+            border-radius: 0 !important;
+        }
+        
+        #details-panel .sticky {
+            top: 0 !important;
+        }
+        
+        #close-details {
+            pointer-events: auto !important;
+            z-index: 102 !important;
+        }
+        }
+        
+        #mobile-show-reservations {
+            position: relative;
+            z-index: 10;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        #mobile-reservations-toggle,
+        #mobile-menu-toggle,
+        #mobile-show-reservations {
+            display: none !important;
+        }
+        
+        #reservations-sidebar {
+            display: flex !important;
+        }
+    }
+
+    /* Textarea auto-resize */
+    #message-input {
+        min-height: 44px;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    /* Make reservation items obviously clickable */
+    .reservation-item, .reservation-item-mobile {
+        cursor: pointer !important;
+        transition: all 0.2s ease;
+    }
+
+    .reservation-item:hover, .reservation-item-mobile:hover {
+        background-color: #eff6ff !important;
+        transform: translateY(-1px);
+    }
+
+    .reservation-item:active, .reservation-item-mobile:active {
+        transform: translateY(0);
+    }
+    
+    /* Image Preview Modal */
+    #imagePreviewModal {
+        background-color: black !important;
+        z-index: 9999 !important;
+    }
+    
+    #prevImage, #nextImage {
+        transform: translateY(-50%);
+        transition: opacity 0.2s;
+    }
+    
+    #prevImage:hover, #nextImage:hover {
+        opacity: 0.8;
+    }
+
+    /* New message toast */
+    .opacity-0 { opacity: 0; }
+    .opacity-100 { opacity: 1; }
+    .translate-y-3 { transform: translateY(0.75rem); }
+    .translate-y-0 { transform: translateY(0); }
+    .transition-base {
+        transition: opacity .2s ease, transform .2s ease;
+    }
+
     /* Smooth transitions for panel */
     .transform {
         --tw-translate-x: 0;
@@ -1155,60 +2177,30 @@
     .z-20 { z-index: 20; }
     .z-30 { z-index: 30; }
     .z-40 { z-index: 40; }
+    .z-50 { z-index: 50; }
 
-    #imagePreviewModal {
-        background-color: black !important;
+    #messages-container {
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
     }
 
-    #prevImage, #nextImage {
-        transform: translateY(-50%);
-        transition: opacity 0.2s;
-    }
-
-    #prevImage:hover, #nextImage:hover {
-        opacity: 0.8;
-    }
-
-    /* Fix scrolling */
-    .overflow-y-auto {
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar {
+    /* Make sure the scrollbar looks good */
+    #messages-container::-webkit-scrollbar {
         width: 6px;
     }
 
-    .overflow-y-auto::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
+    #messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
         border-radius: 3px;
     }
 
-    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.7);
+    #messages-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
     }
 
-    /* Fix for mobile browsers */
-    @supports (-webkit-touch-callout: none) {
-        .h-screen {
-            height: -webkit-fill-available;
-        }
-    }
-
-    /* Fix chat container height */
-    .flex-1.flex.flex-col {
-        min-height: 0;
-    }
-
-    #messages-container {
-        height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+    #messages-container::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
     }
 </style>
-{% endblock %} 
+{% endblock %}

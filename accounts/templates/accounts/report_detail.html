@@ -42,6 +42,17 @@
         <div class="bg-gray-50 rounded p-3 mt-1">{{ report.evidence }}</div>
       </div>
       {% endif %}
+      {% if report.evidence_image %}
+      <div class="mb-4">
+        <span class="font-semibold">Evidence Screenshot:</span>
+        <div class="mt-2">
+          <a href="{{ report.evidence_image.url }}" target="_blank" class="block">
+            <img src="{{ report.evidence_image.url }}" alt="Evidence Screenshot" class="max-w-full h-auto rounded-lg shadow-md border border-gray-300 hover:opacity-90 transition">
+          </a>
+          <p class="text-xs text-gray-500 mt-1">Click to view full size</p>
+        </div>
+      </div>
+      {% endif %}
       {% if report.admin_notes %}
       <div class="mb-4">
         <span class="font-semibold">Admin Notes:</span>

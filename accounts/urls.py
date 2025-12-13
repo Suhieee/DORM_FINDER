@@ -2,8 +2,9 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
         RegisterView, LoginView, DashboardView,
-        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView, UpdateUserRoleView, VerifyEmailView, ResendVerificationEmailView, ResendVerificationEmailLoggedInView, TransactionLogView,
-        ViewUserProfileView, ReportUserView, ManageReportsView, ReportDetailView, ResolveReportView, EnhancedToggleUserStatusView
+        ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, NotificationAPIView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView, UpdateUserRoleView, VerifyEmailView, ResendVerificationEmailView, ResendVerificationEmailLoggedInView, TransactionLogView,
+        ViewUserProfileView, ReportUserView, ManageReportsView, ReportDetailView, ResolveReportView, EnhancedToggleUserStatusView,
+        SubmitVerificationView, VerificationRequestsView, ReviewVerificationView
     )
 
 app_name = "accounts"
@@ -21,6 +22,7 @@ urlpatterns = [
 
     path("notifications/", NotificationListView.as_view(), name="notification_list"),
     path("notifications/read/<int:pk>/", MarkNotificationAsReadView.as_view(), name="mark_notification_read"),
+    path("api/notifications/", NotificationAPIView.as_view(), name="notification_api"),
 
     path('create-admin/', CreateAdminView.as_view(), name='create_admin'),
     path('manage-users/', ManageUsersView.as_view(), name='manage_users'),
@@ -65,4 +67,12 @@ urlpatterns = [
     path('manage-reports/', ManageReportsView.as_view(), name='manage_reports'),
     path('report-detail/<int:report_id>/', ReportDetailView.as_view(), name='report_detail'),
     path('resolve-report/<int:report_id>/', ResolveReportView.as_view(), name='resolve_report'),
+    
+    # Transaction Log
+    path('transaction-log/', TransactionLogView.as_view(), name='transaction_log'),
+    
+    # Identity Verification URLs
+    path('verify-identity/', SubmitVerificationView.as_view(), name='submit_verification'),
+    path('verification-requests/', VerificationRequestsView.as_view(), name='verification_requests'),
+    path('review-verification/<int:user_id>/', ReviewVerificationView.as_view(), name='review_verification'),
 ]

@@ -8,7 +8,8 @@ from .views import (
     ReservationCreateView, LandlordReservationsView, tenantReservationsView,
     MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView,
     ManageRoomsView, PublicDormListView, PublicDormDetailView, 
-    PublicRoommateListView, PublicRoommateDetailView, HomePageView
+    PublicRoommateListView, PublicRoommateDetailView, HomePageView,
+    ScheduleVisitView, StudentVisitsView, LandlordVisitsView, ConvertVisitToReservationView
 )
 from . import views
 
@@ -62,4 +63,14 @@ urlpatterns = [
 
     # Room management for landlords
     path('dorms/<int:dorm_id>/rooms/', ManageRoomsView.as_view(), name='manage_rooms'),
+    
+    # Visit scheduling system
+    path('dorm/<int:dorm_id>/schedule-visit/', ScheduleVisitView.as_view(), name='schedule_visit'),
+    path('my-visits/', StudentVisitsView.as_view(), name='student_visits'),
+    path('landlord/visits/', LandlordVisitsView.as_view(), name='landlord_visits'),
+    path('visit/<int:visit_id>/update-status/', views.update_visit_status, name='update_visit_status'),
+    path('visit/<int:visit_id>/convert-to-reservation/', ConvertVisitToReservationView.as_view(), name='convert_to_reservation'),
+    
+    # Move-in checklist
+    path('reservation/<int:reservation_id>/update-checklist/', views.update_checklist, name='update_checklist'),
 ]

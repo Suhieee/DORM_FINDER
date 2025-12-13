@@ -1,104 +1,311 @@
 {% extends 'accounts/base.html' %}
 {% block title %}Transaction Log{% endblock %}
 {% load static %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="bg-white rounded-lg shadow-lg p-0">
-        <div class="bg-blue-800 text-white text-center py-4 rounded-t-lg">
-            <h2 class="text-2xl font-bold tracking-wide">Transaction Log</h2>
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+            <i class="bi bi-list-check mr-3 text-blue-600"></i>
+            Transaction Log
+        </h1>
+        <p class="text-gray-600 mt-2">Track all activities and transactions for your properties</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Total Transactions -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-sm font-medium">Total Transactions</p>
+                    <h3 class="text-3xl font-bold mt-2">{{ total_transactions }}</h3>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-full p-4">
+                    <i class="bi bi-receipt text-3xl"></i>
+                </div>
+            </div>
         </div>
-        <div class="p-0">
+
+        <!-- Total Revenue -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm font-medium">Total Revenue</p>
+                    <h3 class="text-3xl font-bold mt-2">₱{{ total_revenue|floatformat:2 }}</h3>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-full p-4">
+                    <i class="bi bi-cash-coin text-3xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Types -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-purple-100 text-sm font-medium">Transaction Types</p>
+                    <h3 class="text-3xl font-bold mt-2">{{ transaction_breakdown|length }}</h3>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-full p-4">
+                    <i class="bi bi-pie-chart text-3xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="bi bi-funnel mr-2 text-blue-600"></i>
+            Filter Transactions
+        </h3>
+        <form method="get" action="{% url 'accounts:transaction_log' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Transaction Type Filter -->
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select name="type" id="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Types</option>
+                    {% for value, label in transaction_types %}
+                        <option value="{{ value }}" {% if request.GET.type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Landlord Filter (Admin Only) -->
+            {% if user.user_type == 'admin' %}
+            <div>
+                <label for="landlord" class="block text-sm font-medium text-gray-700 mb-2">Landlord</label>
+                <select name="landlord" id="landlord" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Landlords</option>
+                    {% for landlord in all_landlords %}
+                        <option value="{{ landlord.id }}" {% if request.GET.landlord == landlord.id|stringformat:"s" %}selected{% endif %}>{{ landlord.get_full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Dorm Filter -->
+            <div>
+                <label for="dorm" class="block text-sm font-medium text-gray-700 mb-2">Dorm</label>
+                <select name="dorm" id="dorm" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Dorms</option>
+                    {% for dorm in user_dorms %}
+                        <option value="{{ dorm.id }}" {% if request.GET.dorm == dorm.id|stringformat:"s" %}selected{% endif %}>
+                            {% if user.user_type == 'admin' %}{{ dorm.name }} ({{ dorm.landlord.get_full_name }}){% else %}{{ dorm.name }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Range -->
+            <div>
+                <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input type="date" name="start_date" id="start_date" value="{{ request.GET.start_date }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input type="date" name="end_date" id="end_date" value="{{ request.GET.end_date }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <!-- Search -->
+            <div class="md:col-span-2 {% if user.user_type == 'admin' %}lg:col-span-4{% else %}lg:col-span-2{% endif %}">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" name="search" id="search" value="{{ request.GET.search }}" placeholder="Search by description..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="md:col-span-2 flex space-x-3">
+                <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center">
+                    <i class="bi bi-search mr-2"></i>
+                    Apply Filters
+                </button>
+                <a href="{% url 'accounts:transaction_log' %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-medium flex items-center justify-center">
+                    <i class="bi bi-x-circle mr-2"></i>
+                    Clear
+                </a>
+                <button type="button" onclick="window.print()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center">
+                    <i class="bi bi-printer mr-2"></i>
+                    Print
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Transaction List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        {% if page_obj %}
             <div class="overflow-x-auto">
-                <table class="w-full rounded-b-lg divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-2 text-left">Dorm</th>
-                            <th class="px-4 py-2 text-left">Tenant</th>
-                            <th class="px-4 py-2 text-left">Status</th>
-                            <th class="px-4 py-2 text-left">Amount</th>
-                            <th class="px-4 py-2 text-left">Date</th>
-                            <th class="px-4 py-2 text-left">Reason</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            {% if user.user_type == 'admin' %}
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Landlord</th>
+                            {% endif %}
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dorm</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        {% for tx in page_obj %}
+                    <tbody class="divide-y divide-gray-200">
+                        {% for transaction in page_obj %}
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-4 py-2 font-medium text-gray-900">{{ tx.dorm.name }}</td>
-                            <td class="px-4 py-2">{{ tx.tenant.username }}</td>
-                            <td class="px-4 py-2">
-                                {% if tx.status == 'completed' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                        Completed
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full {{ transaction.color_class }} flex items-center justify-center">
+                                        <i class="bi {{ transaction.icon }} text-lg"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">{{ transaction.get_transaction_type_display }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm text-gray-900">{{ transaction.description|truncatewords:10 }}</p>
+                            </td>
+                            {% if user.user_type == 'admin' %}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="text-sm font-medium text-gray-900">{{ transaction.landlord.get_full_name }}</p>
+                                <p class="text-xs text-gray-500">{{ transaction.landlord.email }}</p>
+                            </td>
+                            {% endif %}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="text-sm text-gray-900">{% if transaction.dorm %}{{ transaction.dorm.name }}{% else %}-{% endif %}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="text-sm text-gray-900">{% if transaction.tenant %}{{ transaction.tenant.get_full_name }}{% else %}-{% endif %}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if transaction.amount %}
+                                    <p class="text-sm font-semibold text-green-600">₱{{ transaction.amount|floatformat:2 }}</p>
+                                {% else %}
+                                    <p class="text-sm text-gray-400">-</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if transaction.status == 'success' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="bi bi-check-circle mr-1"></i>
+                                        Success
                                     </span>
-                                {% elif tx.status == 'confirmed' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" /></svg>
-                                        Confirmed
-                                    </span>
-                                {% elif tx.status == 'pending' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" /></svg>
+                                {% elif transaction.status == 'pending' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="bi bi-clock mr-1"></i>
                                         Pending
                                     </span>
-                                {% elif tx.status == 'declined' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                        Declined
+                                {% elif transaction.status == 'failed' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="bi bi-x-circle mr-1"></i>
+                                        Failed
                                     </span>
-                                {% elif tx.status == 'cancelled' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                {% elif transaction.status == 'cancelled' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <i class="bi bi-slash-circle mr-1"></i>
                                         Cancelled
                                     </span>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-2">{% if tx.payment_amount %}₱{{ tx.payment_amount }}{% else %}-{% endif %}</td>
-                            <td class="px-4 py-2">{{ tx.created_at|date:'Y-m-d H:i' }}</td>
-                            <td class="px-4 py-2">
-                                {% if tx.status == 'cancelled' or tx.status == 'declined' %}
-                                    {% if tx.cancellation_reason %}
-                                        <span class="inline-block bg-red-50 text-red-700 px-2 py-1 rounded cursor-pointer hover:bg-red-100 transition" title="Click to expand" onclick="toggleReason(this)">
-                                            Reason
-                                        </span>
-                                        <div class="hidden mt-2 text-sm text-gray-700 bg-gray-50 rounded p-2 shadow-inner">{{ tx.cancellation_reason }}</div>
-                                    {% else %}
-                                        <span class="text-gray-400">-</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-gray-400">-</span>
-                                {% endif %}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="text-sm text-gray-900">{{ transaction.created_at|date:"M d, Y" }}</p>
+                                <p class="text-xs text-gray-500">{{ transaction.created_at|date:"h:i A" }}</p>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+
             <!-- Pagination -->
-            <div class="mt-6 flex justify-center">
-                <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
-                    {% endif %}
-                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
-                    {% endif %}
+            {% if page_obj.has_other_pages %}
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <nav class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Previous
+                            </a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Next
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing
+                                <span class="font-medium">{{ page_obj.start_index }}</span>
+                                to
+                                <span class="font-medium">{{ page_obj.end_index }}</span>
+                                of
+                                <span class="font-medium">{{ page_obj.paginator.count }}</span>
+                                results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page=1{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">First</span>
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </a>
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Previous</span>
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                {% endif %}
+                                
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                                
+                                {% if page_obj.has_next %}
+                                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Next</span>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.dorm %}&dorm={{ request.GET.dorm }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Last</span>
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    </div>
                 </nav>
             </div>
-        </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <i class="bi bi-inbox text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
+                <p class="text-gray-500">Try adjusting your filters or check back later.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
-<script>
-function toggleReason(el) {
-    const reasonDiv = el.nextElementSibling;
-    if (reasonDiv.classList.contains('hidden')) {
-        reasonDiv.classList.remove('hidden');
-        el.textContent = 'Hide';
-    } else {
-        reasonDiv.classList.add('hidden');
-        el.textContent = 'Reason';
+
+<!-- Print Styles -->
+<style>
+    @media print {
+        .no-print, nav, button, form {
+            display: none !important;
+        }
+        body {
+            background: white;
+        }
+        .bg-gradient-to-br {
+            background: #f3f4f6 !important;
+            color: black !important;
+        }
     }
-}
-</script>
+</style>
 {% endblock %} 
