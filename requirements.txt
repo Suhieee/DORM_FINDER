@@ -12,7 +12,7 @@ joblib==1.5.1
 numpy==2.3.0
 packaging==25.0
 pillow==11.2.1
-psycopg==3.1.18
+psycopg2-binary==2.9.10
 python-dateutil==2.9.0
 python-dotenv==1.0.0
 python-http-client==3.3.7
