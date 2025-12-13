@@ -2,8 +2,10 @@ asgiref==3.8.1
 certifi==2025.11.12
 charset-normalizer==3.4.4
 cloudinary==1.44.1
+dj-database-url==2.1.0
 Django==4.2.23
 django-cloudinary-storage==0.3.0
+django-ratelimit==4.1.0
 gunicorn==21.2.0
 idna==3.11
 joblib==1.5.1
