@@ -71,8 +71,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'cloudinary_storage',  # Uncomment when Cloudinary credentials are set
-    # 'cloudinary',  # Uncomment when Cloudinary credentials are set
+    'cloudinary_storage',
+    'cloudinary',
     'accounts',
     'dormitory',
     'user_profile'
