@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<div class="h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden p-4">
+<div class="h-[calc(100vh-4rem)] bg-gray-50 overflow-hidden p-4">
     <!-- Mobile Reservations Toggle Button -->
     <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@
         <div class="absolute inset-0 bg-black/50" onclick="hideMobileReservations()" style="pointer-events: auto; top: 4rem;"></div>
         <div class="absolute left-0 w-80 bg-white shadow-xl transform transition-transform duration-300 -translate-x-full" style="pointer-events: auto; top: 4rem; bottom: 0; height: calc(100vh - 4rem);">
             <!-- Mobile Header -->
-            <div class="sticky top-0 p-4 bg-gradient-to-r from-blue-500 to-blue-600 z-10">
+            <div class="sticky top-0 p-4 bg-blue-600 z-10">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">Reservations</h2>
                     <button id="close-mobile-sidebar" class="text-white p-2 hover:bg-white/20 rounded-lg transition-colors" style="pointer-events: auto;">
@@ -105,53 +105,6 @@
                     </svg>
                 </div>
             </div>
-
-            <!-- Mobile Status Filters -->
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
-                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters-mobile" style="pointer-events: auto;">Clear</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Pending</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
-                            {{ pending_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Confirmed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                            {{ confirmed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Completed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                            {{ completed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Declined</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                            {{ declined_count }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Mobile Reservations List -->
             <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 400px); pointer-events: auto;">
                 {% for reservation in reservations %}
@@ -183,10 +136,12 @@
                                 <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
                             </div>
                             <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
-                            <div class="flex items-center mt-1">
+                            <div class="flex items-center mt-1 flex-wrap gap-1">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
                                     {% if reservation.status == 'pending' %}
                                         bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'pending_payment' %}
+                                        bg-amber-100 text-amber-800
                                     {% elif reservation.status == 'confirmed' %}
                                         bg-green-100 text-green-800
                                     {% elif reservation.status == 'completed' %}
@@ -196,6 +151,28 @@
                                     {% endif %}">
                                     {{ reservation.status|title }}
                                 </span>
+                                
+                                <!-- Payment Status Badge -->
+                                {% if reservation.payment_status %}
+                                    {% if reservation.payment_status == 'success' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                        Paid
+                                    </span>
+                                    {% elif reservation.payment_status == 'processing' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                                        Processing
+                                    </span>
+                                    {% elif reservation.payment_status == 'failed' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">
+                                        Failed
+                                    </span>
+                                    {% elif reservation.payment_status == 'pending' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                        Unpaid
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+                                
                                 {% if reservation.unread_messages_count %}
                                 <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                                     {{ reservation.unread_messages_count }}
@@ -218,7 +195,7 @@
         <!-- Left Sidebar - Reservations List (Desktop) -->
         <div id="reservations-sidebar" class="hidden md:flex flex-col w-80 bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Desktop Header -->
-            <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600">
+            <div class="p-4 bg-blue-600">
                 <h2 class="text-lg font-bold text-white">Reservations</h2>
             </div>
             
@@ -231,55 +208,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </div>
-            </div>
-
-            <!-- Status Filters -->
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
-                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters">Clear</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Pending</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
-                            {{ pending_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Confirmed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                            {{ confirmed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Completed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                            {{ completed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Declined</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                            {{ declined_count }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reservations List -->
+            </div> 
+           <!-- Reservations List -->
             <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 380px);">
                 {% for reservation in reservations %}
                 <div class="reservation-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors duration-200 {% if selected_reservation and selected_reservation.id == reservation.id %}bg-blue-50 border-l-4 border-blue-500{% endif %}"
@@ -310,10 +240,12 @@
                                 <span class="text-xs text-gray-500 whitespace-nowrap ml-2">{{ reservation.reservation_date|timesince }}</span>
                             </div>
                             <p class="text-xs text-gray-600 truncate">{{ reservation.dorm.name }}</p>
-                            <div class="flex items-center mt-1">
+                            <div class="flex items-center mt-1 flex-wrap gap-1">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs 
                                     {% if reservation.status == 'pending' %}
                                         bg-yellow-100 text-yellow-800
+                                    {% elif reservation.status == 'pending_payment' %}
+                                        bg-amber-100 text-amber-800
                                     {% elif reservation.status == 'confirmed' %}
                                         bg-green-100 text-green-800
                                     {% elif reservation.status == 'completed' %}
@@ -323,6 +255,28 @@
                                     {% endif %}">
                                     {{ reservation.status|title }}
                                 </span>
+                                
+                                <!-- Payment Status Badge -->
+                                {% if reservation.payment_status %}
+                                    {% if reservation.payment_status == 'success' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                        Paid
+                                    </span>
+                                    {% elif reservation.payment_status == 'processing' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                                        Processing
+                                    </span>
+                                    {% elif reservation.payment_status == 'failed' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">
+                                        Failed
+                                    </span>
+                                    {% elif reservation.payment_status == 'pending' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                        Unpaid
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+                                
                                 {% if reservation.unread_messages_count %}
                                 <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                                     {{ reservation.unread_messages_count }}
@@ -345,7 +299,7 @@
             {% if selected_reservation %}
                 <!-- Chat Header -->
  <!-- Chat Header -->
-<div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-between flex-shrink-0">
+<div class="p-4 bg-blue-600 text-white flex items-center justify-between flex-shrink-0">
     <!-- LEFT SIDE: User Info -->
     <div class="flex items-center space-x-3">
         <!-- Mobile burger menu -->
@@ -370,8 +324,8 @@
         
         <!-- User Info -->
         <div>
-            <h2 class="font-bold">{{ selected_reservation.tenant.get_full_name }}</h2>
-            <p class="text-xs opacity-90">Last active {{ selected_reservation.tenant.last_login|timesince }} ago</p>
+            <h2 class="font-bold text-white">{{ selected_reservation.tenant.get_full_name }}</h2>
+            <p class="text-xs text-white">Last active {{ selected_reservation.tenant.last_login|timesince }} ago</p>
         </div>
     </div>
 
@@ -416,21 +370,17 @@
             
             {% elif selected_reservation.status == 'occupied' %}
             <!-- Mark as Moved Out button for OCCUPIED reservations -->
-            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="mark_moved_out">
-                <button type="submit" onclick="return confirm('Are you sure the tenant has moved out? This will make the dorm available again.')"
-                        class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
-                    🏠 Mark as Moved Out
-                </button>
-            </form>
+            <button type="button" onclick="openMoveOutModal()"
+                    class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
+                Mark as Moved Out
+            </button>
             {% endif %}
         </div>
 
         <!-- Details Toggle Button -->
-        <div class="border-l border-white/30 pl-4">
+        <div class="border-l border-black/30 pl-4">
             <button id="toggle-details-btn" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6" fill="none" stroke="black" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </button>
@@ -559,6 +509,63 @@
                 <button type="submit" 
                         class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
                     Complete Reservation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mark as Moved Out Modal -->
+<div id="moveOutModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <!-- Success Icon -->
+        <div class="flex justify-center mb-4">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <h3 class="text-xl font-bold text-center mb-4">Confirm Tenant Move-Out</h3>
+        
+        <!-- Info Notice -->
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        This will mark the tenant as moved out and make the dorm available for new reservations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-gray-600 mb-4">This action will:</p>
+        <ul class="list-disc list-inside text-gray-600 mb-6 space-y-2">
+            <li>Change reservation status to <span class="font-semibold text-blue-600">"Completed"</span></li>
+            <li>Make <span class="font-semibold">{{ selected_reservation.dorm.name }}</span> available again</li>
+            <li>Send a notification to <span class="font-semibold">{{ selected_reservation.tenant.get_full_name }}</span></li>
+            <li>Restore available bed space</li>
+        </ul>
+        
+        <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_moved_out">
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeMoveOutModal()" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                    Confirm Move-Out
                 </button>
             </div>
         </form>
@@ -705,7 +712,7 @@
             {% else %}
                 <div class="flex-1 flex items-center justify-center bg-gray-50">
                     <div class="text-center">
-                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6 mx-auto">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
                             <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                             </svg>
@@ -727,7 +734,7 @@
         <!-- Right Sidebar - Dorm Details -->
         {% if selected_reservation %}
         <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
+            <div class=" top-0 bg-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
                 <h3 class="font-bold text-lg text-white">Dorm Details</h3>
                 <button id="close-details" class="p-2 hover:bg-white/20 rounded-lg transition-colors text-white" style="pointer-events: auto;">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -848,6 +855,79 @@
                     </div>
                 </div>
 
+                <!-- Progress Tracker -->
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-3">Progress</h4>
+                    <div class="relative">
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-between mb-2">
+                            <!-- Step 1: Reserve -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'pending,pending_payment,confirmed,occupied,completed' %}bg-green-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    1
+                                </div>
+                                <span class="text-xs mt-1 text-center">Reserve</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.status in 'pending_payment,confirmed,occupied,completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 2: Confirm -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'pending_payment,confirmed,occupied,completed' %}bg-green-500 text-white{% elif selected_reservation.status == 'pending' %}bg-yellow-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    2
+                                </div>
+                                <span class="text-xs mt-1 text-center">Confirm</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.has_paid_reservation %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 3: Pay -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.has_paid_reservation %}bg-green-500 text-white{% elif selected_reservation.status == 'pending_payment' %}bg-yellow-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    3
+                                </div>
+                                <span class="text-xs mt-1 text-center">Pay</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.visit_status == 'completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 4: Visit -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.visit_status == 'completed' %}bg-green-500 text-white{% elif selected_reservation.visit_status == 'scheduled' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    4
+                                </div>
+                                <span class="text-xs mt-1 text-center">Visit</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.checklist_completed_at %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 5: Checklist -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.checklist_completed_at %}bg-green-500 text-white{% elif selected_reservation.has_paid_reservation and selected_reservation.visit_status == 'completed' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    5
+                                </div>
+                                <span class="text-xs mt-1 text-center">Check</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.status in 'occupied,completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 6: Move-in -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'occupied,completed' %}bg-green-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    6
+                                </div>
+                                <span class="text-xs mt-1 text-center">Move-in</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Reservation Status -->
                 <div class="border-t pt-4">
                     <h4 class="font-semibold mb-2">Status</h4>
@@ -859,7 +939,7 @@
                                 bg-green-100 text-green-800
                             {% elif selected_reservation.status == 'occupied' %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                🏠 Tenant Checked In
+                                Tenant Checked In
                             </span>
                             {% elif selected_reservation.status == 'completed' %}
                                 bg-blue-100 text-blue-800
@@ -940,6 +1020,54 @@
                     {% endif %}
                 </div>
                 {% endif %}
+
+                <!-- Payment Receipt - Show after successful payment (Gateway payments) -->
+                {% if selected_reservation.has_paid_reservation and selected_reservation.payment_verified_at and not selected_reservation.payment_proof %}
+                <div class="border-t pt-4">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-start mb-3">
+                            <svg class="w-6 h-6 text-green-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-green-900 mb-1">Payment Received</h4>
+                                <p class="text-sm text-green-800">Tenant payment has been successfully verified</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg p-3 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Transaction ID:</span>
+                                <span class="font-medium">#{{ selected_reservation.id }}</span>
+                            </div>
+                            {% if selected_reservation.payment_amount %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Amount Received:</span>
+                                <span class="font-bold text-green-600">₱{{ selected_reservation.payment_amount|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Method:</span>
+                                <span class="font-medium">{{ selected_reservation.get_payment_method_display }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tenant:</span>
+                                <span class="font-medium">{{ selected_reservation.tenant.get_full_name }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Status:</span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    {{ selected_reservation.get_payment_status_display }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between border-t pt-2 mt-2">
+                                <span class="text-gray-600">Verified On:</span>
+                                <span class="font-medium">{{ selected_reservation.payment_verified_at|date:"M d, Y g:i A" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 
                 <!-- Visit Information & Management -->
                 {% if selected_reservation.visit_scheduled %}
@@ -981,7 +1109,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="complete_visit">
                                 <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
-                                    ✓ Mark Visit as Completed
+                                    Mark Visit as Completed
                                 </button>
                             </form>
                             <p class="text-xs text-gray-600 mt-2 text-center">
@@ -1038,7 +1166,7 @@
                     <label class="flex items-start cursor-pointer">
                         <input type="radio" name="confirmation_type" value="visit" id="option_visit" class="mt-1 mr-3">
                         <div class="flex-1">
-                            <div class="font-semibold text-gray-900 mb-1">📅 Schedule Visit First</div>
+                            <div class="font-semibold text-gray-900 mb-1">Schedule Visit First</div>
                             <p class="text-sm text-gray-600">Arrange a property viewing before move-in</p>
                         </div>
                     </label>
@@ -1077,7 +1205,7 @@
                     <label class="flex items-start cursor-pointer">
                         <input type="radio" name="confirmation_type" value="movein" id="option_movein" class="mt-1 mr-3">
                         <div class="flex-1">
-                            <div class="font-semibold text-gray-900 mb-1">🏠 Set Move-in Date (Skip Visit)</div>
+                            <div class="font-semibold text-gray-900 mb-1">Set Move-in Date (Skip Visit)</div>
                             <p class="text-sm text-gray-600">Proceed directly to move-in without a visit</p>
                         </div>
                     </label>
@@ -1993,6 +2121,15 @@ function closeMakeRoomAvailableModal() {
     document.getElementById('makeRoomAvailableModal').classList.add('hidden');
 }
 
+// Move Out Modal Functions
+function openMoveOutModal() {
+    document.getElementById('moveOutModal').classList.remove('hidden');
+}
+
+function closeMoveOutModal() {
+    document.getElementById('moveOutModal').classList.add('hidden');
+}
+
 // Close modals when clicking outside
 document.getElementById('makeDormAvailableModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
@@ -2003,6 +2140,12 @@ document.getElementById('makeDormAvailableModal')?.addEventListener('click', fun
 document.getElementById('makeRoomAvailableModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeMakeRoomAvailableModal();
+    }
+});
+
+document.getElementById('moveOutModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeMoveOutModal();
     }
 });
 

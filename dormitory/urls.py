@@ -8,10 +8,16 @@ from .views import (
     ReservationCreateView, LandlordReservationsView, tenantReservationsView,
     MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView,
     ManageRoomsView, PublicDormListView, PublicDormDetailView, 
-    PublicRoommateListView, PublicRoommateDetailView, HomePageView,
-    ScheduleVisitView, StudentVisitsView, LandlordVisitsView, ConvertVisitToReservationView
+    PublicRoommateListView, PublicRoommateDetailView, HomePageView
+)
+from .payment_views import (
+    payment_booking_intent, payment_gateway_checkout, payment_webhook,
+    payment_success, payment_failure, cancel_reservation_with_refund,
+    paymongo_gcash_checkout, paymongo_success, paymongo_failure, paymongo_webhook,
+    paymongo_checkout, checkout_success
 )
 from . import views
+from . import chatbot_views
 
 app_name = "dormitory"
 
@@ -64,13 +70,32 @@ urlpatterns = [
     # Room management for landlords
     path('dorms/<int:dorm_id>/rooms/', ManageRoomsView.as_view(), name='manage_rooms'),
     
-    # Visit scheduling system
-    path('dorm/<int:dorm_id>/schedule-visit/', ScheduleVisitView.as_view(), name='schedule_visit'),
-    path('my-visits/', StudentVisitsView.as_view(), name='student_visits'),
-    path('landlord/visits/', LandlordVisitsView.as_view(), name='landlord_visits'),
-    path('visit/<int:visit_id>/update-status/', views.update_visit_status, name='update_visit_status'),
-    path('visit/<int:visit_id>/convert-to-reservation/', ConvertVisitToReservationView.as_view(), name='convert_to_reservation'),
-    
     # Move-in checklist
     path('reservation/<int:reservation_id>/update-checklist/', views.update_checklist, name='update_checklist'),
+    
+    # Payment Gateway URLs
+    path('payment/booking-intent/<int:reservation_id>/', payment_booking_intent, name='payment_booking_intent'),
+    path('payment/checkout/<int:reservation_id>/', payment_gateway_checkout, name='payment_gateway_checkout'),
+    path('payment/webhook/', payment_webhook, name='payment_webhook'),
+    path('payment/success/<int:reservation_id>/', payment_success, name='payment_success'),
+    path('payment/failure/<int:reservation_id>/', payment_failure, name='payment_failure'),
+    path('payment/cancel-with-refund/<int:reservation_id>/', cancel_reservation_with_refund, name='cancel_reservation_with_refund'),
+    
+    # PayMongo GCash Payment URLs (Sources API - Legacy)
+    path('payment/gcash/checkout/<int:reservation_id>/', paymongo_gcash_checkout, name='paymongo_gcash_checkout'),
+    path('payment/gcash/success/<int:reservation_id>/', paymongo_success, name='paymongo_success'),
+    path('payment/gcash/failure/<int:reservation_id>/', paymongo_failure, name='paymongo_failure'),
+    path('payment/gcash/webhook/', paymongo_webhook, name='paymongo_webhook'),
+    
+    # PayMongo Checkout Sessions URLs (RECOMMENDED - Full UI)
+    path('payment/checkout-session/<int:reservation_id>/', paymongo_checkout, name='paymongo_checkout'),
+    path('payment/checkout-success/<int:reservation_id>/', checkout_success, name='checkout_success'),
+    
+    # Chatbot AI Assistant URLs
+    path('chatbot/message/', chatbot_views.chatbot_message, name='chatbot_message'),
+    path('chatbot/reset/', chatbot_views.chatbot_reset, name='chatbot_reset'),
+    path('chatbot/save-faq/', chatbot_views.chatbot_save_faq, name='chatbot_save_faq'),
+    
+    # Cron Job Endpoint for Production (Railway)
+    path('cron/cancel-expired/', views.cron_cancel_expired, name='cron_cancel_expired'),
 ]

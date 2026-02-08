@@ -266,11 +266,16 @@ class RoommatePost(models.Model):
 
     def get_profile_image_url(self):
         """
-        Safely get profile image URL with fallback to default image
+        Safely get profile image URL with fallback to placeholder
+        Priority: RoommatePost profile_image -> User's email gravatar -> Generated avatar
         """
+        # Try RoommatePost profile image first
         if self.profile_image and hasattr(self.profile_image, 'url'):
             return self.profile_image.url
-        return '/static/images/default-profile.png'  # Path to your default image
+        
+        # Fallback to generated avatar with user's name
+        name = self.name if self.name else self.user.get_full_name() or self.user.username
+        return f'https://ui-avatars.com/api/?name={name.replace(" ", "+")}&background=7c3aed&color=fff&size=128'
 
 
     def __str__(self):
@@ -421,6 +426,20 @@ class Reservation(models.Model):
         ('15:00-17:00', '3:00 PM - 5:00 PM'),
         ('17:00-19:00', '5:00 PM - 7:00 PM'),
     )
+    
+    PAYMENT_METHOD_CHOICES = (
+        ('gateway', 'Payment Gateway'),
+        ('manual', 'Manual Upload'),
+        ('cash', 'Cash Payment'),
+    )
+    
+    PAYMENT_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    )
 
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='reservations')
     tenant = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'user_type': 'tenant'})
@@ -442,6 +461,21 @@ class Reservation(models.Model):
     has_paid_reservation = models.BooleanField(default=False)
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True, help_text='Reason for cancellation if the reservation was cancelled')
+    
+    # Payment Gateway Integration Fields
+    payment_intent_id = models.CharField(max_length=100, null=True, blank=True, 
+                                        help_text="Payment gateway transaction ID (e.g., MonGo Pay)")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='manual',
+                                     help_text="Method used for payment")
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending',
+                                     help_text="Current status of the payment")
+    payment_verified_at = models.DateTimeField(null=True, blank=True,
+                                              help_text="When the payment was verified by gateway or landlord")
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
+                                       help_text="Amount refunded to tenant")
+    refund_reason = models.TextField(blank=True, null=True,
+                                    help_text="Reason for refund if applicable")
+    refund_processed_at = models.DateTimeField(null=True, blank=True)
     
     # Visit scheduling fields
     visit_scheduled = models.BooleanField(default=False, help_text="Whether landlord scheduled a visit")
@@ -506,6 +540,93 @@ class Reservation(models.Model):
         
         return timezone.now() > self.payment_deadline
 
+class PaymentConfiguration(models.Model):
+    """Configuration for payment terms per dorm"""
+    dorm = models.OneToOneField(Dorm, on_delete=models.CASCADE, related_name='payment_config')
+    
+    # Payment terms
+    deposit_months = models.IntegerField(default=2, 
+                                        validators=[MinValueValidator(0), MaxValueValidator(12)],
+                                        help_text="Number of months for security deposit (e.g., 2 months)")
+    advance_months = models.IntegerField(default=1,
+                                        validators=[MinValueValidator(0), MaxValueValidator(12)],
+                                        help_text="Number of months for advance payment (e.g., 1 month)")
+    
+    # Fees
+    processing_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+                                                 validators=[MinValueValidator(0), MaxValueValidator(100)],
+                                                 help_text="Processing fee percentage (e.g., 2.5%)")
+    
+    # Payment options
+    accepts_partial_payment = models.BooleanField(default=False,
+                                                  help_text="Allow tenants to pay in installments")
+    partial_payment_percent = models.DecimalField(max_digits=5, decimal_places=2, default=50.0,
+                                                  validators=[MinValueValidator(1), MaxValueValidator(100)],
+                                                  help_text="Percentage required for first installment")
+    
+    # Payment methods accepted
+    accepts_gateway = models.BooleanField(default=True, help_text="Accept online payment gateway")
+    accepts_manual = models.BooleanField(default=True, help_text="Accept manual payment upload")
+    accepts_cash = models.BooleanField(default=False, help_text="Accept cash payment on-site")
+    
+    # Cancellation policy
+    refund_before_days = models.IntegerField(default=7,
+                                            validators=[MinValueValidator(0)],
+                                            help_text="Full refund if cancelled X days before move-in")
+    partial_refund_percent = models.DecimalField(max_digits=5, decimal_places=2, default=50.0,
+                                                 validators=[MinValueValidator(0), MaxValueValidator(100)],
+                                                 help_text="Partial refund percentage if cancelled late")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Payment Configuration"
+        verbose_name_plural = "Payment Configurations"
+    
+    def __str__(self):
+        return f"Payment Config for {self.dorm.name}"
+    
+    def calculate_total_amount(self):
+        """Calculate total payment amount including deposit, advance, and fees"""
+        base_price = self.dorm.price
+        deposit = base_price * self.deposit_months
+        advance = base_price * self.advance_months
+        subtotal = deposit + advance
+        fee = subtotal * (self.processing_fee_percent / 100)
+        total = subtotal + fee
+        
+        return {
+            'base_price': float(base_price),
+            'deposit': float(deposit),
+            'deposit_months': self.deposit_months,
+            'advance': float(advance),
+            'advance_months': self.advance_months,
+            'subtotal': float(subtotal),
+            'processing_fee': float(fee),
+            'processing_fee_percent': float(self.processing_fee_percent),
+            'total': float(total),
+        }
+    
+    def get_partial_payment_amount(self):
+        """Calculate amount for first installment if partial payment is enabled"""
+        if not self.accepts_partial_payment:
+            return None
+        
+        total = self.calculate_total_amount()['total']
+        return total * (self.partial_payment_percent / 100)
+    
+    def calculate_refund(self, days_before_movein):
+        """Calculate refund amount based on cancellation policy"""
+        total = self.calculate_total_amount()['total']
+        
+        if days_before_movein >= self.refund_before_days:
+            # Full refund
+            return total
+        else:
+            # Partial refund
+            return total * (self.partial_refund_percent / 100)
+
 class Review(models.Model):
     RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]  # Rating from 1 to 5
 
@@ -558,6 +679,7 @@ class RoommateMatch(models.Model):
     initiator = models.ForeignKey(RoommatePost, on_delete=models.CASCADE, related_name='initiated_matches')
     target = models.ForeignKey(RoommatePost, on_delete=models.CASCADE, related_name='received_matches')
     compatibility_score = models.DecimalField(max_digits=5, decimal_places=2)  # Store as percentage
+    compatibility_factors = models.JSONField(default=dict, blank=True)  # Store detailed breakdown
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20,
@@ -568,10 +690,34 @@ class RoommateMatch(models.Model):
         ],
         default='pending'
     )
+    # Learning algorithm fields
+    user_feedback_score = models.IntegerField(null=True, blank=True, help_text="User rating of match quality (1-5)")
     
     class Meta:
         unique_together = ('initiator', 'target')
         ordering = ['-compatibility_score']
+    
+    def get_compatibility_reasons(self):
+        """Return top 3 compatibility reasons based on factors"""
+        if not self.compatibility_factors:
+            return []
+        
+        reasons = []
+        factors = self.compatibility_factors
+        
+        if factors.get('budget_score', 0) >= 80:
+            reasons.append(f"Budget ranges align perfectly (±{factors.get('budget_diff', 0)}%)")
+        if factors.get('location_match'):
+            reasons.append(f"Both prefer {self.initiator.preferred_location}")
+        if factors.get('amenities_score', 0) >= 70:
+            count = factors.get('common_amenities_count', 0)
+            reasons.append(f"Share {count} common amenity preferences")
+        if factors.get('mood_match'):
+            reasons.append(f"Compatible personalities: {self.initiator.get_mood_display()}")
+        if factors.get('age_score', 0) >= 80:
+            reasons.append(f"Similar age (±{abs(self.initiator.age - self.target.age)} years)")
+        
+        return reasons[:3]
 
     def __str__(self):
         return f"{self.initiator.name} → {self.target.name} ({self.compatibility_score}%)"
@@ -585,12 +731,21 @@ class RoommateChat(models.Model):
         related_name='received_roommate_messages',
         null=True  # Allow null temporarily for migration
     )
-    content = models.TextField()
+    content = models.TextField(blank=True)  # Allow blank for image-only messages
+    image = models.ImageField(upload_to='chat_images/', null=True, blank=True)  # Support image sharing
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)  # Track when message was read
 
     class Meta:
         ordering = ['timestamp']
+    
+    def get_response_time_hours(self):
+        """Calculate response time in hours if message has been read"""
+        if self.read_at and self.timestamp:
+            delta = self.read_at - self.timestamp
+            return round(delta.total_seconds() / 3600, 1)
+        return None
 
     def save(self, *args, **kwargs):
         # Auto-set receiver based on match if not set
@@ -788,3 +943,69 @@ class TransactionLog(models.Model):
             description=description,
             metadata=metadata or {}
         )
+
+
+class ChatbotConversation(models.Model):
+    """Store chatbot conversation sessions"""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True, related_name='chatbot_conversations')
+    session_id = models.CharField(max_length=100, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Chatbot Conversation'
+        verbose_name_plural = 'Chatbot Conversations'
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else f'Guest ({self.session_id[:8]})'
+        return f'{user_info} - {self.created_at.strftime("%Y-%m-%d %H:%M")}'
+
+
+class ChatbotMessage(models.Model):
+    """Individual messages in chatbot conversations"""
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('assistant', 'Assistant'),
+        ('system', 'System'),
+    ]
+    
+    conversation = models.ForeignKey(ChatbotConversation, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_from_cache = models.BooleanField(default=False, help_text='Whether this response came from FAQ cache')
+    
+    class Meta:
+        ordering = ['timestamp']
+        verbose_name = 'Chatbot Message'
+        verbose_name_plural = 'Chatbot Messages'
+    
+    def __str__(self):
+        preview = self.content[:50] + '...' if len(self.content) > 50 else self.content
+        return f'{self.role}: {preview}'
+
+
+class ChatbotFAQ(models.Model):
+    """Frequently Asked Questions cache to reduce API calls"""
+    question = models.TextField(unique=True, help_text='Normalized question text')
+    answer = models.TextField(help_text='Cached answer')
+    keywords = models.CharField(max_length=500, help_text='Comma-separated keywords for matching', blank=True)
+    hit_count = models.IntegerField(default=0, help_text='Number of times this FAQ was used')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['-hit_count', '-updated_at']
+        verbose_name = 'Chatbot FAQ'
+        verbose_name_plural = 'Chatbot FAQs'
+    
+    def __str__(self):
+        preview = self.question[:60] + '...' if len(self.question) > 60 else self.question
+        return f'{preview} (hits: {self.hit_count})'
+    
+    def increment_hit(self):
+        """Increment hit counter when FAQ is used"""
+        self.hit_count += 1
+        self.save(update_fields=['hit_count', 'updated_at'])

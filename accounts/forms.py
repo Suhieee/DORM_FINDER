@@ -5,15 +5,213 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-class CustomUserCreationForm(UserCreationForm):
-    first_name = forms.CharField(max_length=30, required=True, label="First Name")
-    last_name = forms.CharField(max_length=30, required=True, label="Last Name")
-    contact_number = forms.CharField(max_length=15, required=True, label="Contact Number")
-    profile_picture = forms.ImageField(required=False, label="Profile Picture")  # New Field
+class TenantRegistrationForm(UserCreationForm):
+    """Separate registration form for tenants"""
+    first_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="First Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'First Name'
+        })
+    )
+    last_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="Last Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Last Name'
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Email'
+        })
+    )
+    contact_number = forms.CharField(
+        max_length=15, 
+        required=True, 
+        label="Contact Number",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': '9XX XXX XXXX',
+            'pattern': '^9[0-9]{9}$',
+            'maxlength': '10',
+            'oninput': "this.value = this.value.replace(/[^0-9]/g, '')"
+        })
+    )
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2', 'user_type']
+        fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Username'
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Confirm Password'
+        })
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            return email
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.user_type = 'tenant'  # Force tenant type
+        if commit:
+            user.save()
+        return user
+
+
+class LandlordRegistrationForm(UserCreationForm):
+    """Separate registration form for landlords"""
+    first_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="First Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'First Name'
+        })
+    )
+    last_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="Last Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Last Name'
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Email'
+        })
+    )
+    contact_number = forms.CharField(
+        max_length=15, 
+        required=True, 
+        label="Contact Number",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': '9XX XXX XXXX',
+            'pattern': '^9[0-9]{9}$',
+            'maxlength': '10',
+            'oninput': "this.value = this.value.replace(/[^0-9]/g, '')"
+        })
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Username'
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Confirm Password'
+        })
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            return email
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.user_type = 'landlord'  # Force landlord type
+        if commit:
+            user.save()
+        return user
+
+
+class CustomUserCreationForm(UserCreationForm):
+    first_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="First Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'First Name'
+        })
+    )
+    last_name = forms.CharField(
+        max_length=30, 
+        required=True, 
+        label="Last Name",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'Last Name'
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'Email'
+        })
+    )
+    contact_number = forms.CharField(
+        max_length=15, 
+        required=True, 
+        label="Contact Number",
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': '9XX XXX XXXX',
+            'pattern': '^9[0-9]{9}$',
+            'maxlength': '10',
+            'oninput': "this.value = this.value.replace(/[^0-9]/g, '')"
+        })
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'username', 'email', 'contact_number', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'Username'
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'Password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500',
+            'placeholder': 'Confirm Password'
+        })
 
     def clean_email(self):
         email = self.cleaned_data.get('email', '').strip()

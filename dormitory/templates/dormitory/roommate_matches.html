@@ -25,7 +25,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 /* Enhanced message bubble styling */
 .msg-left::after, .msg-right::after { content: ""; display:block; width:8px; height:8px; transform:rotate(45deg); position:relative; }
 .msg-left::after { background: #f3f4f6; margin-left:-4px; margin-top:4px; }
-.msg-right::after { background: linear-gradient(90deg,#7c3aed,#2563eb); margin-left:4px; margin-top:4px; }
+.msg-right::after { background: #2563eb; margin-left:4px; margin-top:4px; }
 
 /* Enhanced message bubble */
 .message-bubble {
@@ -80,6 +80,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 .messenger-container {
   height: calc(100vh - 120px);
   max-height: 800px;
+  margin-top: 1rem;
 }
 
 .matches-grid {
@@ -104,7 +105,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: rgba(255,255,255,0.4);
   transition: left 0.5s;
 }
 
@@ -158,7 +159,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 .compatibility-bar {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
+  background: #e5e7eb;
   border-radius: 10px;
   height: 8px;
 }
@@ -166,7 +167,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 .compatibility-fill {
   height: 100%;
   border-radius: 10px;
-  background: linear-gradient(90deg, #7c3aed, #2563eb, #06b6d4);
+  background: #7c3aed;
   position: relative;
   transition: width 1s ease-out;
 }
@@ -178,7 +179,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  background: rgba(255,255,255,0.3);
   animation: shimmer 2s infinite;
 }
 
@@ -251,7 +252,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
 /* Enhanced floating button */
 .floating-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -301,7 +302,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, #7c3aed, #2563eb);
+  background: #7c3aed;
   transform: scaleY(0);
   transition: transform 0.2s ease;
 }
@@ -311,7 +312,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 }
 
 .conversation-item:hover {
-  background: linear-gradient(90deg, #f8fafc, #f1f5f9);
+  background: #f1f5f9;
 }
 
 /* Enhanced search input */
@@ -329,7 +330,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
 /* Loading states */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: #e0e0e0;
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
 }
@@ -479,7 +480,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   position: fixed;
   top: 120px;
   right: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   color: white;
   border: none;
   border-radius: 50%;
@@ -561,38 +562,82 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   }
   
   .open-chat-button {
-    right: 1rem;
+    left: 1rem;
+    right: auto;
     bottom: 1rem;
     top: auto;
   }
 }
 </style>
-
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="mb-6 rounded-2xl p-6 flex items-center justify-between border"
-         style="background: linear-gradient(90deg, rgba(109,40,217,0.06), rgba(37,99,235,0.04));">
-        <div>
-            <h1 class="text-2xl font-semibold text-gray-900">Roommate Matches</h1>
-            <p class="text-sm text-gray-600 mt-1">Smart matches, friendly chat — find a roommate who fits.</p>
-        </div>
-        <div class="hidden md:flex items-center gap-4">
-            {% if user_post %}
-            <div class="flex items-center gap-3 bg-white/70 backdrop-blur px-3 py-2 rounded-xl border shadow-sm">
-                <img src="{{ user_post.get_profile_image_url }}"
-                     class="w-9 h-9 rounded-full object-cover border" alt="me">
-                <div class="text-sm">
-                    <div class="text-xs text-gray-500">Your compatibility</div>
-                    <div class="text-sm font-semibold text-gray-800">Personalized</div>
+<div class="container mx-auto px-4 pb-8 pt-20 md:pt-28">
+    <!-- Header with Back Navigation -->
+    <div class="mb-6 rounded-2xl p-6 border bg-purple-50">
+        <div class="flex items-center justify-between">
+            <!-- Back Button and Title -->
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">Roommate Matches</h1>
+                    <p class="text-sm text-gray-600 mt-1">Smart matches, friendly chat — find a roommate who fits.</p>
                 </div>
             </div>
-            {% endif %}
-            <button class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg shadow hover:scale-[1.01] transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l-4 4m0 0l4-4m-4 4V8a4 4 0 014-4h8a4 4 0 014 4v8a4 4 0 01-4 4H8z"/></svg>
-                <span class="text-sm">Smart Match Me</span>
+            
+            <!-- Action Buttons -->
+            <div class="hidden md:flex items-center gap-4">
+            <!-- AI Helper Button -->
+            <button onclick="openAIChatbot()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 hover:scale-[1.01] transition-transform" title="Get AI help finding your perfect roommate">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span class="text-sm">AI Helper</span>
+            </button>
+            <button onclick="autoMatchTopProfiles()" class="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 hover:scale-[1.01] transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="text-sm">Auto-Match Top 3</span>
+            </button>
+            <button onclick="showMatchInsights()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 hover:scale-[1.01] transition-transform">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="text-sm">Match Insights</span>
             </button>
         </div>
     </div>
+
+    <!-- Smart Recommendations Banner -->
+    {% if potential_matches %}
+    <div class="mb-6 bg-purple-50 rounded-2xl p-6 border border-purple-100">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-purple-600 rounded-lg">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">✨ AI Picks for You</h3>
+                <p class="text-sm text-gray-600">Top matches based on your preferences</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for post, score in potential_matches|slice:":3" %}
+            <div class="bg-white rounded-xl p-4 border border-purple-100 hover:shadow-lg transition-all hover:scale-[1.02]">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ post.get_profile_image_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-200" alt="{{ post.name }}">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 truncate">{{ post.name }}</h4>
+                        <p class="text-xs text-gray-500 truncate">{{ post.preferred_location }}</p>
+                    </div>
+                    <div class="text-2xl font-bold text-purple-600">{{ score }}%</div>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'accounts:view_user_profile' post.user.id %}" class="flex-1 text-center px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 hover:shadow-md transition">View</a>
+                    <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="flex-1 initiate-match-form">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full px-3 py-2 bg-white border-2 border-purple-600 text-purple-600 text-xs rounded-lg hover:bg-purple-50 transition">Connect</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Floating Chat Button -->
     <div id="roommate-chat-meta"
@@ -621,8 +666,13 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
             <div class="divide-y divide-gray-100 overflow-y-auto scrollbar-thin px-2 flex-1">
             {% for match in matches %}
             <div class="p-3">
-                    <div class="match-card flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match and selected_match.id == match.id %}bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600{% endif %}">
-                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none relative profile-hover" data-user-id="{% if match.initiator.user == request.user %}{{ match.target.user.id }}{% else %}{{ match.initiator.user.id }}{% endif %}">
+                    <div class="match-card flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match and selected_match.id == match.id %}bg-purple-50 border-l-4 border-purple-600{% endif %}" 
+                         data-match-id="{{ match.id }}" 
+                         data-reasons="{{ match.get_compatibility_reasons|escapejs }}">
+                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none relative profile-hover" 
+                       data-user-id="{% if match.initiator.user == request.user %}{{ match.target.user.id }}{% else %}{{ match.initiator.user.id }}{% endif %}"
+                       data-user-name="{% if match.initiator.user == request.user %}{{ match.target.name }}{% else %}{{ match.initiator.name }}{% endif %}"
+                       data-user-type="{% if match.initiator.user == request.user %}{{ match.target.user.user_type }}{% else %}{{ match.initiator.user.user_type }}{% endif %}">
                         <img src="{% if match.initiator.user == request.user %}{{ match.target.get_profile_image_url }}{% else %}{{ match.initiator.get_profile_image_url }}{% endif %}"
                              class="w-12 h-12 rounded-full object-cover border shadow-sm" alt="avatar">
                         <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
@@ -649,22 +699,45 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                                 </button>
                         </div>
 
-                        <!-- Enhanced compatibility bar -->
+                        <!-- Enhanced compatibility bar with AI explanation -->
                         <div class="mt-3">
                             <div class="compatibility-bar">
                                 <div class="compatibility-fill" data-progress="{{ match.compatibility_score|floatformat:0 }}"></div>
                             </div>
                             <div class="mt-2 flex items-center justify-between">
-                                <span class="text-xs font-medium text-gray-700">{{ match.compatibility_score }}% match</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-700">{{ match.compatibility_score }}% match</span>
+                                    <button class="group relative" onclick="showMatchExplanation(event, {{ match.id }})">
+                                        <svg class="w-4 h-4 text-gray-400 hover:text-purple-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap">Why we matched?</span>
+                                    </button>
+                                </div>
                                 <span class="text-xs">
                                     <span class="px-2 py-1 rounded-full text-[11px] font-medium shadow-sm
-                                        {% if match.status == 'pending' %}bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800
-                                        {% elif match.status == 'accepted' %}bg-gradient-to-r from-green-100 to-green-200 text-green-800
-                                        {% else %}bg-gradient-to-r from-red-100 to-red-200 text-red-800{% endif %}">
+                                        {% if match.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% elif match.status == 'accepted' %}bg-green-100 text-green-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
                                         {{ match.get_status_display }}
                                     </span>
                                 </span>
                             </div>
+                            
+                            <!-- Conversation Starter -->
+                            {% if match.status == 'accepted' and selected_match.id == match.id and personalized_icebreaker %}
+                            <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <div class="flex-1">
+                                        <p class="text-xs font-medium text-blue-900 mb-1">💬 Personalized Conversation Starter:</p>
+                                        <p class="text-xs text-blue-700">"{{ personalized_icebreaker }}"</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- accept/reject (only when relevant) -->
@@ -708,7 +781,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                         <p class="text-xs text-gray-500 mt-1 truncate">{{ post.preferred_location }}</p>
                         <div class="mt-2 w-full">
                             <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                    <div class="h-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600" data-progress="{{ score|floatformat:0 }}"></div>
+                                    <div class="h-2 rounded-full bg-purple-600" data-progress="{{ score|floatformat:0 }}"></div>
                             </div>
                             <div class="mt-1 text-xs text-blue-700 font-medium">{{ score }}%</div>
                         </div>
@@ -738,7 +811,6 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
     </div>
     </div>
         </div>
-
 <!-- Fullscreen Chat Container with Messenger Layout -->
 <div id="chat-fullscreen" class="chat-fullscreen">
     <div class="messenger-layout">
@@ -748,7 +820,16 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                 <h2 class="text-lg font-semibold text-gray-800">Messages</h2>
                     </div>
 
+
+
             <div class="conversations-search">
+                <!-- Back Button -->
+                   <button class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-all group" id="close-chat-btn" title="Back to matches">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                
                 <div class="relative">
                     <input type="text" placeholder="Search conversations..." class="search-input w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -817,17 +898,27 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                 {% endif %}
             </div>
                     </div>
-        
         <!-- Chat Main Area -->
         <div class="chat-main">
             <div class="chat-header">
                 <div class="flex items-center gap-3">
-                    <button class="close-chat-btn" id="close-chat-btn">&times;</button>
+                    <!-- Back Button for Chat -->
+                    <button class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-all group" id="close-chat-btn" title="Back to matches">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
                     {% if selected_match and chat_partner %}
                     <img id="chat-avatar" src="{{ chat_partner.get_profile_image_url }}" class="w-10 h-10 rounded-full object-cover border" alt="{{ chat_partner.name }}">
                     <div>
                         <h3 id="chat-name" class="font-medium text-gray-800">{{ chat_partner.name }}</h3>
-                        <div id="chat-status" class="text-xs text-gray-500">{{ selected_match.get_status_display }}</div>
+                        <div id="chat-status" class="text-xs text-gray-500">
+                            {{ selected_match.get_status_display }}
+                            {% if response_time_text %}
+                            <span class="mx-1">•</span>
+                            <span class="text-green-600">{{ response_time_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% else %}
                     <div>
@@ -857,11 +948,12 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                 {% if chat_messages %}
                     {% for message in chat_messages %}
                     <div class="mb-4 {% if message.sender == request.user %}flex justify-end{% else %}flex justify-start{% endif %}">
-                        <div class="message-bubble inline-block rounded-2xl px-4 py-3 shadow-sm {% if message.sender == request.user %}bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
-                            {% if message.content|slice:":7" == "[image]" %}
-                                <img src="{{ message.content|cut:'[image]' }}" alt="image" class="max-h-32 w-auto rounded-xl mb-2 object-cover" />
-                            {% else %}
-                                <p class="text-sm leading-relaxed">{{ message.content }}</p>
+                        <div class="message-bubble inline-block rounded-2xl px-4 py-3 shadow-md {% if message.sender == request.user %}bg-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
+                            {% if message.image %}
+                                <img src="{{ message.image.url }}" alt="Shared image" class="max-h-48 max-w-xs w-auto rounded-xl mb-2 object-cover" />
+                            {% endif %}
+                            {% if message.content %}
+                                <p class="text-sm leading-relaxed font-medium">{{ message.content }}</p>
                             {% endif %}
                             
                             <!-- Message reactions -->
@@ -878,9 +970,9 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                             </div>
                             
                             <div class="flex items-center gap-2 mt-2 justify-end">
-                                <span class="text-xs {% if message.sender == request.user %}text-white/80{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
+                                <span class="text-xs {% if message.sender == request.user %}text-white opacity-90{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
                                 {% if message.sender == request.user %}
-                                    <span class="text-[10px] {% if message.is_read %}text-white/70{% else %}text-white/40{% endif %}">✓{% if message.is_read %}✓{% endif %}</span>
+                                    <span class="text-[10px] text-white opacity-80">✓{% if message.is_read %}✓{% endif %}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -903,8 +995,8 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                 </div>
 
                 {% if selected_match.status == 'accepted' %}
-            <div class="chat-input-container">
-                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="flex items-center gap-3" id="fullscreen-chat-form" enctype="multipart/form-data">
+            <div class="chat-input-container relative z-[9999]" style="padding-bottom: 80px;">
+                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="flex items-center gap-3 bg-white" id="fullscreen-chat-form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <label class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg border bg-gray-50 text-gray-600 hover:bg-gray-100 cursor-pointer">
                         <input type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="fullscreen-chat-image-input" />
@@ -918,7 +1010,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
                         <button type="button" id="fullscreen-remove-preview-btn" class="remove-preview -ml-3" title="Remove">×</button>
                     </div>
 
-                    <button type="submit" class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-2xl shadow">Send</button>
+                    <button type="submit" class="inline-flex items-center gap-2 text-white bg-blue-700 px-6 py-2 rounded-2xl shadow">Send</button>
                 </form>
             </div>
             {% elif selected_match.status == 'pending' %}
@@ -981,8 +1073,17 @@ document.addEventListener('DOMContentLoaded', function() {
         let timeout;
         
         element.addEventListener('mouseenter', function(e) {
+            e.preventDefault(); // Prevent navigation on hover
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            const userType = this.dataset.userType;
+            if (!userId) return; // Exit if no userId
+            
             timeout = setTimeout(() => {
-                showProfilePreview(e.target, this.dataset.userId);
+                const imgElement = this.querySelector('img') || e.target.closest('.profile-hover').querySelector('img');
+                if (imgElement) {
+                    showProfilePreview(imgElement, userId, userName, userType);
+                }
             }, 500);
         });
         
@@ -990,28 +1091,34 @@ document.addEventListener('DOMContentLoaded', function() {
             clearTimeout(timeout);
             hideProfilePreview();
         });
+        
+        // Prevent click navigation - user should click name link instead
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+        });
     });
     
-    function showProfilePreview(element, userId) {
+    function showProfilePreview(imgElement, userId, userName, userType) {
+        if (!userId || userId === 'undefined') return; // Safety check
+        
         // Create profile preview tooltip
         const preview = document.createElement('div');
         preview.className = 'profile-preview show';
         preview.innerHTML = `
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${element.src}" class="w-12 h-12 rounded-full object-cover" alt="profile">
+            <div class="flex items-center gap-3">
+                <img src="${imgElement.src}" class="w-12 h-12 rounded-full object-cover" alt="profile">
                 <div>
-                    <h4 class="font-semibold text-gray-800">Loading...</h4>
-                    <p class="text-sm text-gray-500">Profile preview</p>
+                    <h4 class="font-semibold text-gray-800">${userName || 'User'}</h4>
+                    <p class="text-xs text-gray-500 capitalize">${userType || 'Member'}</p>
                 </div>
             </div>
-            <div class="skeleton h-4 rounded mb-2"></div>
-            <div class="skeleton h-4 rounded w-3/4"></div>
+            <p class="text-xs text-gray-400 italic mt-2">Click name to view full profile</p>
         `;
         
         document.body.appendChild(preview);
         
         // Position the preview
-        const rect = element.getBoundingClientRect();
+        const rect = imgElement.getBoundingClientRect();
         preview.style.position = 'fixed';
         preview.style.top = (rect.top - preview.offsetHeight - 10) + 'px';
         preview.style.left = (rect.left - preview.offsetWidth/2 + rect.width/2) + 'px';
@@ -1208,6 +1315,122 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // AI Chatbot Integration
+    window.openAIChatbot = function() {
+        // Trigger your existing AI chatbot
+        const chatbotBtn = document.querySelector('[onclick*="chatbot"]') || document.querySelector('.chatbot-button');
+        if (chatbotBtn) {
+            chatbotBtn.click();
+            setTimeout(() => {
+                const chatInput = document.querySelector('#chat-input') || document.querySelector('input[placeholder*="message"]');
+                if (chatInput) {
+                    chatInput.value = "I need help finding the perfect roommate. Can you explain my compatibility scores and give me tips?";
+                }
+            }, 500);
+        } else {
+            alert('AI Helper: Looking at your matches, I can help you understand compatibility scores, suggest conversation starters, and provide safety tips for meeting potential roommates!');
+        }
+    };
+
+    // Auto-Match Top Profiles Function
+    window.autoMatchTopProfiles = function() {
+        // Get top 3 recommended matches from the AI Picks section
+        const topMatches = document.querySelectorAll('.initiate-match-form');
+        
+        if (topMatches.length === 0) {
+            alert('No matches available yet. Create a roommate profile to get matched!');
+            return;
+        }
+        
+        if (confirm(`Send connection requests to your top ${Math.min(3, topMatches.length)} AI-recommended matches?`)) {
+            let sent = 0;
+            const maxMatches = Math.min(3, topMatches.length);
+            
+            Array.from(topMatches).slice(0, maxMatches).forEach((form, index) => {
+                setTimeout(() => {
+                    form.submit();
+                    sent++;
+                    
+                    if (sent === maxMatches) {
+                        setTimeout(() => {
+                            alert(`✅ Successfully sent ${sent} connection request${sent > 1 ? 's' : ''} to your best matches!`);
+                            location.reload();
+                        }, 500);
+                    }
+                }, index * 500); // Stagger submissions
+            });
+        }
+    };
+    
+    // Match Explanation Tooltip with real data
+    window.showMatchExplanation = function(event, matchId) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Find the match element to get compatibility reasons
+        const matchElement = event.target.closest('[data-match-id="' + matchId + '"]');
+        let reasons = [];
+        
+        if (matchElement && matchElement.dataset.reasons) {
+            try {
+                reasons = JSON.parse(matchElement.dataset.reasons);
+            } catch (e) {
+                console.error('Failed to parse reasons:', e);
+            }
+        }
+        
+        // Fallback to default if no reasons found
+        if (reasons.length === 0) {
+            reasons = [
+                'You both prefer similar living environments',
+                'Your budget ranges align well',
+                'Compatible personalities and lifestyles'
+            ];
+        }
+        
+        const tooltip = document.createElement('div');
+        tooltip.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-blue-200 p-4 max-w-xs';
+        tooltip.innerHTML = `
+            <div class="flex items-center gap-2 mb-3">
+                <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h4 class="font-semibold text-gray-900">Why You Matched</h4>
+            </div>
+            <ul class="space-y-2 mb-3">
+                ${reasons.map(reason => `
+                    <li class="flex items-start gap-2 text-xs text-gray-700">
+                        <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>${reason}</span>
+                    </li>
+                `).join('')}
+            </ul>
+            <p class="text-xs text-gray-500 italic">💡 Tip: Message them to learn more about their preferences!</p>
+        `;
+        
+        const rect = event.target.getBoundingClientRect();
+        tooltip.style.top = (rect.bottom + 10) + 'px';
+        tooltip.style.left = Math.max(10, rect.left - 150) + 'px';
+        
+        document.body.appendChild(tooltip);
+        
+        setTimeout(() => {
+            const closeTooltip = (e) => {
+                if (!tooltip.contains(e.target)) {
+                    tooltip.remove();
+                    document.removeEventListener('click', closeTooltip);
+                }
+            };
+            document.addEventListener('click', closeTooltip);
+        }, 100);
+        
+        setTimeout(() => tooltip.remove(), 10000);
+    };
+
     // Chat messaging helpers
     const chatMessages = document.getElementById('fullscreen-chat-messages');
     const chatForm = document.getElementById('fullscreen-chat-form');
@@ -1275,15 +1498,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json();
                 if (res.ok) {
                     let bodyHtml = '';
-                    if (data.image_url) {
-                        bodyHtml = `<img src="${data.image_url}" alt="image" class="max-h-60 rounded-lg mb-2 object-cover" />`;
-                    } else if (data.message && data.message.content) {
-                        bodyHtml = `<p class="text-sm leading-relaxed">${data.message.content}</p>`;
-                    } else {
-                        bodyHtml = `<p class="text-sm leading-relaxed">${content}</p>`;
+                    if (data.message && data.message.has_image && data.message.image_url) {
+                        bodyHtml = `<img src="${data.message.image_url}" alt="Shared image" class="max-h-48 max-w-xs w-auto rounded-xl mb-2 object-cover" />`;
+                    }
+                    if (data.message && data.message.content) {
+                        bodyHtml += `<p class="text-sm leading-relaxed font-medium">${data.message.content}</p>`;
                     }
 
-                    const msgHtml = `<div class="flex justify-end"><div class="inline-block rounded-3xl px-5 py-3 max-w-[85%] shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white msg-right">${bodyHtml}<div class="flex items-center gap-2 mt-2 justify-end"><span class="text-xs text-white/80">${(data.message && data.message.timestamp) || ''}</span><span class="text-[10px] text-white/60">✓</span></div></div></div>`;
+                    const msgHtml = `<div class="mb-4 flex justify-end"><div class="message-bubble inline-block rounded-2xl px-4 py-3 shadow-md bg-blue-600 text-white msg-right">${bodyHtml}<div class="flex items-center gap-2 mt-2 justify-end"><span class="text-xs text-white opacity-90">${data.message.timestamp || ''}</span><span class="text-[10px] text-white opacity-80">✓</span></div></div></div>`;
                     if (chatMessages) chatMessages.insertAdjacentHTML('beforeend', msgHtml);
                     scrollChatToBottom(true);
 
@@ -1300,6 +1522,127 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Show Match Insights Modal
+window.showMatchInsights = function() {
+    const topMatches = document.querySelectorAll('.initiate-match-form');
+    if (topMatches.length === 0) {
+        alert('No AI matches available yet. Complete your profile to get recommendations!');
+        return;
+    }
+    
+    // Build insights content
+    let insightsHTML = '<div class="space-y-4">';
+    
+    Array.from(topMatches).slice(0, 3).forEach((form, index) => {
+        const matchCard = form.closest('[data-match-id]');
+        const matchName = matchCard.querySelector('.font-semibold')?.textContent?.trim() || 'Match ' + (index + 1);
+        const compatibilityScore = matchCard.querySelector('.text-2xl.font-bold')?.textContent?.replace('%', '') || '0';
+        
+        // Extract compatibility reasons
+        let reasons = [];
+        try {
+            const reasonsData = matchCard.dataset.reasons;
+            if (reasonsData) reasons = JSON.parse(reasonsData);
+        } catch(e) {}
+        
+        insightsHTML += `
+            <div class="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold text-gray-900">#${index + 1}: ${matchName}</h4>
+                    <span class="text-xl font-bold text-purple-600">${compatibilityScore}%</span>
+                </div>
+                
+                <!-- Compatibility Breakdown -->
+                <div class="mb-3">
+                    <p class="text-xs font-semibold text-gray-600 mb-2">COMPATIBILITY BREAKDOWN</p>
+                    ${reasons.length > 0 ? reasons.map(r => `
+                        <div class="flex items-start gap-2 mb-1">
+                            <svg class="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-sm text-gray-700">${r}</span>
+                        </div>
+                    `).join('') : '<p class="text-sm text-gray-500">Compatibility based on profile analysis</p>'}
+                </div>
+                
+                <!-- Conversation Tips -->
+                <div class="mb-3">
+                    <p class="text-xs font-semibold text-gray-600 mb-2">💡 CONVERSATION STARTER</p>
+                    <p class="text-sm text-gray-700 bg-white p-2 rounded border border-purple-100">
+                        ${getConversationTip(reasons)}
+                    </p>
+                </div>
+                
+                <!-- Quick Action -->
+                <button onclick="document.querySelectorAll('.initiate-match-form')[${index}].submit(); closeInsightsModal();" 
+                        class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                    Send Connection Request
+                </button>
+            </div>
+        `;
+    });
+    
+    insightsHTML += '</div>';
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'insightsModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">Your Top Match Insights</h3>
+                <button onclick="closeInsightsModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                ${insightsHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeInsightsModal();
+    });
+};
+
+// Generate conversation tip based on compatibility reasons
+function getConversationTip(reasons) {
+    if (reasons.length === 0) return 'Ask about their interests and daily routines to break the ice!';
+    
+    const tips = {
+        'cleanliness': 'Start by discussing cleaning schedules and shared space responsibilities.',
+        'sleep': 'Talk about your sleep patterns and how to respect each other\'s rest time.',
+        'study': 'Share your study habits and preferred quiet hours.',
+        'social': 'Discuss how often you have guests and social preferences.',
+        'noise': 'Ask about noise tolerance levels and preferred quiet times.',
+        'temperature': 'Talk about room temperature preferences and AC/heating usage.',
+        'budget': 'Discuss shared expenses and budget expectations upfront.',
+        'schedule': 'Share your daily routines to find overlapping free time.',
+    };
+    
+    // Match first compatible reason to a tip
+    for (let reason of reasons) {
+        const lowerReason = reason.toLowerCase();
+        for (let [key, tip] of Object.entries(tips)) {
+            if (lowerReason.includes(key)) return tip;
+        }
+    }
+    
+    return 'Ask about their expectations for a roommate relationship and shared living!';
+}
+
+window.closeInsightsModal = function() {
+    const modal = document.getElementById('insightsModal');
+    if (modal) modal.remove();
+};
 </script>
 
 {% endblock %}

@@ -6,9 +6,9 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity, DormVisit
+    RoommateAmenity
 )
-from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm, DormVisitForm
+from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
 from django.db.models import Avg , Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -304,6 +304,12 @@ class AddDormView(LoginRequiredMixin, CreateView):
 
         form.instance.landlord = self.request.user
 
+        # Auto-approve dorm if landlord is verified
+        if self.request.user.is_identity_verified:
+            form.instance.approval_status = 'approved'
+        else:
+            form.instance.approval_status = 'pending'
+
         # The form validation will now handle the latitude/longitude requirement
         # No need for separate checks since we made the fields required
 
@@ -315,16 +321,21 @@ class AddDormView(LoginRequiredMixin, CreateView):
         for image in images:
             DormImage.objects.create(dorm=self.object, image=image)
 
-        # Notify all admins that a new dorm is awaiting review
-        admins = CustomUser.objects.filter(user_type="admin")
-        for admin in admins:
-            Notification.objects.create(
-                user=admin,
-                message=f"New dorm '{self.object.name}' submitted by {self.request.user.username} is awaiting review.",
-                related_object_id=self.object.id,
-            )
+        # Send different notifications based on verification status
+        if self.request.user.is_identity_verified:
+            # Landlord is verified - dorm is auto-approved
+            messages.success(self.request, "Dorm successfully created and automatically approved! (Verified Badge)")
+        else:
+            # Landlord is not verified - dorm needs admin review
+            admins = CustomUser.objects.filter(user_type="admin")
+            for admin in admins:
+                Notification.objects.create(
+                    user=admin,
+                    message=f"New dorm '{self.object.name}' submitted by {self.request.user.username} is awaiting review.",
+                    related_object_id=self.object.id,
+                )
+            messages.success(self.request, "Dorm successfully created and sent for admin review!")
 
-        messages.success(self.request, "Dorm successfully created and sent for admin review!")
         return response
 
     def form_invalid(self, form):
@@ -890,13 +901,6 @@ class ReservationCreateView(CreateView):
         
         if existing_reservation:
             return redirect(f"{reverse('dormitory:tenant_reservations')}?selected_reservation={existing_reservation.pk}")
-        
-        # Check if user has a completed visit (recommended but not required)
-        self.completed_visit = DormVisit.objects.filter(
-            dorm=self.dorm,
-            student=request.user,
-            status='completed'
-        ).first()
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -908,18 +912,12 @@ class ReservationCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dorm'] = self.dorm
-        context['has_completed_visit'] = bool(self.completed_visit)
-        context['completed_visit'] = self.completed_visit
         return context
 
     def form_valid(self, form):
         form.instance.dorm = self.dorm
         form.instance.tenant = self.request.user
         form.instance.status = 'pending'  # Landlord needs to confirm first
-        
-        # Link to visit if exists
-        if self.completed_visit:
-            form.instance.visit = self.completed_visit
         
         # Save the reservation
         self.object = form.save()
@@ -1053,10 +1051,16 @@ class LandlordReservationsView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        from django.db.models import Count, Q
         return Reservation.objects.select_related('dorm', 'tenant').prefetch_related(
             'chat_messages'
         ).filter(
             dorm__landlord=self.request.user
+        ).annotate(
+            unread_messages_count=Count(
+                'chat_messages',
+                filter=Q(chat_messages__is_read=False) & Q(chat_messages__receiver=self.request.user)
+            )
         ).order_by('-reservation_date')
 
     def get_context_data(self, **kwargs):
@@ -1409,6 +1413,7 @@ class UpdateReservationStatusView(View):
             
             if reservation.status == 'occupied':
                 reservation.status = 'completed'
+                reservation.save()
                 
                 # Make dorm available again - restore the bed/unit
                 if reservation.dorm.accommodation_type == 'whole_unit':
@@ -1422,6 +1427,24 @@ class UpdateReservationStatusView(View):
                 if reservation.room is not None:
                     reservation.room.is_available = True
                     reservation.room.save()
+                
+                # Create transaction log
+                from .models_transaction import TransactionLog
+                TransactionLog.objects.create(
+                    landlord=request.user,
+                    tenant=reservation.tenant,
+                    transaction_type='tenant_moved_out',
+                    status='success',
+                    dorm=reservation.dorm,
+                    reservation=reservation,
+                    description=f"{reservation.tenant.get_full_name() or reservation.tenant.username} moved out from {reservation.dorm.name}",
+                    metadata={
+                        'reservation_id': reservation.id,
+                        'move_out_date': timezone.now().isoformat(),
+                        'dorm_name': reservation.dorm.name,
+                        'tenant_name': reservation.tenant.get_full_name() or reservation.tenant.username,
+                    }
+                )
                 
                 messages.success(request, f"Tenant has been marked as moved out. {reservation.dorm.name} is now available again.")
                 
@@ -1581,6 +1604,7 @@ If you have any questions, please contact your landlord.""",
 def user_context(request):
     """Context processor optimized to reduce database queries."""
     from django.core.cache import cache
+    from django.db.models import Count, Q
     
     context = {}
     if not request.user.is_authenticated:
@@ -1591,12 +1615,20 @@ def user_context(request):
         cache_key = f'tenant_reservations_{request.user.id}'
         reservations = cache.get(cache_key)
         if reservations is None:
+            # Annotate each reservation with unread message count
             reservations = list(Reservation.objects.filter(
                 tenant=request.user,
                 status__in=['pending_payment', 'pending', 'confirmed']
+            ).annotate(
+                unread_messages_count=Count(
+                    'chat_messages',
+                    filter=Q(chat_messages__is_read=False) & Q(chat_messages__receiver=request.user)
+                )
             ).select_related('dorm').order_by('-created_at')[:5])  # Limit to 5
             cache.set(cache_key, reservations, 30)
-        context['user_pending_reservations'] = reservations
+        
+        # Only include reservations with unread messages for the badge
+        context['user_pending_reservations'] = [r for r in reservations if r.unread_messages_count > 0]
     elif request.user.user_type == 'landlord':
         cache_key = f'landlord_pending_count_{request.user.id}'
         pending_count = cache.get(cache_key)
@@ -1622,8 +1654,14 @@ class tenantReservationsView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        from django.db.models import Count, Q
         return Reservation.objects.select_related('dorm').filter(
             tenant=self.request.user
+        ).annotate(
+            unread_messages_count=Count(
+                'chat_messages',
+                filter=Q(chat_messages__is_read=False) & Q(chat_messages__receiver=self.request.user)
+            )
         ).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -1878,12 +1916,43 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
                         context['chat_partner'] = selected_match.target
                     else:
                         context['chat_partner'] = selected_match.initiator
-                    # Mark messages as read
+                    
+                    # Generate personalized icebreaker
+                    context['personalized_icebreaker'] = RoommateMatchingService.generate_icebreaker(
+                        selected_match, self.request.user
+                    )
+                    
+                    # Calculate average response time for chat partner
+                    from django.db.models import Avg
+                    from django.utils import timezone
+                    partner_messages = RoommateChat.objects.filter(
+                        match=selected_match,
+                        sender=context['chat_partner'].user,
+                        read_at__isnull=False
+                    )
+                    
+                    if partner_messages.exists():
+                        # Calculate average response time
+                        response_times = []
+                        for msg in partner_messages:
+                            if msg.read_at and msg.timestamp:
+                                delta = (msg.read_at - msg.timestamp).total_seconds() / 3600  # in hours
+                                response_times.append(delta)
+                        
+                        if response_times:
+                            avg_hours = sum(response_times) / len(response_times)
+                            if avg_hours < 1:
+                                context['response_time_text'] = f"Usually replies within {int(avg_hours * 60)} minutes"
+                            else:
+                                context['response_time_text'] = f"Usually replies within {int(avg_hours)} hours"
+                    
+                    # Mark messages as read and update read_at timestamp
+                    from django.utils import timezone
                     RoommateChat.objects.filter(
                         match=selected_match,
                         receiver=self.request.user,
                         is_read=False
-                    ).update(is_read=True)
+                    ).update(is_read=True, read_at=timezone.now())
                 except RoommateMatch.DoesNotExist:
                     messages.error(self.request, "Selected match not found.")
         
@@ -1985,38 +2054,41 @@ class SendRoommateChatMessageView(View):
         if not content and not image_file:
             return JsonResponse({'error': 'Please enter a message or choose an image.'}, status=400)
 
-        # If an image is present, store it and encode the URL in content with a prefix marker
-        image_url = None
-        if image_file:
-            # Reuse media storage; keep folder consistent with other chats
-            saved_path = default_storage.save(f"chat_images/{image_file.name}", image_file)
-            image_url = settings.MEDIA_URL + saved_path
-            if not content:
-                content = f"[image]{image_url}"
-
-        # Create the message
+        # Create the message with proper image field handling
         message = RoommateChat.objects.create(
             match=match,
             sender=request.user,
-            content=content
+            content=content,
+            image=image_file  # Save image directly to the image field
         )
+        
+        # Create notification
+        notification_text = f"New roommate chat from {request.user.get_full_name() or request.user.username}"
+        if content:
+            notification_text += f": {content[:60]}"
+        elif image_file:
+            notification_text += ": Sent an image"
+            
         notify_user(
             user=message.receiver,
-            message=f"New roommate chat from {request.user.get_full_name() or request.user.username}: {content[:60]}",
+            message=notification_text,
             related_object_id=match.id
         )
 
-        return JsonResponse({
+        # Prepare response data
+        response_data = {
             'status': 'success',
             'message': {
                 'id': message.id,
                 'content': message.content,
                 'timestamp': message.timestamp.strftime('%I:%M %p'),
-                'sender_name': message.sender.get_full_name(),
-                'has_image': bool(image_url),
-                'image_url': image_url
+                'sender_name': message.sender.get_full_name() or message.sender.username,
+                'has_image': bool(message.image),
+                'image_url': message.image.url if message.image else None
             }
-        })
+        }
+        
+        return JsonResponse(response_data)
 
 @method_decorator([csrf_exempt, login_required], name='dispatch')
 class ToggleMessageReactionView(View):
@@ -2212,295 +2284,8 @@ class HomePageView(TemplateView):
 
 
 # ========================
-# VISIT SCHEDULING SYSTEM
+# MOVE-IN CHECKLIST
 # ========================
-
-class ScheduleVisitView(LoginRequiredMixin, CreateView):
-    """Student schedules a visit to a dorm"""
-    model = DormVisit
-    form_class = DormVisitForm
-    template_name = 'dormitory/schedule_visit.html'
-    
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'tenant':
-            messages.error(request, "Only students can schedule visits.")
-            return redirect('accounts:dashboard')
-        
-        self.dorm = get_object_or_404(Dorm, pk=kwargs['dorm_id'], 
-                                     approval_status='approved')
-        
-        # Check if student already has a pending/confirmed visit
-        existing_visit = DormVisit.objects.filter(
-            dorm=self.dorm,
-            student=request.user,
-            status__in=['pending', 'confirmed']
-        ).first()
-        
-        if existing_visit:
-            messages.info(request, f"You already have a visit scheduled for {self.dorm.name}.")
-            return redirect('dormitory:student_visits')
-        
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['dorm'] = self.dorm
-        return kwargs
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['dorm'] = self.dorm
-        
-        # Get already booked time slots for next 7 days
-        from datetime import timedelta
-        today = timezone.now().date()
-        booked_slots = {}
-        
-        for day in range(8):
-            date = today + timedelta(days=day)
-            booked = list(DormVisit.objects.filter(
-                dorm=self.dorm,
-                visit_date=date,
-                status__in=['pending', 'confirmed']
-            ).values_list('time_slot', flat=True))
-            if booked:
-                booked_slots[date.isoformat()] = booked
-        
-        context['booked_slots'] = booked_slots
-        return context
-    
-    def form_valid(self, form):
-        form.instance.dorm = self.dorm
-        form.instance.student = self.request.user
-        
-        try:
-            self.object = form.save()
-            
-            # Notify landlord
-            notify_user(
-                user=self.dorm.landlord,
-                message=f"{self.request.user.get_full_name() or self.request.user.username} requested a visit to {self.dorm.name} on {form.instance.visit_date} ({form.instance.get_time_slot_display()})",
-                related_object_id=self.object.id
-            )
-            
-            messages.success(
-                self.request, 
-                f"Visit request sent successfully! Wait for {self.dorm.landlord.get_full_name() or self.dorm.landlord.username} to confirm your visit."
-            )
-            return redirect('dormitory:student_visits')
-            
-        except ValidationError as e:
-            messages.error(self.request, str(e))
-            return self.form_invalid(form)
-
-
-class StudentVisitsView(LoginRequiredMixin, ListView):
-    """Student views their scheduled visits"""
-    model = DormVisit
-    template_name = 'dormitory/student_visits.html'
-    context_object_name = 'visits'
-    paginate_by = 20
-    
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'tenant':
-            messages.error(request, "Only students can access this page.")
-            return redirect('accounts:dashboard')
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get_queryset(self):
-        return DormVisit.objects.filter(
-            student=self.request.user
-        ).select_related('dorm', 'dorm__landlord').order_by('-visit_date', '-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        queryset = self.get_queryset()
-        
-        # Count by status
-        context['pending_count'] = queryset.filter(status='pending').count()
-        context['confirmed_count'] = queryset.filter(status='confirmed').count()
-        context['completed_count'] = queryset.filter(status='completed').count()
-        
-        return context
-
-
-class LandlordVisitsView(LoginRequiredMixin, ListView):
-    """Landlord manages visit requests"""
-    model = DormVisit
-    template_name = 'dormitory/landlord_visits.html'
-    context_object_name = 'visits'
-    paginate_by = 20
-    
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'landlord':
-            messages.error(request, "Only landlords can access this page.")
-            return redirect('accounts:dashboard')
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get_queryset(self):
-        return DormVisit.objects.filter(
-            dorm__landlord=self.request.user
-        ).select_related('dorm', 'student').order_by('-visit_date', '-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        queryset = self.get_queryset()
-        
-        # Count by status
-        context['pending_count'] = queryset.filter(status='pending').count()
-        context['confirmed_count'] = queryset.filter(status='confirmed').count()
-        context['completed_count'] = queryset.filter(status='completed').count()
-        
-        return context
-
-
-@login_required
-@require_POST
-def update_visit_status(request, visit_id):
-    """Landlord or student updates visit status"""
-    visit = get_object_or_404(DormVisit, id=visit_id)
-    
-    # Check permissions
-    is_landlord = request.user == visit.dorm.landlord
-    is_student = request.user == visit.student
-    
-    if not (is_landlord or is_student):
-        return JsonResponse({'error': 'Not authorized'}, status=403)
-    
-    action = request.POST.get('action')
-    
-    # Landlord actions
-    if is_landlord:
-        if action == 'confirm':
-            visit.status = 'confirmed'
-            visit.confirmed_at = timezone.now()
-            visit.save()
-            
-            notify_user(
-                user=visit.student,
-                message=f"Your visit to {visit.dorm.name} on {visit.visit_date} ({visit.get_time_slot_display()}) has been confirmed!",
-                related_object_id=visit.id
-            )
-            messages.success(request, f"Visit confirmed for {visit.student.get_full_name()}!")
-            
-        elif action == 'decline':
-            decline_reason = request.POST.get('decline_reason', 'No reason provided')
-            visit.status = 'declined'
-            visit.landlord_notes = f"Declined: {decline_reason}"
-            visit.save()
-            
-            notify_user(
-                user=visit.student,
-                message=f"Your visit request to {visit.dorm.name} was declined. Reason: {decline_reason}",
-                related_object_id=visit.id
-            )
-            messages.info(request, "Visit request declined.")
-            
-        elif action == 'complete':
-            visit.status = 'completed'
-            visit.completed_at = timezone.now()
-            visit.save()
-            messages.success(request, "Visit marked as completed!")
-            
-        elif action == 'no_show':
-            visit.status = 'no_show'
-            visit.save()
-            messages.warning(request, "Visit marked as no-show.")
-    
-    # Student actions
-    elif is_student:
-        if action == 'cancel':
-            if visit.status in ['pending', 'confirmed']:
-                visit.status = 'cancelled'
-                visit.save()
-                
-                notify_user(
-                    user=visit.dorm.landlord,
-                    message=f"{visit.student.get_full_name()} cancelled their visit to {visit.dorm.name} on {visit.visit_date}",
-                    related_object_id=visit.id
-                )
-                messages.success(request, "Visit cancelled successfully.")
-            else:
-                messages.error(request, "Cannot cancel this visit.")
-    
-    # Return JSON for AJAX or redirect for form submission
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'success', 'new_status': visit.status})
-    
-    # Redirect based on user type
-    if is_landlord:
-        return redirect('dormitory:landlord_visits')
-    else:
-        return redirect('dormitory:student_visits')
-
-
-class ConvertVisitToReservationView(LoginRequiredMixin, CreateView):
-    """Student converts completed visit into actual reservation"""
-    model = Reservation
-    form_class = ReservationForm
-    template_name = 'dormitory/convert_to_reservation.html'
-    
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.user_type != 'tenant':
-            messages.error(request, "Only students can make reservations.")
-            return redirect('accounts:dashboard')
-        
-        self.visit = get_object_or_404(DormVisit, pk=kwargs['visit_id'], 
-                                       student=request.user)
-        
-        # Validate visit can be converted
-        if not self.visit.can_convert_to_reservation:
-            messages.error(request, "This visit cannot be converted to a reservation. The visit must be completed first.")
-            return redirect('dormitory:student_visits')
-        
-        # Check if dorm is still reservable
-        if not self.visit.dorm.is_reservable():
-            messages.error(request, "This dorm is no longer available for reservations.")
-            return redirect('dormitory:student_visits')
-        
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['dorm'] = self.visit.dorm
-        return kwargs
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['visit'] = self.visit
-        context['dorm'] = self.visit.dorm
-        return context
-    
-    def form_valid(self, form):
-        from datetime import timedelta
-        
-        form.instance.dorm = self.visit.dorm
-        form.instance.tenant = self.request.user
-        form.instance.status = 'pending_payment'
-        form.instance.visit = self.visit
-        form.instance.payment_deadline = timezone.now() + timedelta(hours=48)
-        
-        self.object = form.save()
-        
-        # Notify landlord
-        notify_user(
-            user=self.visit.dorm.landlord,
-            message=f"{self.request.user.get_full_name() or self.request.user.username} made a reservation for {self.visit.dorm.name} after their visit. Payment deadline: 48 hours.",
-            related_object_id=self.object.id
-        )
-        
-        messages.success(
-            self.request, 
-            "Reservation created! Please upload payment proof within 48 hours or your reservation will be automatically cancelled."
-        )
-        
-        base_url = reverse('dormitory:tenant_reservations')
-        return redirect(f"{base_url}?selected_reservation={self.object.pk}")
-    
-    def get_success_url(self):
-        base_url = reverse('dormitory:tenant_reservations')
-        return f"{base_url}?selected_reservation={self.object.pk}"
-
 
 @login_required
 @require_POST
@@ -2555,3 +2340,48 @@ def update_checklist(request, reservation_id):
         'all_completed': all_completed,
         'completed_at': reservation.checklist_completed_at.isoformat() if reservation.checklist_completed_at else None
     })
+
+
+# ============================================
+# CRON JOB ENDPOINT FOR PRODUCTION
+# ============================================
+
+@csrf_exempt
+@require_POST
+def cron_cancel_expired(request):
+    """
+    Endpoint for external cron services to trigger auto-cancel
+    Protected by secret token from environment variable
+    
+    Usage: POST to /dormitory/cron/cancel-expired/
+    Header: X-Cron-Token: your-secret-token
+    """
+    # Verify secret token
+    token = request.headers.get('X-Cron-Token', '')
+    expected_token = os.environ.get('CRON_SECRET_TOKEN', '')
+    
+    if not expected_token or token != expected_token:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    # Import here to avoid circular imports
+    from django.core.management import call_command
+    from io import StringIO
+    
+    try:
+        # Capture command output
+        output = StringIO()
+        call_command('cancel_expired_payments', stdout=output)
+        output_text = output.getvalue()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Auto-cancel executed successfully',
+            'output': output_text,
+            'timestamp': timezone.now().isoformat()
+        }, status=200)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'timestamp': timezone.now().isoformat()
+        }, status=500)

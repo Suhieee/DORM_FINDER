@@ -44,6 +44,17 @@
         <textarea name="address" id="address" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter address" required>{{ form.address.value|default:'' }}</textarea>
     </div>
 
+        <!-- Location Picker -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Select Dorm Location</label>
+        <div id="map" class="h-64 w-full mt-2 border border-gray-300 rounded-md z-30"></div>
+        <div id="location-info" class="mt-2 text-sm text-gray-600 hidden">
+            <span id="selected-location"></span>
+        </div>
+        <input type="hidden" name="latitude" id="latitude" value="{{ form.latitude.value|default:'' }}" required>
+        <input type="hidden" name="longitude" id="longitude" value="{{ form.longitude.value|default:'' }}" required>           
+    </div>
+
     <!-- Accommodation Type -->
     <div>
         <label for="accommodation_type" class="block text-sm font-medium text-gray-700">Accommodation Type</label>
@@ -112,17 +123,6 @@
             </div>
             {% endfor %}
         </div>
-    </div>
-
-    <!-- Location Picker -->
-    <div>
-        <label class="block text-sm font-medium text-gray-700">Select Dorm Location</label>
-        <div id="map" class="h-64 w-full mt-2 border border-gray-300 rounded-md z-30"></div>
-        <div id="location-info" class="mt-2 text-sm text-gray-600 hidden">
-            <span id="selected-location"></span>
-        </div>
-        <input type="hidden" name="latitude" id="latitude" value="{{ form.latitude.value|default:'' }}" required>
-        <input type="hidden" name="longitude" id="longitude" value="{{ form.longitude.value|default:'' }}" required>           
     </div>
 
     <!-- Permit Upload -->

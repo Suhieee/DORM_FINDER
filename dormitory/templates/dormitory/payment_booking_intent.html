@@ -1,0 +1,176 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Payment Details - {{ reservation.dorm.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Payment Details</h1>
+        <p class="mt-2 text-gray-600">Review and select your payment method for {{ reservation.dorm.name }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Payment Breakdown Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Breakdown</h2>
+            
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Monthly Rent</span>
+                    <span class="font-medium">₱{{ payment_breakdown.base_price|floatformat:2 }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Deposit ({{ payment_breakdown.deposit_months }} months)</span>
+                    <span class="font-medium">₱{{ payment_breakdown.deposit|floatformat:2 }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Advance ({{ payment_breakdown.advance_months }} months)</span>
+                    <span class="font-medium">₱{{ payment_breakdown.advance|floatformat:2 }}</span>
+                </div>
+                
+                <div class="flex justify-between pt-2 border-t">
+                    <span class="text-gray-600">Subtotal</span>
+                    <span class="font-medium">₱{{ payment_breakdown.subtotal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Processing Fee ({{ payment_breakdown.processing_fee_percent }}%)</span>
+                    <span class="font-medium">₱{{ payment_breakdown.processing_fee|floatformat:2 }}</span>
+                </div>
+                
+                <div class="flex justify-between pt-3 border-t-2 border-gray-300">
+                    <span class="text-lg font-bold text-gray-900">Total Amount</span>
+                    <span class="text-2xl font-bold text-blue-600">₱{{ payment_breakdown.total|floatformat:2 }}</span>
+                </div>
+            </div>
+            
+            {% if accepts_partial and partial_payment_amount %}
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    Partial payment available: Pay ₱{{ partial_payment_amount|floatformat:2 }} now
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Method Selection -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Payment Method</h2>
+            
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                {% if accepts_gateway %}
+                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                    <input type="radio" name="payment_method" value="gateway" class="mr-3">
+                    <div class="inline-block">
+                        <div class="font-medium text-gray-900">Online Payment Gateway</div>
+                        <div class="text-sm text-gray-600">Pay securely via MonGo Pay (Credit/Debit Card, E-Wallet)</div>
+                        <div class="mt-2">
+                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">Instant Verification</span>
+                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">Secure</span>
+                        </div>
+                    </div>
+                </label>
+                {% endif %}
+                
+                <!-- PayMongo Checkout (GCash, PayMaya, Cards) - RECOMMENDED -->
+                <label class="block p-4 border-2 border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gradient-to-r from-blue-50 to-white">
+                    <input type="radio" name="payment_method" value="gcash" class="mr-3" checked>
+                    <div class="inline-block">
+                        <div class="font-medium text-gray-900 flex items-center">
+                            <span class="mr-2">PayMongo Checkout</span>
+                            <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">RECOMMENDED</span>
+                        </div>
+                        <div class="text-sm text-gray-600">Pay via GCash, PayMaya, or Credit/Debit Card</div>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <svg class="w-8 h-8" viewBox="0 0 50 50" fill="none">
+                                <circle cx="25" cy="25" r="25" fill="#007DFF"/>
+                                <text x="25" y="30" font-family="Arial" font-size="18" font-weight="bold" fill="white" text-anchor="middle">G</text>
+                            </svg>
+                            <svg class="w-8 h-8" viewBox="0 0 50 50" fill="none">
+                                <circle cx="25" cy="25" r="25" fill="#00D632"/>
+                                <text x="25" y="30" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">PM</text>
+                            </svg>
+                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">✓ Instant</span>
+                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">✓ Secure</span>
+                            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">✓ Email Receipt</span>
+                        </div>
+                    </div>
+                </label>
+                
+                {% if accepts_manual %}
+                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                    <input type="radio" name="payment_method" value="manual" class="mr-3">
+                    <div class="inline-block">
+                        <div class="font-medium text-gray-900">Manual Payment Upload</div>
+                        <div class="text-sm text-gray-600">Transfer to landlord and upload payment proof</div>
+                        <div class="mt-2">
+                            <span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">Manual Verification</span>
+                        </div>
+                    </div>
+                </label>
+                {% endif %}
+                
+                {% if accepts_cash %}
+                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                    <input type="radio" name="payment_method" value="cash" class="mr-3">
+                    <div class="inline-block">
+                        <div class="font-medium text-gray-900">Cash Payment On-Site</div>
+                        <div class="text-sm text-gray-600">Arrange cash payment with landlord</div>
+                        <div class="mt-2">
+                            <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded">Coordinate with Landlord</span>
+                        </div>
+                    </div>
+                </label>
+                {% endif %}
+                
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Proceed to Payment
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'dormitory:tenant_reservations' %}" class="text-sm text-gray-600 hover:text-gray-900">
+                        ← Cancel and go back
+                    </a>
+                </div>
+            </form>
+            
+            <!-- Security Notice -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-900 mb-2">🔒 Secure Payment</h3>
+                <p class="text-xs text-gray-600">
+                    Your payment information is encrypted and secure. We never store your credit card details.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dorm Summary -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Reservation Summary</h2>
+        <div class="flex items-start space-x-4">
+            {% if reservation.dorm.images.first %}
+            <img src="{{ reservation.dorm.images.first.image.url }}" alt="{{ reservation.dorm.name }}" class="w-24 h-24 object-cover rounded-lg">
+            {% endif %}
+            <div class="flex-1">
+                <h3 class="font-medium text-gray-900">{{ reservation.dorm.name }}</h3>
+                <p class="text-sm text-gray-600">{{ reservation.dorm.address }}</p>
+                <p class="text-sm text-gray-600 mt-1">Landlord: {{ reservation.dorm.landlord.get_full_name|default:reservation.dorm.landlord.username }}</p>
+                {% if reservation.move_in_date %}
+                <p class="text-sm text-gray-600 mt-1">Move-in Date: {{ reservation.move_in_date }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

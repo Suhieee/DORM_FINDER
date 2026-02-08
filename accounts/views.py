@@ -4,13 +4,18 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, FormView, UpdateView ,ListView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, ResolveReportForm, IdentityVerificationForm, VerificationReviewForm
+from .forms import (
+    CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, 
+    ResolveReportForm, IdentityVerificationForm, VerificationReviewForm,
+    TenantRegistrationForm, LandlordRegistrationForm
+)
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib import messages
 from dormitory.models import Dorm, Review, Reservation, Message, TransactionLog
 from django.views import View
 from .models import Notification, CustomUser, UserReport
-from user_profile.models import UserProfile, UserInteraction
+from user_profile.models import UserProfile, UserInteraction, TenantPreferences
+from user_profile.forms import TenantPreferencesForm
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Avg, Count, F, Q, ExpressionWrapper, FloatField, Value
 from django.db.models.functions import Cast, Coalesce, Round
@@ -37,13 +42,167 @@ from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
 
+class RegisterChoiceView(TemplateView):
+    """View to let users choose between tenant or landlord registration"""
+    template_name = "accounts/register_choice.html"
+
+
+class TenantRegisterView(CreateView):
+    """Registration view specifically for tenants"""
+    form_class = TenantRegistrationForm
+    template_name = "accounts/tenant_register.html"
+
+    def form_valid(self, form):
+        """Log in user after successful registration and redirect to preferences setup"""
+        user = form.save()
+        # Create user profile
+        token = secrets.token_urlsafe(32)
+        now = timezone.now()
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "profile_picture": "profile_pictures/default.jpg",
+                "verification_token": token,
+                "verification_token_created_at": now,
+            },
+        )
+        if not _:
+            profile.verification_token = token
+            profile.verification_token_created_at = now
+            profile.save()
+
+        # Send verification email
+        try:
+            self._send_verification_email(user, token)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
+            messages.warning(self.request, 'Registration successful, but email verification could not be sent.')
+
+        login(self.request, user)
+        messages.success(self.request, f"Welcome, {user.username}! Let's set up your preferences to find the perfect dorm.")
+        return redirect('user_profile:setup_preferences')
+
+    def _send_verification_email(self, user, token):
+        """Helper method to send verification email"""
+        from django.urls import reverse
+        if settings.SITE_URL:
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = settings.SITE_URL.rstrip('/') + verification_path
+        else:
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = self.request.build_absolute_uri(verification_path)
+        
+        html_message = render_to_string('email/verify_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+            'year': datetime.now().year,
+        })
+        
+        logger = logging.getLogger(__name__)
+        sendgrid_configured = bool(getattr(settings, 'SENDGRID_API_KEY', None))
+        smtp_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+        email_configured = sendgrid_configured or smtp_configured
+        
+        if email_configured:
+            send_mail(
+                'Verify your email address',
+                '',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,
+                html_message=html_message,
+            )
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Registration failed. Please check the form.")
+        return super().form_invalid(form)
+
+
+class LandlordRegisterView(CreateView):
+    """Registration view specifically for landlords"""
+    form_class = LandlordRegistrationForm
+    template_name = "accounts/landlord_register.html"
+
+    def form_valid(self, form):
+        """Log in user after successful registration and redirect to verification"""
+        user = form.save()
+        # Create user profile
+        token = secrets.token_urlsafe(32)
+        now = timezone.now()
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "profile_picture": "profile_pictures/default.jpg",
+                "verification_token": token,
+                "verification_token_created_at": now,
+            },
+        )
+        if not _:
+            profile.verification_token = token
+            profile.verification_token_created_at = now
+            profile.save()
+
+        # Send verification email
+        try:
+            self._send_verification_email(user, token)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
+            messages.warning(self.request, 'Registration successful, but email verification could not be sent.')
+
+        login(self.request, user)
+        messages.success(self.request, f"Welcome, {user.username}! To list properties, you must verify your identity first.")
+        return redirect('accounts:submit_verification')
+
+    def _send_verification_email(self, user, token):
+        """Helper method to send verification email"""
+        from django.urls import reverse
+        if settings.SITE_URL:
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = settings.SITE_URL.rstrip('/') + verification_path
+        else:
+            verification_path = reverse('accounts:verify_email', kwargs={'token': token})
+            verification_url = self.request.build_absolute_uri(verification_path)
+        
+        html_message = render_to_string('email/verify_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+            'year': datetime.now().year,
+        })
+        
+        logger = logging.getLogger(__name__)
+        sendgrid_configured = bool(getattr(settings, 'SENDGRID_API_KEY', None))
+        smtp_configured = bool(settings.EMAIL_HOST_PASSWORD) and bool(settings.DEFAULT_FROM_EMAIL)
+        email_configured = sendgrid_configured or smtp_configured
+        
+        if email_configured:
+            send_mail(
+                'Verify your email address',
+                '',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,
+                html_message=html_message,
+            )
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Registration failed. Please check the form.")
+        return super().form_invalid(form)
+
+
 class RegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = "accounts/register.html"
 
     def form_valid(self, form):
         """Log in user after successful registration, create profile, and redirect."""
-        user = form.save()
+        # Get user_type from POST data and set it on the user instance
+        user_type = self.request.POST.get('user_type', 'tenant')
+        user = form.save(commit=False)
+        user.user_type = user_type
+        user.save()
+        
         # Ensure a UserProfile exists (signals also handle this; this is idempotent)
         token = secrets.token_urlsafe(32)
         now = timezone.now()
@@ -126,9 +285,16 @@ class RegisterView(CreateView):
             return next_url
         
         user = self.request.user
-        # User types are stored as lowercase: 'tenant', 'landlord', 'admin'
-        # All users redirect to the main dashboard which shows different content based on user_type
-        return reverse_lazy("accounts:dashboard")
+        # Redirect based on user type
+        if user.user_type == 'tenant':
+            # Redirect tenant to preference setup
+            return reverse_lazy("user_profile:setup_preferences")
+        elif user.user_type == 'landlord':
+            # Redirect landlord to verification page
+            return reverse_lazy("accounts:submit_verification")
+        else:
+            # Admin or other types go to dashboard
+            return reverse_lazy("accounts:dashboard")
 
     def form_invalid(self, form):
         """Handle errors if registration fails."""
@@ -268,8 +434,43 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             recent_views = UserInteraction.objects.filter(user=user, interaction_type='view').order_by('-timestamp')[:10]
             viewed_dorms = Dorm.objects.filter(id__in=recent_views.values_list('dorm_id', flat=True))
 
-            # --- Prepare base queryset and dorm list ---
-            base_queryset = Dorm.objects.filter(approval_status="approved", available=True).annotate(
+            # Get tenant preferences for AI-based filtering
+            try:
+                preferences = TenantPreferences.objects.get(user=user)
+                context['has_preferences'] = True
+                context['preferences'] = preferences
+            except TenantPreferences.DoesNotExist:
+                preferences = None
+                context['has_preferences'] = False
+
+            # --- Prepare base queryset with SMART FILTERING based on preferences ---
+            base_queryset = Dorm.objects.filter(approval_status="approved", available=True)
+            
+            # Apply preference-based filters if they exist
+            if preferences:
+                # Budget filter
+                if preferences.min_budget > 0 or preferences.max_budget < 1000000:
+                    base_queryset = base_queryset.filter(
+                        price__gte=preferences.min_budget,
+                        price__lte=preferences.max_budget
+                    )
+                
+                # Gender preference filter (if dorm has gender field)
+                if hasattr(Dorm, 'gender_preference') and preferences.preferred_gender != 'any':
+                    base_queryset = base_queryset.filter(
+                        Q(gender_preference=preferences.preferred_gender) | 
+                        Q(gender_preference='any')
+                    )
+                
+                # Room type filter
+                if preferences.preferred_room_type == 'single':
+                    base_queryset = base_queryset.filter(accommodation_type='whole_unit')
+                elif preferences.preferred_room_type == 'shared':
+                    base_queryset = base_queryset.filter(
+                        accommodation_type__in=['bedspace', 'room_sharing']
+                    )
+
+            base_queryset = base_queryset.annotate(
                 avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
                 review_count=Count('reviews'),
                 amenity_count=Count('amenities'),
@@ -342,56 +543,127 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             else:
                 ml_recommended_indices = []
 
-            # --- Calculate distance score if tenant has a school ---
-            if hasattr(user, 'school') and user.school and user.school.latitude and user.school.longitude:
+            # --- Calculate distance score based on preferences or school ---
+            if preferences and preferences.preferred_location:
+                # Use Google Geocoding API or simple text matching for now
+                # For now, we'll use simple text matching and distance if coords available
                 for dorm in dorms:
-                    distance = self.calculate_distance(
-                        user.school.latitude, 
-                        user.school.longitude,
-                        dorm.latitude, 
-                        dorm.longitude
-                    )
-                    dorm.distance_score = max(0, 1 - (distance / 10))  # 10km as max ideal distance
+                    if dorm.latitude and dorm.longitude:
+                        # Calculate distance from preferred location (would need geocoding in production)
+                        # For now, give bonus if address contains preferred location
+                        if preferences.preferred_location.lower() in dorm.address.lower():
+                            dorm.distance_score = 1.0
+                        else:
+                            dorm.distance_score = 0.5
+                    else:
+                        dorm.distance_score = 0.5
             else:
+                # No preferences, use default distance scoring
                 for dorm in dorms:
-                    dorm.distance_score = 0.5  # Neutral score if no school set
-
-            # --- Rule-based + ML scoring and explanations ---
+                    dorm.distance_score = 0.5
+            
+            # --- AI-POWERED scoring with preferences ---
             scored_dorms = []
             for i, dorm in enumerate(dorms):
+                # Base scoring
                 final_score = (
-                    float(getattr(dorm, 'avg_rating', dorm.get_average_rating())) * 0.25 +
-                    dorm.distance_score * 0.25 +
-                    (dorm.amenity_count / 10) * 0.25 +
+                    float(getattr(dorm, 'avg_rating', dorm.get_average_rating())) * 0.20 +
+                    dorm.distance_score * 0.20 +
+                    (dorm.amenity_count / 10) * 0.15 +
                     float(getattr(dorm, 'review_count', 0)) * 0.05 +
                     float(dorm.price) * -0.00001
                 )
-                ml_bonus = 0.2 if i in ml_recommended_indices else 0
-                collab_bonus = 0.2 if dorm.id in collab_dorm_ids else 0
-                total_score = final_score + ml_bonus + collab_bonus
+                
+                # AI bonuses
+                ml_bonus = 0.15 if i in ml_recommended_indices else 0
+                collab_bonus = 0.15 if dorm.id in collab_dorm_ids else 0
+                
+                # PREFERENCE-BASED BONUS (makes it smart!)
+                preference_bonus = 0
+                amenity_matches = 0
+                if preferences:
+                    # Get dorm amenities
+                    dorm_amenity_names = set(dorm.amenities.values_list('name', flat=True))
+                    
+                    # Check amenity matches
+                    if preferences.wifi_required and any('wifi' in a.lower() or 'internet' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.parking_required and any('parking' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.laundry_required and any('laundry' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.kitchen_required and any('kitchen' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.aircon_required and any('aircon' in a.lower() or 'air con' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.security_required and any('security' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.pet_friendly_required and any('pet' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.study_area_required and any('study' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    if preferences.near_public_transport and any('transport' in a.lower() or 'jeep' in a.lower() or 'mrt' in a.lower() for a in dorm_amenity_names):
+                        amenity_matches += 1
+                    
+                    # Calculate preference bonus (0-0.30 based on amenity matches)
+                    total_required_amenities = sum([
+                        preferences.wifi_required,
+                        preferences.parking_required,
+                        preferences.laundry_required,
+                        preferences.kitchen_required,
+                        preferences.aircon_required,
+                        preferences.security_required,
+                        preferences.pet_friendly_required,
+                        preferences.study_area_required,
+                        preferences.near_public_transport
+                    ])
+                    if total_required_amenities > 0:
+                        preference_bonus = (amenity_matches / total_required_amenities) * 0.30
+                    
+                    # Budget match bonus
+                    if preferences.min_budget <= dorm.price <= preferences.max_budget:
+                        preference_bonus += 0.10
+                
+                total_score = final_score + ml_bonus + collab_bonus + preference_bonus
 
-                # --- Explanation logic ---
+                # --- Enhanced explanation logic with preferences ---
                 reasons = []
+                dorm.preference_match_percentage = 0
+                if preferences and total_required_amenities > 0:
+                    match_pct = int((amenity_matches / total_required_amenities) * 100)
+                    dorm.preference_match_percentage = match_pct
+                    if match_pct >= 80:
+                        reasons.append(f" {match_pct}% match with your preferences")
+                    elif match_pct >= 50:
+                        reasons.append(f" {match_pct}% match with your preferences")
+                
+                if preferences and preferences.min_budget <= dorm.price <= preferences.max_budget:
+                    reasons.append(" Within your budget")
+                
                 if i in ml_recommended_indices:
-                    reasons.append("Similar to your favorites/views")
+                    reasons.append(" Similar to your favorites")
                 if dorm.id in collab_dorm_ids:
-                    reasons.append("Liked by tenants with similar taste")
+                    reasons.append(" Popular among similar tenants")
                 if getattr(dorm, 'avg_rating', dorm.get_average_rating()) >= 4.5:
-                    reasons.append("Highly rated by tenants")
+                    reasons.append(" Highly rated")
                 if dorm.distance_score >= 0.8:
-                    reasons.append("Very close to your school")
+                    reasons.append(" Near your preferred location")
                 if dorm.amenity_count >= 7:
-                    reasons.append("Has many amenities")
-                if getattr(dorm, 'review_count', 0) >= 10:
-                    reasons.append("Popular among tenants")
-                explanation = " and ".join(reasons[:2]) if reasons else "Recommended for you"
+                    reasons.append(" Many amenities")
+                
+                explanation = " • ".join(reasons[:3]) if reasons else "Recommended for you"
 
-                scored_dorms.append((dorm, total_score, explanation))
-
-            # --- Sort and split as before, but keep explanations ---
+                scored_dorms.append((dorm, total_score, explanation, amenity_matches if preferences else 0))
+            
+            # --- Sort by score (AI-powered ranking!) ---
             scored_dorms.sort(key=lambda x: x[1], reverse=True)
-            regular_dorms = [(d, e) for d, s, e in scored_dorms if d.accommodation_type == 'whole_unit'][:6]
-            bedspace_dorms = [(d, e) for d, s, e in scored_dorms if d.accommodation_type in ['bedspace', 'room_sharing']][:6]
+            regular_dorms = [(d, e) for d, s, e, a in scored_dorms if d.accommodation_type == 'whole_unit'][:12]
+            bedspace_dorms = [(d, e) for d, s, e, a in scored_dorms if d.accommodation_type in ['bedspace', 'room_sharing']][:12]
+            
+            # Top matches specifically for preference-based users
+            if preferences:
+                top_matches = [(d, e, a) for d, s, e, a in scored_dorms if a >= 3][:6]  # At least 3 amenity matches
+                context['top_preference_matches'] = top_matches
 
             context.update({
                 "dorms": regular_dorms,
@@ -427,16 +699,27 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Recent inquiries/messages
             context['recent_inquiries'] = messages_qs.order_by('-timestamp')[:5]
 
-            # Sales metrics
+            # Sales metrics - Use TransactionLog for accurate revenue tracking
             now = timezone.now()
             month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            monthly_sales = reservations.filter(
-                created_at__gte=month_start,
-                has_paid_reservation=True
-            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total']
-            total_income = reservations.filter(
-                has_paid_reservation=True
-            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total']
+            
+            # Get successful payment transactions for this landlord
+            # Note: payment_received transactions are created when payment is initiated
+            # and updated to status='success' when payment is confirmed via webhook
+            successful_transactions = TransactionLog.objects.filter(
+                landlord=user,
+                transaction_type='payment_received',
+                status='success',
+                amount__isnull=False  # Ensure amount is present
+            )
+            
+            monthly_sales = successful_transactions.filter(
+                created_at__gte=month_start
+            ).aggregate(total=Coalesce(Sum('amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total']
+            
+            total_income = successful_transactions.aggregate(
+                total=Coalesce(Sum('amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2))
+            )['total']
 
             context['monthly_sales'] = monthly_sales or 0
             context['total_income'] = total_income or 0
@@ -448,11 +731,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             else:
                 last_month_start = month_start.replace(month=month_start.month - 1)
             
-            last_month_sales = reservations.filter(
+            last_month_sales = successful_transactions.filter(
                 created_at__gte=last_month_start,
-                created_at__lt=month_start,
-                has_paid_reservation=True
-            ).aggregate(total=Coalesce(Sum('payment_amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total'] or 0
+                created_at__lt=month_start
+            ).aggregate(total=Coalesce(Sum('amount'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)))['total'] or 0
             
             if last_month_sales > 0:
                 sales_growth = round(((float(monthly_sales) - float(last_month_sales)) / float(last_month_sales)) * 100, 1)
@@ -497,14 +779,27 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Calculate 6 months ago (approximately 180 days)
             six_months_ago = now - timedelta(days=180)
             
+            # Get reservation counts
             last_six_months = Reservation.objects.filter(
                 dorm__landlord=user,
                 created_at__gte=six_months_ago
             ).annotate(
                 month=TruncMonth('created_at')
             ).values('month').annotate(
-                count=Count('id'),
-                revenue=Coalesce(Sum('payment_amount', filter=Q(has_paid_reservation=True)), Value(0), output_field=DecimalField())
+                count=Count('id')
+            ).order_by('month')
+            
+            # Get revenue from TransactionLog for accurate tracking
+            revenue_six_months = TransactionLog.objects.filter(
+                landlord=user,
+                transaction_type='payment_received',
+                status='success',
+                amount__isnull=False,  # Ensure amount is present
+                created_at__gte=six_months_ago
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                revenue=Coalesce(Sum('amount'), Value(0), output_field=DecimalField())
             ).order_by('month')
 
             # Generate last 6 months labels using calendar
@@ -525,7 +820,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             
             # Map data to months
             reservations_data = {entry['month'].strftime('%b %Y'): entry['count'] for entry in last_six_months if entry['month']}
-            revenue_data = {entry['month'].strftime('%b %Y'): float(entry['revenue']) for entry in last_six_months if entry['month']}
+            revenue_data = {entry['month'].strftime('%b %Y'): float(entry['revenue']) for entry in revenue_six_months if entry['month']}
             
             reservations_counts = [reservations_data.get(m, 0) for m in chart_months]
             revenue_values = [revenue_data.get(m, 0) for m in chart_months]
@@ -1685,3 +1980,8 @@ class ReviewVerificationView(UserPassesTestMixin, View):
             'landlord': landlord,
             'form': form
         })
+
+
+class HowItWorksView(TemplateView):
+    """View for the How It Works page - explains the system to tenants"""
+    template_name = 'accounts/how_it_works.html'

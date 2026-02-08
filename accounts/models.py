@@ -14,6 +14,7 @@ class CustomUser(AbstractUser):
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='tenant')
     contact_number = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    last_seen = models.DateTimeField(null=True, blank=True, help_text='Last time user was active')
     
     # Identity Verification (for landlords)
     is_identity_verified = models.BooleanField(default=False, help_text='Has landlord submitted and been verified?')
@@ -70,6 +71,36 @@ class CustomUser(AbstractUser):
         if timezone.now() >= self.ban_expires_at:
             return "Ban Expired"
         return f"Banned until {self.ban_expires_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def is_online(self):
+        """Check if user was active in the last 5 minutes"""
+        if self.last_seen:
+            return timezone.now() - self.last_seen < timedelta(minutes=5)
+        return False
+    
+    @property
+    def last_seen_display(self):
+        """Get human-readable last seen text"""
+        if not self.last_seen:
+            return "Never active"
+        
+        if self.is_online:
+            return "Active now"
+        
+        time_diff = timezone.now() - self.last_seen
+        
+        if time_diff < timedelta(minutes=60):
+            minutes = int(time_diff.total_seconds() / 60)
+            return f"Last seen {minutes}m ago"
+        elif time_diff < timedelta(hours=24):
+            hours = int(time_diff.total_seconds() / 3600)
+            return f"Last seen {hours}h ago"
+        elif time_diff < timedelta(days=7):
+            days = int(time_diff.days)
+            return f"Last seen {days}d ago"
+        else:
+            return f"Last seen {self.last_seen.strftime('%b %d')}"
 
     class Meta:
         constraints = [

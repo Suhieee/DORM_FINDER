@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python manage.py migrate && gunicorn smart_dorm_finder.wsgi:application"
+startCommand = "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn smart_dorm_finder.wsgi:application"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 

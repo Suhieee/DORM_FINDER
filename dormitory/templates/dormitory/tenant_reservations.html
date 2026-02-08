@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<div class="h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden p-4">
+<div class="h-[calc(100vh-4rem)] bg-gray-50 overflow-hidden p-4">
     <!-- Mobile Reservations Toggle Button -->
     <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@
         <div class="absolute inset-0 bg-black/50" onclick="hideMobileReservations()" style="pointer-events: auto; top: 4rem;"></div>
         <div class="absolute left-0 w-80 bg-white shadow-xl transform transition-transform duration-300 -translate-x-full" style="pointer-events: auto; top: 4rem; bottom: 0; height: calc(100vh - 4rem);">
             <!-- Mobile Header -->
-            <div class="sticky top-0 p-4 bg-gradient-to-r from-blue-500 to-blue-600 z-10">
+            <div class="sticky top-0 p-4 bg-blue-600 z-10">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">My Reservations</h2>
                     <button id="close-mobile-sidebar" class="text-white p-2 hover:bg-white/20 rounded-lg transition-colors" style="pointer-events: auto;">
@@ -105,62 +105,6 @@
                     </svg>
                 </div>
             </div>
-
-            <!-- Mobile Status Filters -->
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
-                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters-mobile" style="pointer-events: auto;">Clear</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending_payment" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Payment</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
-                            {{ pending_payment_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Pending</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                            {{ pending_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                                <span class="text-xs font-medium text-gray-700">Confirmed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                            {{ confirmed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Completed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                            {{ completed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status-mobile col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined" style="pointer-events: auto;">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Declined</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                            {{ declined_count }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Mobile Reservations List -->
             <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 400px); pointer-events: auto;">
                 {% for reservation in reservations %}
@@ -229,7 +173,7 @@
         <!-- Left Sidebar - Reservations List (Desktop) -->
         <div id="reservations-sidebar" class="hidden md:flex flex-col w-80 bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Desktop Header -->
-            <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600">
+            <div class="p-4 bg-blue-600">
                 <h2 class="text-lg font-bold text-white">My Reservations</h2>
             </div>
             
@@ -243,62 +187,6 @@
                     </svg>
                 </div>
             </div>
-
-            <!-- Status Filters -->
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-gray-600">Filter Status</h3>
-                    <span class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" id="clear-filters">Clear</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending_payment">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Payment</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
-                            {{ pending_payment_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="pending">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Pending</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                            {{ pending_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="confirmed">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                                <span class="text-xs font-medium text-gray-700">Confirmed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                            {{ confirmed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="completed">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Completed</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                            {{ completed_count }}
-                        </span>
-                    </div>
-                    <div class="filter-status col-span-2 flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" data-status="declined">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span class="text-xs font-medium text-gray-700">Declined</span>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                            {{ declined_count }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Reservations List -->
             <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 380px);">
                 {% for reservation in reservations %}
@@ -366,10 +254,10 @@
         <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden min-h-0">
             {% if selected_reservation %}
                 <!-- Chat Header -->
-                <div class="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-between flex-shrink-0">
+                <div class="p-4 bg-blue-600 text-white flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center space-x-3">
                         <!-- Mobile burger menu -->
-                        <button id="mobile-menu-toggle" class="md:hidden p-2 hover:bg-white/20 rounded-lg transition-colors">
+                        <button id="mobile-menu-toggle" class="md:hidden p-2 hover:bg-black/20 rounded-lg transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
                             </svg>
@@ -386,8 +274,8 @@
                             <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full {% if selected_reservation.dorm.landlord.is_online %}bg-green-400{% else %}bg-gray-400{% endif %} ring-2 ring-blue-600"></div>
                         </div>
                         <div>
-                            <h2 class="font-bold">{{ selected_reservation.dorm.landlord.get_full_name }}</h2>
-                            <p class="text-xs opacity-90">Last active {{ selected_reservation.dorm.landlord.last_login|timesince }} ago</p>
+                            <h2 class="text-white px-3 py-1 rounded-full text-sm font-semibold">{{ selected_reservation.dorm.landlord.get_full_name }}</h2>
+                            <p class="text-white px-3 py-1 rounded-full text-xs font-semibold">Last active {{ selected_reservation.dorm.landlord.last_login|timesince }} ago</p>
                         </div>
                     </div>
 
@@ -397,7 +285,7 @@
                             💳 Payment Required
                         </span>
                         {% endif %}
-                        <button id="toggle-details-btn" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                        <button id="toggle-details-btn" class="p-2 hover:bg-black/20 rounded-lg transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -512,7 +400,7 @@
             {% else %}
                 <div class="flex-1 flex items-center justify-center bg-gray-50">
                     <div class="text-center">
-                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6 mx-auto">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
                             <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                             </svg>
@@ -533,8 +421,8 @@
 
         <!-- Right Sidebar - Dorm Details -->
         {% if selected_reservation %}
-        <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
+        <div id="details-panel" class="w-96 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
+            <div class="top-0 bg-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
                 <h3 class="font-bold text-lg text-white">Dorm Details</h3>
                 <button id="close-details" class="p-2 hover:bg-white/20 rounded-lg transition-colors text-white" style="pointer-events: auto;">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -655,6 +543,79 @@
                     </div>
                 </div>
 
+                <!-- Progress Tracker -->
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-3">Progress</h4>
+                    <div class="relative">
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-between mb-2">
+                            <!-- Step 1: Reserve -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'pending,pending_payment,confirmed,occupied,completed' %}bg-green-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    1
+                                </div>
+                                <span class="text-xs mt-1 text-center">Reserve</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.status in 'pending_payment,confirmed,occupied,completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 2: Confirm -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'pending_payment,confirmed,occupied,completed' %}bg-green-500 text-white{% elif selected_reservation.status == 'pending' %}bg-yellow-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    2
+                                </div>
+                                <span class="text-xs mt-1 text-center">Confirm</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.has_paid_reservation %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 3: Pay -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.has_paid_reservation %}bg-green-500 text-white{% elif selected_reservation.status == 'pending_payment' %}bg-yellow-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    3
+                                </div>
+                                <span class="text-xs mt-1 text-center">Pay</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.visit_status == 'completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 4: Visit -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.visit_status == 'completed' %}bg-green-500 text-white{% elif selected_reservation.visit_status == 'scheduled' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    4
+                                </div>
+                                <span class="text-xs mt-1 text-center">Visit</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.checklist_completed_at %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 5: Checklist -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.checklist_completed_at %}bg-green-500 text-white{% elif selected_reservation.has_paid_reservation and selected_reservation.visit_status == 'completed' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    5
+                                </div>
+                                <span class="text-xs mt-1 text-center">Check</span>
+                            </div>
+                            <!-- Connector -->
+                            <div class="flex-1 h-1 {% if selected_reservation.status in 'occupied,completed' %}bg-green-500{% else %}bg-gray-200{% endif %} -mx-2"></div>
+                            
+                            <!-- Step 6: Move-in -->
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                    {% if selected_reservation.status in 'occupied,completed' %}bg-green-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                                    6
+                                </div>
+                                <span class="text-xs mt-1 text-center">Move-in</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Reservation Status -->
                 <div class="border-t pt-4">
                     <h4 class="font-semibold mb-2">Status</h4>
@@ -674,8 +635,8 @@
                             {{ selected_reservation.get_status_display }}
                         </div>
 
-                        <!-- Cancel Button - Only show for confirmed/pending_payment but unpaid reservations -->
-                        {% if selected_reservation.status in 'confirmed,pending_payment' and not selected_reservation.has_paid_reservation %}
+                        <!-- Cancel Button - Only show for pending_payment status (not confirmed) -->
+                        {% if selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation %}
                         <button type="button" onclick="openCancelModal()"
                                 class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
                             Cancel Reservation
@@ -733,32 +694,130 @@
                     </div>
                 </div>
 
-                <!-- Payment Section -->
-                {% if selected_reservation.status in 'confirmed,pending_payment' and not selected_reservation.has_paid_reservation and not selected_reservation.payment_proof %}
+                <!-- Payment Section - Only show for pending_payment status -->
+                {% if selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation and not selected_reservation.payment_proof %}
                 <div class="border-t pt-4">
                     <!-- Payment Deadline Alert (for pending_payment) -->
                     {% if selected_reservation.status == 'pending_payment' and selected_reservation.payment_deadline %}
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div id="paymentDeadlineAlert" class="border rounded-lg p-4 mb-4 transition-all duration-300">
                         <div class="flex items-start">
-                            <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-6 h-6 flex-shrink-0 mt-0.5 mr-3" id="deadlineIcon" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                             </svg>
-                            <div>
-                                <h4 class="font-semibold text-red-900 mb-1">⏰ Payment Required Within 48 Hours</h4>
-                                <p class="text-sm text-red-800 mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold mb-1" id="deadlineTitle">Payment Required Within 48 Hours</h4>
+                                <p class="text-sm mb-2" id="deadlineMessage">
                                     Your reservation will be <strong>automatically cancelled</strong> if payment is not received by:
                                 </p>
-                                <p class="text-lg font-bold text-red-900">
+                                <p class="text-lg font-bold">
                                     {{ selected_reservation.payment_deadline|date:"F j, Y - g:i A" }}
                                 </p>
-                                {% if selected_reservation.hours_until_payment_deadline %}
-                                <p class="text-sm text-red-700 mt-2">
-                                    ⏱️ Time remaining: <strong>{{ selected_reservation.hours_until_payment_deadline|floatformat:0 }} hours</strong>
-                                </p>
-                                {% endif %}
+                                
+                                <!-- Live Countdown Timer -->
+                                <div class="mt-3 p-3 bg-white/50 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">Time Remaining:</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="text-center">
+                                                <div id="hoursLeft" class="text-2xl font-bold">--</div>
+                                                <div class="text-xs">Hours</div>
+                                            </div>
+                                            <div class="text-2xl font-bold">:</div>
+                                            <div class="text-center">
+                                                <div id="minutesLeft" class="text-2xl font-bold">--</div>
+                                                <div class="text-xs">Minutes</div>
+                                            </div>
+                                            <div class="text-2xl font-bold">:</div>
+                                            <div class="text-center">
+                                                <div id="secondsLeft" class="text-2xl font-bold">--</div>
+                                                <div class="text-xs">Seconds</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pay Now Button -->
+                                <div class="mt-4">
+                                    <a href="{% url 'dormitory:payment_booking_intent' selected_reservation.id %}" 
+                                       class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg font-semibold">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        Pay Now
+                                    </a>
+                                    <p class="text-xs mt-2" id="paymentNote">
+                                        Pay online with MonGo Pay or upload manual payment proof
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <script>
+                        // Payment Countdown Timer
+                        (function() {
+                            const deadline = new Date("{{ selected_reservation.payment_deadline|date:'c' }}").getTime();
+                            const alertBox = document.getElementById('paymentDeadlineAlert');
+                            const icon = document.getElementById('deadlineIcon');
+                            const title = document.getElementById('deadlineTitle');
+                            const message = document.getElementById('deadlineMessage');
+                            const note = document.getElementById('paymentNote');
+                            
+                            function updateCountdown() {
+                                const now = new Date().getTime();
+                                const distance = deadline - now;
+                                
+                                if (distance < 0) {
+                                    document.getElementById('hoursLeft').textContent = '00';
+                                    document.getElementById('minutesLeft').textContent = '00';
+                                    document.getElementById('secondsLeft').textContent = '00';
+                                    title.textContent = 'Payment Deadline Expired';
+                                    message.innerHTML = 'This reservation may be automatically cancelled.';
+                                    alertBox.className = 'border border-red-500 bg-red-50 rounded-lg p-4 mb-4 transition-all duration-300';
+                                    icon.className = 'w-6 h-6 text-red-600 flex-shrink-0 mt-0.5 mr-3';
+                                    title.className = 'font-semibold text-red-900 mb-1';
+                                    message.className = 'text-sm text-red-800 mb-2';
+                                    note.className = 'text-xs text-red-600 mt-2';
+                                    return;
+                                }
+                                
+                                const hours = Math.floor(distance / (1000 * 60 * 60));
+                                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                
+                                document.getElementById('hoursLeft').textContent = String(hours).padStart(2, '0');
+                                document.getElementById('minutesLeft').textContent = String(minutes).padStart(2, '0');
+                                document.getElementById('secondsLeft').textContent = String(seconds).padStart(2, '0');
+                                
+                                // Color-coded urgency
+                                if (hours < 6) {
+                                    // Critical (< 6 hours) - Red
+                                    alertBox.className = 'border border-red-500 bg-red-50 rounded-lg p-4 mb-4 transition-all duration-300';
+                                    icon.className = 'w-6 h-6 text-red-600 flex-shrink-0 mt-0.5 mr-3';
+                                    title.className = 'font-semibold text-red-900 mb-1';
+                                    message.className = 'text-sm text-red-800 mb-2';
+                                    note.className = 'text-xs text-red-600 mt-2';
+                                } else if (hours < 24) {
+                                    // Warning (< 24 hours) - Orange
+                                    alertBox.className = 'border border-orange-500 bg-orange-50 rounded-lg p-4 mb-4 transition-all duration-300';
+                                    icon.className = 'w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5 mr-3';
+                                    title.className = 'font-semibold text-orange-900 mb-1';
+                                    message.className = 'text-sm text-orange-800 mb-2';
+                                    note.className = 'text-xs text-orange-600 mt-2';
+                                } else {
+                                    // Safe (> 24 hours) - Yellow
+                                    alertBox.className = 'border border-yellow-500 bg-yellow-50 rounded-lg p-4 mb-4 transition-all duration-300';
+                                    icon.className = 'w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5 mr-3';
+                                    title.className = 'font-semibold text-yellow-900 mb-1';
+                                    message.className = 'text-sm text-yellow-800 mb-2';
+                                    note.className = 'text-xs text-yellow-600 mt-2';
+                                }
+                            }
+                            
+                            updateCountdown();
+                            setInterval(updateCountdown, 1000);
+                        })();
+                    </script>
                     {% endif %}
                     
                     <h4 class="font-semibold mb-4">
@@ -775,7 +834,7 @@
                             <p><span class="text-gray-600">Amount:</span> ₱{{ selected_reservation.dorm.price }}</p>
                             <p><span class="text-gray-600">Reservation ID:</span> {{ selected_reservation.id }}</p>
                             {% if selected_reservation.status == 'pending_payment' %}
-                            <p class="text-sm text-red-600 font-semibold">⚠️ Payment is REQUIRED to confirm your reservation.</p>
+                            <p class="text-sm text-red-600 font-semibold">Payment is REQUIRED to confirm your reservation.</p>
                             {% else %}
                             <p class="text-sm text-gray-500">Payment is optional but recommended to secure your slot.</p>
                             {% endif %}
@@ -823,6 +882,56 @@
                 </div>
                 {% endif %}
 
+                <!-- Payment Receipt - Show after successful payment -->
+                {% if selected_reservation.has_paid_reservation and selected_reservation.payment_verified_at %}
+                <div class="border-t pt-4">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-start mb-3">
+                            <svg class="w-6 h-6 text-green-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-green-900 mb-1">Payment Confirmed</h4>
+                                <p class="text-sm text-green-800">Your payment has been successfully verified</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg p-3 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Transaction ID:</span>
+                                <span class="font-medium">#{{ selected_reservation.id }}</span>
+                            </div>
+                            {% if selected_reservation.payment_amount %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Amount Paid:</span>
+                                <span class="font-bold text-green-600">₱{{ selected_reservation.payment_amount|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Method:</span>
+                                <span class="font-medium">{{ selected_reservation.get_payment_method_display }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Status:</span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    {{ selected_reservation.get_payment_status_display }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between border-t pt-2 mt-2">
+                                <span class="text-gray-600">Verified On:</span>
+                                <span class="font-medium">{{ selected_reservation.payment_verified_at|date:"M d, Y g:i A" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 flex items-center justify-between">
+                            <p class="text-xs text-green-700">
+                                Your reservation is now secured. Proceed with the next steps.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Display Payment Proof if Already Submitted -->
                 {% if selected_reservation.payment_proof %}
                 <div class="border-t pt-4">
@@ -849,7 +958,7 @@
                                 </svg>
                                 Visit Scheduled
                             </p>
-                            <p><span class="text-gray-600">📅 Date:</span> <span class="font-medium">{{ selected_reservation.visit_date|date:"F j, Y" }}</span></p>
+                            <p><span class="text-gray-600">Date:</span> <span class="font-medium">{{ selected_reservation.visit_date|date:"F j, Y" }}</span></p>
                             <p><span class="text-gray-600">🕐 Time:</span> <span class="font-medium">{{ selected_reservation.get_visit_time_slot_display }}</span></p>
                             <p><span class="text-gray-600">Status:</span> 
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold
@@ -878,7 +987,7 @@
                                 </svg>
                                 Move-in Date Set
                             </p>
-                            <p><span class="text-gray-600">📅 Move-in:</span> <span class="font-medium text-lg">{{ selected_reservation.move_in_date|date:"F j, Y" }}</span></p>
+                            <p><span class="text-gray-600">Move-in:</span> <span class="font-medium text-lg">{{ selected_reservation.move_in_date|date:"F j, Y" }}</span></p>
                             {% if selected_reservation.move_in_notes %}
                             <div class="mt-2 p-2 bg-white rounded border border-green-100">
                                 <p class="text-xs text-gray-600 mb-1">Move-in Instructions:</p>
@@ -914,7 +1023,7 @@
                                            data-reservation="{{ selected_reservation.id }}"
                                            data-item="property_inspected"
                                            {% if selected_reservation.checklist_property_inspected %}checked{% endif %}>
-                                    <span class="ml-3 text-sm text-gray-800">🏠 Property Inspected</span>
+                                    <span class="ml-3 text-sm text-gray-800">Property Inspected</span>
                                 </label>
                                 <label class="flex items-center cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
                                     <input type="checkbox" 
@@ -955,23 +1064,6 @@
                                 </p>
                             </div>
                             {% endif %}
-                        {% endif %}
-                        
-                        <!-- Old Visit System (Backward Compatibility) -->
-                        {% if selected_reservation.visit and not selected_reservation.visit_scheduled %}
-                        <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
-                            <p class="font-semibold text-purple-900 mb-2">✓ Property Visit Details</p>
-                            <p><span class="text-gray-600">Visit Date:</span> {{ selected_reservation.visit.visit_date|date:"F j, Y" }}</p>
-                            <p><span class="text-gray-600">Time Slot:</span> {{ selected_reservation.visit.get_time_slot_display }}</p>
-                            <p><span class="text-gray-600">Visit Status:</span> 
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                    {% if selected_reservation.visit.status == 'completed' %}bg-green-100 text-green-800
-                                    {% elif selected_reservation.visit.status == 'confirmed' %}bg-blue-100 text-blue-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ selected_reservation.visit.get_status_display }}
-                                </span>
-                            </p>
-                        </div>
                         {% endif %}
                         
                         <p class="mt-3"><span class="text-gray-600">Landlord:</span> {{ selected_reservation.dorm.landlord.get_full_name }}</p>
@@ -1561,7 +1653,7 @@
                             dormName.includes(searchTerm) || 
                             landlordName.includes(searchTerm) ||
                             text.includes(searchTerm)) {
-                            item.style.display = 'block';
+                            item.style.display = '';
                         } else {
                             item.style.display = 'none';
                         }

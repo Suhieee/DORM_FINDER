@@ -3,24 +3,6 @@
 {% load static %}
 {% block content %}
 
-<!-- Public Access Notice -->
-{% if not user.is_authenticated %}
-<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-    <div class="flex items-center">
-        <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-        </svg>
-        <div>
-            <h3 class="text-sm font-medium text-blue-800">Want to connect with roommates?</h3>
-            <p class="text-sm text-blue-700 mt-1">
-                <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="font-medium underline">Log in</a> or 
-                <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="font-medium underline">register</a> 
-                to create your own profile and connect with potential roommates.
-            </p>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 <div class="w-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
     <div class="w-full bg-white rounded-xl p-6 md:p-8 mb-8 shadow-md">

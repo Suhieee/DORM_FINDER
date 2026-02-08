@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'false'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage',
+    'cloudinary_storage',  # Cloudinary for media storage
     'cloudinary',
     'accounts',
     'dormitory',
@@ -91,8 +91,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'accounts.middleware.SessionTimeoutMiddleware',  # Session timeout warning
     'django.contrib.messages.middleware.MessageMiddleware',
+    'accounts.middleware.UpdateLastSeenMiddleware',  # Update user last_seen timestamp
+    'accounts.middleware.SessionTimeoutMiddleware',  # Session timeout warning
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -298,6 +299,26 @@ CACHES = {
 # Site URL for email verification links (use in production)
 # Set this to your production domain (e.g., 'https://yourdomain.com')
 # If not set, will use request.build_absolute_uri() which may not work correctly in production
-SITE_URL = os.environ.get('SITE_URL', '')  # e.g., 'https://yourdomain.com'
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')  # Default to localhost for development
 if SITE_URL and not SITE_URL.endswith('/'):
     SITE_URL = SITE_URL + '/'
+
+# MonGo Pay (Payment Gateway) Configuration
+# TEST MODE - For development/testing only
+# Get credentials from https://mongopay.test/dashboard
+MONGOPAY_BASE_URL = os.environ.get('MONGOPAY_BASE_URL', 'https://api.mongopay.test')
+MONGOPAY_API_KEY = os.environ.get('MONGOPAY_API_KEY', '')  # Set in .env file
+MONGOPAY_SECRET_KEY = os.environ.get('MONGOPAY_SECRET_KEY', '')  # Set in .env file
+MONGOPAY_MERCHANT_ID = os.environ.get('MONGOPAY_MERCHANT_ID', '')  # Set in .env file
+MONGOPAY_TEST_MODE = os.environ.get('MONGOPAY_TEST_MODE', 'True').lower() == 'true'  # Always use test mode for now
+
+# PayMongo (GCash Payment Integration) Configuration
+# Get test credentials from https://dashboard.paymongo.com
+PAYMONGO_SECRET_KEY = os.environ.get('PAYMONGO_SECRET_KEY', '')  # Test: sk_test_...
+PAYMONGO_PUBLIC_KEY = os.environ.get('PAYMONGO_PUBLIC_KEY', '')  # Test: pk_test_...
+PAYMONGO_WEBHOOK_SECRET = os.environ.get('PAYMONGO_WEBHOOK_SECRET', '')  # Optional webhook signing key
+
+# Google Gemini AI Chatbot Configuration
+# Get your free API key from: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash')  # Stable free model

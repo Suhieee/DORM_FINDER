@@ -16,7 +16,7 @@
                     Manage your dormitory properties and track their approval status
                 </p>
             </div>
-            <a href="{% url 'dormitory:add_dorm' %}" class="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <a href="{% url 'dormitory:add_dorm' %}" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <i class="bi bi-plus-circle text-xl"></i>
                 <span>Add New Property</span>
             </a>
@@ -128,7 +128,7 @@
                         <!-- Action Buttons -->
                         <div class="flex gap-3 pt-4 border-t border-gray-100">
                             <a href="{% url 'dormitory:dorm_detail' dorm.id %}"
-                               class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
+                               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
                                 <span class="flex items-center justify-center gap-2">
                                     View Details
                                 </span>
@@ -136,7 +136,7 @@
 
                             {% if dorm.approval_status == 'approved' and dorm.accommodation_type != 'whole_unit' %}
                                 <a href="{% url 'dormitory:manage_rooms' dorm.id %}"
-                                   class="flex-1 bg-gradient-to-r from-green-800 to-green-600 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
+                                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group/btn">
                                     <span class="flex items-center justify-center gap-2">
                                          Manage Rooms
                                     </span>
@@ -158,7 +158,7 @@
                 <h3 class="text-2xl font-bold text-gray-800 mb-3">No Dorms Listed Yet</h3>
                 <p class="text-gray-600 mb-8">Start by adding your first dormitory property to get started</p>
                 <a href="#" 
-                   class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+                   class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
                     <span>+</span>
                     Add First Dorm
                 </a>

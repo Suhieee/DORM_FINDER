@@ -1,12 +1,12 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import DetailView, UpdateView, View
 from django.urls import reverse_lazy
 from accounts.models import CustomUser  
-from .models import UserProfile, FavoriteDorm
-from .forms import UserProfileForm
+from .models import UserProfile, FavoriteDorm, TenantPreferences
+from .forms import UserProfileForm, TenantPreferencesForm
 from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from dormitory.models import Dorm
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
@@ -29,6 +29,18 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
         context['favorite_dorms'] = FavoriteDorm.objects.filter(
             user_profile=user_profile
         ).select_related('dorm')
+        
+        # Add listed dorms for landlords
+        if self.request.user.user_type == 'landlord':
+            context['listed_dorms'] = Dorm.objects.filter(landlord=self.request.user)
+        
+        # Add tenant preferences if user is a tenant
+        if self.request.user.user_type == 'tenant':
+            try:
+                context['tenant_preferences'] = TenantPreferences.objects.get(user=self.request.user)
+            except TenantPreferences.DoesNotExist:
+                context['tenant_preferences'] = None
+                
         return context
     
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -76,3 +88,85 @@ class ToggleFavoriteDormView(LoginRequiredMixin, View):
             return JsonResponse({
                 'status': 'error'
             }, status=400)
+
+
+class PublicLandlordProfileView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """View for admins to see landlord profiles with verification documents"""
+    model = CustomUser
+    template_name = "user_profile/landlord_profile.html"
+    context_object_name = "landlord"
+    pk_url_kwarg = "user_id"
+    
+    def test_func(self):
+        # Only admins can view this
+        return self.request.user.is_staff
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        landlord = self.get_object()
+        
+        # Get user profile and dorms
+        user_profile, _ = UserProfile.objects.get_or_create(user=landlord)
+        context['user_profile'] = user_profile
+        context['dorms'] = landlord.dorm_set.all()
+        
+        # Show verification documents
+        context['show_documents'] = True
+        
+        return context
+
+
+class SetupPreferencesView(LoginRequiredMixin, UpdateView):
+    """View for tenants to set up their preferences after registration"""
+    model = TenantPreferences
+    form_class = TenantPreferencesForm
+    template_name = "user_profile/setup_preferences.html"
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def dispatch(self, request, *args, **kwargs):
+        # Only tenants can access this
+        if request.user.user_type != 'tenant':
+            messages.warning(request, 'Preferences are only for tenants.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        # Get or create preferences for the logged-in tenant
+        preferences, created = TenantPreferences.objects.get_or_create(user=self.request.user)
+        return preferences
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Your preferences have been saved! We will use these to find the best dorms for you.')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'There was an error saving your preferences. Please try again.')
+        return super().form_invalid(form)
+
+
+class EditPreferencesView(LoginRequiredMixin, UpdateView):
+    """View for tenants to edit their preferences anytime"""
+    model = TenantPreferences
+    form_class = TenantPreferencesForm
+    template_name = "user_profile/edit_preferences.html"
+    success_url = reverse_lazy("user_profile:profile")
+
+    def dispatch(self, request, *args, **kwargs):
+        # Only tenants can access this
+        if request.user.user_type != 'tenant':
+            messages.warning(request, 'Preferences are only for tenants.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        # Get or create preferences for the logged-in tenant
+        preferences, created = TenantPreferences.objects.get_or_create(user=self.request.user)
+        return preferences
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Your preferences have been updated successfully!')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'There was an error updating your preferences. Please try again.')
+        return super().form_invalid(form)

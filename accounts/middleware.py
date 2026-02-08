@@ -2,6 +2,26 @@ from django.utils import timezone
 from django.contrib import messages
 from datetime import timedelta
 
+class UpdateLastSeenMiddleware:
+    """Middleware to update user's last_seen timestamp on each request."""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        
+        if request.user.is_authenticated:
+            # Update last_seen timestamp
+            # Only update if last update was more than 1 minute ago to reduce DB writes
+            if not request.user.last_seen or \
+               (timezone.now() - request.user.last_seen) > timedelta(minutes=1):
+                request.user.last_seen = timezone.now()
+                request.user.save(update_fields=['last_seen'])
+        
+        return response
+
+
 class SessionTimeoutMiddleware:
     """Middleware to handle session timeout warnings and automatic logout."""
     

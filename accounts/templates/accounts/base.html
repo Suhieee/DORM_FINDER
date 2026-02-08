@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
     <title>{% block title %}{% endblock %} Dorm Finder</title>
 </head>
@@ -192,6 +193,16 @@
                                 </ul>
                             </div>
                         </div>
+                    {% else %}
+                        <!-- Login/Register Buttons for Non-authenticated Users -->
+                        <div class="hidden md:flex items-center space-x-2">
+                            <a href="{% url 'accounts:login' %}" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors">
+                                Login
+                            </a>
+                            <a href="{% url 'accounts:register' %}" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colorss">
+                                Register
+                            </a>
+                        </div>
                     {% endif %}
     
                     <!-- Mobile Menu Button -->
@@ -257,13 +268,18 @@
                     <a href="{{ home_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == home_url %}bg-blue-50 text-blue-600{% endif %}">Home</a>
                     <a href="{{ public_dorm_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == public_dorm_list_url %}bg-blue-50 text-blue-600{% endif %}">Browse Dorms</a>
                     <a href="{{ public_roommate_list_url }}" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 {% if request.path == public_roommate_list_url %}bg-blue-50 text-blue-600{% endif %}">Find Roommates</a>
+                    <!-- Login/Register Links in Mobile Menu -->
+                    <div class="border-t border-gray-200 pt-2 mt-2">
+                        <a href="{% url 'accounts:login' %}" class="block px-3 py-2 text-base font-medium text-blue-600 rounded-lg hover:bg-blue-50">Login</a>
+                        <a href="{% url 'accounts:register' %}" class="block px-3 py-2 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Register</a>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </nav>
     
     <!-- Spacer for fixed navbar -->
-    <div class="h-32"><br><br><br><br></div>
+    <div class="h-32"><br><br></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -446,6 +462,9 @@ function getCSRFToken() {
 <!-- Flowbite Script -->
 <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<!-- AI Chatbot Widget -->
+{% include 'dormitory/components/chatbot_widget.html' %}
 
 </body>
 </html>

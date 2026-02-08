@@ -1,0 +1,67 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}GCash Payment - Processing{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-blue-100">
+                <svg class="h-16 w-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Redirecting to GCash Payment
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Please wait while we redirect you to the secure payment page...
+            </p>
+        </div>
+
+        <div class="rounded-md bg-blue-50 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3 flex-1 md:flex md:justify-between">
+                    <p class="text-sm text-blue-700">
+                        You will be redirected to PayMongo's secure checkout page where you can:
+                    </p>
+                </div>
+            </div>
+            <div class="mt-3 ml-8">
+                <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+                    <li>Enter your GCash mobile number</li>
+                    <li>Receive and enter OTP code</li>
+                    <li>Complete your payment securely</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+            <p class="mt-4 text-sm text-gray-500">If you are not redirected automatically, click below:</p>
+            <a href="{{ checkout_url }}" class="mt-4 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Proceed to GCash Payment
+            </a>
+        </div>
+
+        <div class="mt-6">
+            <p class="text-center text-xs text-gray-500">
+                <strong>Test Mode:</strong> Use phone number <code class="bg-gray-200 px-2 py-1 rounded">09123456789</code> and OTP <code class="bg-gray-200 px-2 py-1 rounded">123456</code>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-redirect after 2 seconds
+setTimeout(function() {
+    window.location.href = "{{ checkout_url }}";
+}, 2000);
+</script>
+{% endblock %}

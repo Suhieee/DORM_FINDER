@@ -1,0 +1,113 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Payment Failed{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+    <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+        <!-- Failure Icon -->
+        <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Payment Failed</h1>
+        
+        <p class="text-lg text-gray-600 mb-6">
+            Unfortunately, your payment for <span class="font-semibold">{{ reservation.dorm.name }}</span> could not be processed.
+        </p>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-red-800">
+                ✗ Payment was not completed<br>
+                Your reservation is still pending payment
+            </p>
+        </div>
+        
+        <!-- Common Reasons -->
+        <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Common Reasons for Payment Failure:</h2>
+            <ul class="space-y-2 text-sm text-gray-700">
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="2"/>
+                    </svg>
+                    Insufficient funds in your account
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="2"/>
+                    </svg>
+                    Incorrect card details or expired card
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="2"/>
+                    </svg>
+                    Payment declined by your bank
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="2"/>
+                    </svg>
+                    Network or connection issues
+                </li>
+            </ul>
+        </div>
+        
+        <!-- What to Do Next -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-left">
+            <h3 class="text-md font-semibold text-gray-900 mb-3">What You Can Do:</h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>Check your payment method and try again</li>
+                <li>Use a different card or payment method</li>
+                <li>Contact your bank to authorize the payment</li>
+                <li>Try manual payment upload instead</li>
+            </ol>
+        </div>
+        
+        <!-- Reservation Details -->
+        <div class="bg-gray-100 rounded-lg p-4 mb-6 text-left">
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">Reservation Details</h3>
+            <div class="space-y-1 text-xs text-gray-600">
+                <p><strong>Reservation ID:</strong> {{ reservation.id }}</p>
+                <p><strong>Dorm:</strong> {{ reservation.dorm.name }}</p>
+                <p><strong>Status:</strong> {{ reservation.get_status_display }}</p>
+                {% if reservation.payment_deadline %}
+                <p><strong>Payment Deadline:</strong> {{ reservation.payment_deadline|date:"F d, Y g:i A" }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="{% url 'dormitory:payment_booking_intent' reservation.id %}" class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Try Again
+            </a>
+            
+            <a href="{% url 'dormitory:tenant_reservations' %}" class="inline-flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                View My Reservations
+            </a>
+        </div>
+        
+        <div class="mt-6">
+            <a href="{% url 'dormitory:dorm_list' %}" class="text-sm text-gray-600 hover:text-gray-900">
+                ← Browse other dorms
+            </a>
+        </div>
+    </div>
+    
+    <!-- Support Info -->
+    <div class="mt-6 text-center text-sm text-gray-600">
+        <p>Need assistance? Contact us at support@dormfinder.com or call our hotline</p>
+    </div>
+</div>
+{% endblock %}

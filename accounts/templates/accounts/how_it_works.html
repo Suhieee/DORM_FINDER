@@ -1,0 +1,264 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}How It Works - Smart Dorm Finder{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+                How It Works
+            </h1>
+            <p class="mt-5 max-w-xl mx-auto text-xl text-gray-500">
+                Your step-by-step guide to finding and booking your perfect dorm
+            </p>
+        </div>
+
+        <!-- Step-by-step Guide -->
+        <div class="space-y-12">
+            <!-- Step 1: Browse Dorms -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex">
+                    <div class="md:flex-shrink-0 bg-blue-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">1</div>
+                            <div class="text-xl font-semibold">Browse</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Browse Available Dorms</h3>
+                        <p class="text-gray-600 mb-4">
+                            Start your journey by exploring our wide selection of dormitories. Use our advanced search and filter features to find dorms that match your preferences.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Filter by location, price range, and amenities</li>
+                            <li>View high-quality photos of each dormitory</li>
+                            <li>Check availability and room types</li>
+                            <li>Get personalized recommendations based on your preferences</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: View Details -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex md:flex-row-reverse">
+                    <div class="md:flex-shrink-0 bg-indigo-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">2</div>
+                            <div class="text-xl font-semibold">Explore</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">View Detailed Information</h3>
+                        <p class="text-gray-600 mb-4">
+                            Get comprehensive information about each dormitory to make an informed decision.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Browse through multiple photos and virtual tours</li>
+                            <li>Read detailed descriptions of amenities and facilities</li>
+                            <li>Check the exact location on interactive maps</li>
+                            <li>Read reviews and ratings from previous tenants</li>
+                            <li>View landlord profiles and verification status</li>
+                            <li>Compare different room types and their features</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Make Reservation -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex">
+                    <div class="md:flex-shrink-0 bg-purple-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">3</div>
+                            <div class="text-xl font-semibold">Reserve</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Make Your Reservation</h3>
+                        <p class="text-gray-600 mb-4">
+                            Found the perfect dorm? Secure your spot by making a reservation.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Select your preferred check-in and check-out dates</li>
+                            <li>Choose from available room types</li>
+                            <li>Review the total cost and payment terms</li>
+                            <li>Submit your reservation request instantly</li>
+                            <li>Receive confirmation or rejection notifications</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Payment Process -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex md:flex-row-reverse">
+                    <div class="md:flex-shrink-0 bg-green-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">4</div>
+                            <div class="text-xl font-semibold">Pay</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Complete Payment</h3>
+                        <p class="text-gray-600 mb-4">
+                            Once your reservation is approved by the landlord, complete the payment to confirm your booking.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Receive payment instructions and deadline</li>
+                            <li>Pay securely via GCash using the provided QR code</li>
+                            <li>Upload your payment proof for verification</li>
+                            <li>Get instant confirmation once payment is verified</li>
+                            <li>Access your booking details and receipt</li>
+                        </ul>
+                        <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                            <p class="text-sm text-yellow-700">
+                                <strong>Important:</strong> Complete your payment within 24 hours of reservation approval to avoid automatic cancellation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Communication -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex">
+                    <div class="md:flex-shrink-0 bg-pink-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">5</div>
+                            <div class="text-xl font-semibold">Chat</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Communicate with Landlords</h3>
+                        <p class="text-gray-600 mb-4">
+                            Stay connected with your landlord through our built-in messaging system.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Send direct messages to landlords</li>
+                            <li>Ask questions about the dormitory or policies</li>
+                            <li>Share important documents or images</li>
+                            <li>Discuss move-in details and arrangements</li>
+                            <li>Get real-time notifications for new messages</li>
+                            <li>Maintain conversation history for reference</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Leave Reviews -->
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
+                <div class="md:flex md:flex-row-reverse">
+                    <div class="md:flex-shrink-0 bg-orange-600 flex items-center justify-center p-8">
+                        <div class="text-white text-center">
+                            <div class="text-6xl font-bold mb-2">6</div>
+                            <div class="text-xl font-semibold">Review</div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Share Your Experience</h3>
+                        <p class="text-gray-600 mb-4">
+                            Help future tenants by sharing your honest feedback and experience.
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Rate your overall experience (1-5 stars)</li>
+                            <li>Write detailed reviews about the dormitory</li>
+                            <li>Share feedback about cleanliness, facilities, and location</li>
+                            <li>Comment on the landlord's responsiveness</li>
+                            <li>Help maintain community transparency and trust</li>
+                            <li>Earn reputation points for helpful reviews</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Tips Section -->
+        <div class="mt-16 bg-white rounded-lg shadow-xl p-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">Helpful Tips</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Book Early:</strong> Popular dorms fill up quickly, especially before the start of the semester.
+                    </p>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Read Reviews:</strong> Check what other tenants say about their experiences.
+                    </p>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Ask Questions:</strong> Don't hesitate to message landlords for clarifications.
+                    </p>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Verify Details:</strong> Look for verified landlords with complete documentation.
+                    </p>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Check Location:</strong> Consider proximity to your school and transportation.
+                    </p>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="ml-3 text-gray-600">
+                        <strong class="text-gray-900">Pay on Time:</strong> Complete payment within 24 hours to secure your booking.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="mt-12 text-center">
+            <a href="{% url 'dormitory:dorm_list' %}" class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                Start Browsing Dorms
+                <svg class="ml-2 -mr-1 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Back to Dashboard Link -->
+        <div class="mt-6 text-center">
+            <a href="{% url 'accounts:dashboard' %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

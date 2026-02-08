@@ -60,44 +60,6 @@
     </div>
 </div>
 
-<!-- Public Access Notice -->
-{% if not user.is_authenticated %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div class="flex items-start">
-            <svg class="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-            </svg>
-            <div>
-                <h3 class="text-lg font-semibold text-blue-800 mb-2">Browse Freely!</h3>
-                <p class="text-blue-700 mb-3">
-                    You can browse all available dorms and view detailed information. 
-                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">Log in</a> or 
-                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="font-medium underline hover:text-blue-900">register</a> 
-                    to reserve, contact landlords, and access all features.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="{% url 'accounts:register' %}?next={{ request.path }}" 
-                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Get Started Free
-                    </a>
-                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
-                       class="inline-flex items-center px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                        </svg>
-                        Sign In
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
 <!-- Main Content -->
 <div class="w-full">
     <!-- Filter Section -->

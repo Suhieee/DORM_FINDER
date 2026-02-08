@@ -4,12 +4,46 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
     <div class="max-w-4xl mx-auto">
+        
+        <!-- DEPRECATION NOTICE -->
+        <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-6 rounded-lg shadow-md">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-red-600 mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div>
+                    <h3 class="text-lg font-semibold text-red-800 mb-2">⚠️ This Page is Deprecated</h3>
+                    <p class="text-red-700 mb-3">
+                        Standalone visit scheduling is no longer the recommended way to book properties. 
+                        Please use the new integrated reservation system instead:
+                    </p>
+                    <div class="bg-white border border-red-200 rounded-lg p-4 mb-3">
+                        <p class="text-gray-800 font-medium mb-2">✅ Recommended Process:</p>
+                        <ol class="list-decimal list-inside text-gray-700 space-y-1">
+                            <li>Click <strong>"Reserve Now"</strong> on the dorm page</li>
+                            <li>Create your reservation</li>
+                            <li>Landlord confirms and schedules visit (if needed)</li>
+                            <li>Complete visit and access move-in checklist</li>
+                        </ol>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                            ← Back to Dorm Page
+                        </a>
+                        <a href="{% url 'dormitory:reserve_dorm' dorm.id %}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            Reserve Instead →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Header -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Schedule a Visit</h1>
-                    <p class="text-gray-600">Book a time to see the property in person</p>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Schedule a Visit (Legacy System)</h1>
+                    <p class="text-gray-600">This is the old system - consider using "Reserve Now" instead</p>
                 </div>
                 <a href="{% url 'dormitory:dorm_detail' dorm.id %}" 
                    class="text-gray-600 hover:text-gray-900 transition-colors">

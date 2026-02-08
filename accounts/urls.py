@@ -4,15 +4,18 @@ from .views import (
         RegisterView, LoginView, DashboardView,
         ApproveDormView, RejectDormView, ReviewDormView , RoleBasedRedirectView , LogoutView , MarkNotificationAsReadView, NotificationListView, NotificationAPIView, CreateAdminView, ManageUsersView, ToggleUserStatusView, DeleteUserView, UpdateUserRoleView, VerifyEmailView, ResendVerificationEmailView, ResendVerificationEmailLoggedInView, TransactionLogView,
         ViewUserProfileView, ReportUserView, ManageReportsView, ReportDetailView, ResolveReportView, EnhancedToggleUserStatusView,
-        SubmitVerificationView, VerificationRequestsView, ReviewVerificationView
+        SubmitVerificationView, VerificationRequestsView, ReviewVerificationView, HowItWorksView
     )
 
 app_name = "accounts"
 urlpatterns = [
+    # Registration URL - Unified registration page with role selector
     path("register/", RegisterView.as_view(), name="register"),
+    
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("how-it-works/", HowItWorksView.as_view(), name="how_it_works"),
 
     path("approve-dorm/<int:pk>/", ApproveDormView.as_view(), name="approve_dorm"),
     path("reject-dorm/<int:pk>/", RejectDormView.as_view(), name="reject_dorm"),
