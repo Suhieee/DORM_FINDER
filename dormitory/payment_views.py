@@ -17,7 +17,8 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import Reservation, Dorm, PaymentConfiguration, TransactionLog
+from .models import Reservation, Dorm, PaymentConfiguration
+from .models_transaction import TransactionLog
 from .payment_service import mongo_pay_service
 from .payment_paymongo import paymongo_service
 from accounts.models import Notification

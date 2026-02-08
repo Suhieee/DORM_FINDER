@@ -11,7 +11,8 @@ from .forms import (
 )
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib import messages
-from dormitory.models import Dorm, Review, Reservation, Message, TransactionLog
+from dormitory.models import Dorm, Review, Reservation, Message
+from dormitory.models_transaction import TransactionLog
 from django.views import View
 from .models import Notification, CustomUser, UserReport
 from user_profile.models import UserProfile, UserInteraction, TenantPreferences

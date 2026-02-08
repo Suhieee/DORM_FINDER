@@ -641,55 +641,6 @@
                                 class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
                             Cancel Reservation
                         </button>
-
-                        <!-- Cancellation Modal -->
-                        <div id="cancelModal" class="fixed inset-0 bg-gray-600/50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                            <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                                <div class="mt-3">
-                                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Cancel Reservation</h3>
-                                    <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="cancel">
-                                        <div class="mb-4">
-                                            <label for="cancellation_reason_select" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Select cancellation reason <span class="text-red-500">*</span>
-                                            </label>
-                                            <select name="cancellation_reason_select" id="cancellation_reason_select" 
-                                                    class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    onchange="toggleOtherReason()" required>
-                                                <option value="">-- Select a reason --</option>
-                                                <option value="Found a better option">Found a better option</option>
-                                                <option value="Change of plans">Change of plans</option>
-                                                <option value="Too expensive">Too expensive</option>
-                                                <option value="Location not suitable">Location not suitable</option>
-                                                <option value="Dorm conditions not as expected">Dorm conditions not as expected</option>
-                                                <option value="Financial reasons">Financial reasons</option>
-                                                <option value="Personal reasons">Personal reasons</option>
-                                                <option value="Other">Other (Please specify)</option>
-                                            </select>
-                                        </div>
-                                        <div id="otherReasonDiv" class="mb-4 hidden">
-                                            <label for="cancellation_reason_other" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Please specify your reason
-                                            </label>
-                                            <textarea name="cancellation_reason_other" id="cancellation_reason_other" rows="3"
-                                                    class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    placeholder="Type your reason here..."></textarea>
-                                        </div>
-                                        <div class="flex justify-end space-x-3">
-                                            <button type="button" onclick="closeCancelModal()"
-                                                    class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
-                                                Cancel
-                                            </button>
-                                            <button type="submit"
-                                                    class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
-                                                Confirm Cancellation
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -1075,6 +1026,57 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Cancellation Modal (outside main container for full page centering) -->
+{% if selected_reservation and selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation %}
+<div id="cancelModal" class="fixed inset-0 bg-gray-600/50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Cancel Reservation</h3>
+            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="cancel">
+                <div class="mb-4">
+                    <label for="cancellation_reason_select" class="block text-sm font-medium text-gray-700 mb-2">
+                        Select cancellation reason <span class="text-red-500">*</span>
+                    </label>
+                    <select name="cancellation_reason_select" id="cancellation_reason_select" 
+                            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onchange="toggleOtherReason()" required>
+                        <option value="">-- Select a reason --</option>
+                        <option value="Found a better option">Found a better option</option>
+                        <option value="Change of plans">Change of plans</option>
+                        <option value="Too expensive">Too expensive</option>
+                        <option value="Location not suitable">Location not suitable</option>
+                        <option value="Dorm conditions not as expected">Dorm conditions not as expected</option>
+                        <option value="Financial reasons">Financial reasons</option>
+                        <option value="Personal reasons">Personal reasons</option>
+                        <option value="Other">Other (Please specify)</option>
+                    </select>
+                </div>
+                <div id="otherReasonDiv" class="mb-4 hidden">
+                    <label for="cancellation_reason_other" class="block text-sm font-medium text-gray-700 mb-2">
+                        Please specify your reason
+                    </label>
+                    <textarea name="cancellation_reason_other" id="cancellation_reason_other" rows="3"
+                            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Type your reason here..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeCancelModal()"
+                            class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                        Confirm Cancellation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
     // Add getCookie function at the top of your script

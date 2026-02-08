@@ -397,7 +397,7 @@ class PayMongoService:
                 line_items.append({
                     "name": f"Processing Fee ({payment_breakdown.get('processing_fee_percent', 2.5)}%)",
                     "quantity": 1,
-                    "amount": int(Decimal(str(payment_breakdown['processing_fee'])) * 100),
+                    "amount": int(round(Decimal(str(payment_breakdown['processing_fee'])) * 100)),
                     "currency": "PHP",
                     "description": "Payment processing fee"
                 })
@@ -417,7 +417,7 @@ class PayMongoService:
                         "billing": {
                             "name": reservation.tenant.get_full_name() or reservation.tenant.username,
                             "email": reservation.tenant.email,
-                            "phone": reservation.tenant.contact_number or ""
+                            "phone": ("0" + reservation.tenant.contact_number if reservation.tenant.contact_number and not reservation.tenant.contact_number.startswith('0') else reservation.tenant.contact_number) or "09000000000"
                         },
                         "metadata": {
                             "reservation_id": str(reservation.id),
@@ -437,6 +437,7 @@ class PayMongoService:
             logger.info(f"Creating checkout session for reservation {reservation.id}")
             logger.info(f"Total amount: ₱{payment_breakdown['total']}")
             logger.info(f"Line items: {len(line_items)} items")
+            logger.info(f"Checkout data: {json.dumps(checkout_data, indent=2)}")
             
             response = requests.post(
                 f"{self.BASE_URL}/checkout_sessions",

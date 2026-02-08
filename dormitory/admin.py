@@ -1,9 +1,10 @@
 from django.contrib import admin
 from .models import (
     Dorm, Amenity, RoommatePost, RoommateAmenity, School, Review, 
-    Room, RoomImage, Reservation, TransactionLog, PaymentConfiguration,
+    Room, RoomImage, Reservation, PaymentConfiguration,
     ChatbotConversation, ChatbotMessage, ChatbotFAQ
 )
+from .models_transaction import TransactionLog
 
 admin.site.register(Dorm)
 admin.site.register(Amenity)
