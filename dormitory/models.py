@@ -589,11 +589,13 @@ class PaymentConfiguration(models.Model):
     
     def calculate_total_amount(self):
         """Calculate total payment amount including deposit, advance, and fees"""
+        from decimal import Decimal
+        
         base_price = self.dorm.price
         deposit = base_price * self.deposit_months
         advance = base_price * self.advance_months
         subtotal = deposit + advance
-        fee = subtotal * (self.processing_fee_percent / 100)
+        fee = subtotal * (Decimal(str(self.processing_fee_percent)) / Decimal('100'))
         total = subtotal + fee
         
         return {
