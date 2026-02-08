@@ -87,6 +87,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'  # Redirect to login page after logout
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -214,6 +215,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 if DEBUG:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# WhiteNoise configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files configuration - Use Cloudinary in production, local in development
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
