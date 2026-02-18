@@ -116,3 +116,72 @@ class TenantPreferencesForm(forms.ModelForm):
             })
 
 
+class RoommatePreferencesForm(forms.ModelForm):
+    """Form for roommate preferences - second step of smart matching"""
+    
+    class Meta:
+        model = TenantPreferences
+        fields = [
+            'preferred_roommate_mood', 'preferred_roommate_age_range', 'preferred_roommate_gender',
+            'roommate_budget_min', 'roommate_budget_max', 'roommate_preferred_location',
+            'roommate_cleanliness_important', 'roommate_quiet_environment',
+            'roommate_social_activities', 'roommate_shared_expenses'
+        ]
+        widgets = {
+            'preferred_roommate_mood': forms.Select(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500'
+            }),
+            'preferred_roommate_age_range': forms.Select(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500'
+            }),
+            'preferred_roommate_gender': forms.Select(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500'
+            }),
+            'roommate_budget_min': forms.NumberInput(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500',
+                'min': '0',
+                'step': '100'
+            }),
+            'roommate_budget_max': forms.NumberInput(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500',
+                'min': '0',
+                'step': '100'
+            }),
+            'roommate_preferred_location': forms.TextInput(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500',
+                'placeholder': 'e.g., España, Manila'
+            }),
+        }
+        
+        labels = {
+            'preferred_roommate_mood': 'Preferred Personality Type',
+            'preferred_roommate_age_range': 'Preferred Age Range',
+            'preferred_roommate_gender': 'Preferred Gender',
+            'roommate_budget_min': 'Minimum Budget (₱/month)',
+            'roommate_budget_max': 'Maximum Budget (₱/month)',
+            'roommate_preferred_location': 'Preferred Location',
+            'roommate_cleanliness_important': 'Cleanliness is Important',
+            'roommate_quiet_environment': 'Prefer Quiet Environment',
+            'roommate_social_activities': 'Enjoy Social Activities',
+            'roommate_shared_expenses': 'Open to Sharing Expenses',
+        }
+        
+        help_texts = {
+            'preferred_roommate_mood': 'What personality type would you prefer in a roommate?',
+            'preferred_roommate_age_range': 'What age range do you prefer?',
+            'roommate_budget_min': 'Minimum budget you expect roommate to have',
+            'roommate_budget_max': 'Maximum budget you expect roommate to have',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add custom styling for checkboxes
+        checkbox_fields = [
+            'roommate_cleanliness_important', 'roommate_quiet_environment',
+            'roommate_social_activities', 'roommate_shared_expenses'
+        ]
+        for field in checkbox_fields:
+            self.fields[field].widget.attrs.update({
+                'class': 'w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500'
+            })
+

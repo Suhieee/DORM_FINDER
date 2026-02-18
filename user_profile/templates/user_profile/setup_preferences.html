@@ -1,45 +1,162 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
 
-{% block title %}Set Up Your Preferences{% endblock %}
+{% block title %}Set Up Your Preferences - Step {{ step }} of 2{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
     <div class="max-w-4xl mx-auto px-4">
+        
+        <!-- Choice Modal (shown only on first visit when step=1 and no choice made) -->
+        {% if step == 1 and show_choice_modal %}
+        <div id="choiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+                    <h2 class="text-2xl font-bold flex items-center gap-3">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        What are you looking for?
+                    </h2>
+                    <p class="mt-2 text-blue-100">Help us personalize your experience</p>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <p class="text-gray-700 mb-6">Choose what best fits your needs. You can always change this later!</p>
+                    
+                    <form method="post" action="{% url 'user_profile:setup_preferences' %}?step=1">
+                        {% csrf_token %}
+                        <input type="hidden" name="choice_step" value="1">
+                        
+                        <button type="submit" name="preference_choice" value="dorm_only" class="w-full mb-4 p-6 border-2 border-blue-300 rounded-xl hover:border-blue-600 hover:bg-blue-50 transition-all group">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                    </svg>
+                                </div>
+                                <div class="text-left flex-1">
+                                    <h3 class="text-lg font-bold text-gray-900 mb-1">Find Dorm Only</h3>
+                                    <p class="text-sm text-gray-600">I'm just looking for a place to stay. I'll set my dorm preferences.</p>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button type="submit" name="preference_choice" value="dorm_and_roommate" class="w-full p-6 border-2 border-purple-300 rounded-xl hover:border-purple-600 hover:bg-purple-50 transition-all group">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200">
+                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="text-left flex-1">
+                                    <h3 class="text-lg font-bold text-gray-900 mb-1">Find Dorm + Roommate</h3>
+                                    <p class="text-sm text-gray-600">I want to find both a dorm and compatible roommates. I'll set both preferences.</p>
+                                </div>
+                            </div>
+                        </button>
+                    </form>
+                    
+                    <p class="text-xs text-gray-500 text-center mt-4">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Your choice helps us customize your experience
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Progress Indicator -->
+        {% if preference_choice == 'dorm_and_roommate' %}
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center {% if step == 1 %}text-blue-600{% else %}text-green-600{% endif %}">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 {% if step == 1 %}border-blue-600 bg-blue-100{% else %}border-green-600 bg-green-100{% endif %}">
+                        {% if step == 1 %}
+                        <span class="text-lg font-bold">1</span>
+                        {% else %}
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <span class="ml-2 font-semibold">Dorm Preferences</span>
+                </div>
+                <div class="w-24 h-1 {% if step == 2 %}bg-green-600{% else %}bg-gray-300{% endif %}"></div>
+                <div class="flex items-center {% if step == 2 %}text-purple-600{% else %}text-gray-400{% endif %}">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 {% if step == 2 %}border-purple-600 bg-purple-100{% else %}border-gray-300{% endif %}">
+                        <span class="text-lg font-bold">2</span>
+                    </div>
+                    <span class="ml-2 font-semibold">Roommate Preferences</span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center text-blue-600">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 border-blue-600 bg-blue-100">
+                        <span class="text-lg font-bold">1</span>
+                    </div>
+                    <span class="ml-2 font-semibold">Dorm Preferences</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Header -->
         <div class="text-center mb-8">
-            <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 p-1 rounded-full mb-4">
-                <div class="bg-white p-3 rounded-full">
-                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-                    </svg>
-                </div>
-            </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Set Up Your Preferences</h1>
-            <p class="text-lg text-gray-600">Help us find the perfect dorm for you with smart recommendations</p>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-xl p-8">
-            <!-- Messages -->
-            {% if messages %}
-            <div class="mb-6">
-                {% for message in messages %}
-                <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                    {{ message }}
-                </div>
-                {% endfor %}
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                {% if step == 1 %}
+                Set Up Your Dorm Preferences
+                {% else %}
+                Set Up Your Roommate Preferences
+                {% endif %}
+            </h1>
+            <p class="text-lg text-gray-600">
+                {% if step == 1 %}
+                Help us find the perfect dorm for you with smart recommendations
+                {% else %}
+                Tell us about your ideal roommate to get better matches
+                {% endif %}
+            </p>
+            {% if preference_choice %}
+            <div class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span>{% if preference_choice == 'dorm_only' %}Finding Dorm Only{% else %}Finding Dorm + Roommate{% endif %}</span>
             </div>
             {% endif %}
+        </div>
 
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-2xl shadow-xl p-8">
             <!-- Info Banner -->
-            <div class="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+            <div class="mb-8 bg-{% if step == 1 %}blue{% else %}purple{% endif %}-50 border-l-4 border-{% if step == 1 %}blue{% else %}purple{% endif %}-500 p-4 rounded-r-lg">
                 <div class="flex">
-                    <svg class="w-6 h-6 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 text-{% if step == 1 %}blue{% else %}purple{% endif %}-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <div class="ml-3">
-                        <p class="text-sm text-blue-700">
+                        <p class="text-sm text-{% if step == 1 %}blue{% else %}purple{% endif %}-700">
+                            {% if step == 1 %}
                             These preferences help our smart system recommend dorms that match your needs. You can always edit them later from your profile.
+                            {% else %}
+                            These preferences will help match you with compatible roommates based on personality, lifestyle, and budget preferences.
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -47,7 +164,10 @@
 
             <form method="post" id="preferencesForm" class="space-y-8">
                 {% csrf_token %}
+                <input type="hidden" name="step" value="{{ step }}">
 
+                {% if step == 1 %}
+                <!-- Step 1: Dorm Preferences -->
                 <!-- Location Preferences -->
                 <div class="border-b pb-6">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -147,29 +267,169 @@
                     </div>
                 </div>
 
+                {% else %}
+                <!-- Step 2: Roommate Preferences -->
+                <!-- Personality & Demographics -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Personality & Demographics
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_mood.label }}
+                            </label>
+                            {{ form.preferred_roommate_mood }}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_mood.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_age_range.label }}
+                            </label>
+                            {{ form.preferred_roommate_age_range }}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_age_range.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_gender.label }}
+                            </label>
+                            {{ form.preferred_roommate_gender }}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_gender.help_text }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget & Location -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Budget & Location Preferences
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.roommate_budget_min.label }}
+                            </label>
+                            {{ form.roommate_budget_min }}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.roommate_budget_min.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.roommate_budget_max.label }}
+                            </label>
+                            {{ form.roommate_budget_max }}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.roommate_budget_max.help_text }}</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.roommate_preferred_location.label }}
+                            </label>
+                            {{ form.roommate_preferred_location }}
+                            <p class="text-xs text-gray-500 mt-1">Where would you like your roommate to be looking?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lifestyle Preferences -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Lifestyle & Compatibility
+                    </h2>
+                    <p class="text-sm text-gray-600 mb-4">These help us match you with compatible roommates</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ form.roommate_cleanliness_important }}
+                            <label for="{{ form.roommate_cleanliness_important.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ form.roommate_cleanliness_important.label }}
+                            </label>
+                        </div>
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ form.roommate_quiet_environment }}
+                            <label for="{{ form.roommate_quiet_environment.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ form.roommate_quiet_environment.label }}
+                            </label>
+                        </div>
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ form.roommate_social_activities }}
+                            <label for="{{ form.roommate_social_activities.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ form.roommate_social_activities.label }}
+                            </label>
+                        </div>
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ form.roommate_shared_expenses }}
+                            <label for="{{ form.roommate_shared_expenses.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ form.roommate_shared_expenses.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Action Buttons -->
                 <div class="flex gap-4 pt-6">
-                    <button type="submit" class="flex-1 bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    {% if step == 1 %}
+                        {% if preference_choice == 'dorm_and_roommate' %}
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                            <span>Next: Roommate Preferences</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </button>
+                        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                            Skip for Now
+                        </a>
+                        {% else %}
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Complete Setup</span>
+                        </button>
+                        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                            Skip for Now
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <a href="{% url 'user_profile:setup_preferences' %}?step=1" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
                         </svg>
+                        <span>Back</span>
+                    </a>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Finish Setup</span>
                     </button>
                     <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
-                        Skip for Now
+                        Skip
                     </a>
+                    {% endif %}
                 </div>
             </form>
         </div>
 
         <!-- Why Preferences Matter -->
-        <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+        <div class="mt-8 bg-gradient-to-r from-{% if step == 1 %}blue{% else %}purple{% endif %}-50 to-purple-50 rounded-xl p-6 border border-{% if step == 1 %}blue{% else %}purple{% endif %}-200">
             <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-{% if step == 1 %}blue{% else %}purple{% endif %}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                 </svg>
-                Why set preferences?
+                {% if step == 1 %}Why set dorm preferences?{% else %}Why set roommate preferences?{% endif %}
             </h3>
             <ul class="space-y-2 text-sm text-gray-700">
+                {% if step == 1 %}
                 <li class="flex items-start gap-2">
                     <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -188,6 +448,26 @@
                     </svg>
                     <span>Discover dorms ranked by compatibility with your preferences</span>
                 </li>
+                {% else %}
+                <li class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Get AI-powered roommate recommendations based on compatibility</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Find roommates who share similar lifestyle and budget preferences</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Improve your matches with better personality and age compatibility</span>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </div>

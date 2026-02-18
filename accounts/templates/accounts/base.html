@@ -466,6 +466,11 @@ function getCSRFToken() {
 <!-- AI Chatbot Widget -->
 {% include 'dormitory/components/chatbot_widget.html' %}
 
+<!-- Global Floating Messages (for logged-in users only) -->
+{% if user.is_authenticated %}
+    {% include 'dormitory/components/floating_messages.html' %}
+{% endif %}
+
 </body>
 </html>
 

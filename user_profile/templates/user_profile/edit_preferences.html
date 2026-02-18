@@ -1,7 +1,7 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
 
-{% block title %}Edit Your Preferences{% endblock %}
+{% block title %}Edit Your Preferences - Step {{ step }} of 2{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
@@ -10,29 +10,58 @@
         <div class="text-center mb-8">
             <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 p-1 rounded-full mb-4">
                 <div class="bg-white p-3 rounded-full">
-                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 {% if step == '1' %}text-blue-600{% else %}text-purple-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                 </div>
             </div>
             <h1 class="text-4xl font-bold text-gray-900 mb-2">Edit Your Preferences</h1>
-            <p class="text-lg text-gray-600">Update your preferences to get better dorm recommendations</p>
+            <p class="text-lg text-gray-600">{% if step == '1' %}Update your dorm preferences{% else %}Update your roommate preferences{% endif %}</p>
+        </div>
+        
+        <!-- Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center">
+                <div class="flex items-center">
+                    <!-- Step 1 -->
+                    <div class="flex items-center">
+                        <div class="{% if step == '1' %}bg-blue-600 text-white{% else %}bg-green-500 text-white{% endif %} rounded-full h-10 w-10 flex items-center justify-center font-bold">
+                            {% if step == '1' %}1{% else %}✓{% endif %}
+                        </div>
+                        <span class="ml-2 font-semibold {% if step == '1' %}text-blue-600{% else %}text-gray-600{% endif %}">Dorm Preferences</span>
+                    </div>
+                    
+                    <!-- Connector -->
+                    <div class="w-24 h-1 mx-4 {% if step == '2' %}bg-green-500{% else %}bg-gray-300{% endif %}"></div>
+                    
+                    <!-- Step 2 -->
+                    <div class="flex items-center">
+                        <div class="{% if step == '2' %}bg-purple-600 text-white{% else %}bg-gray-300 text-gray-600{% endif %} rounded-full h-10 w-10 flex items-center justify-center font-bold">
+                            2
+                        </div>
+                        <span class="ml-2 font-semibold {% if step == '2' %}text-purple-600{% else %}text-gray-400{% endif %}">Roommate Preferences</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl p-8">
-            <!-- Messages -->
-            {% if messages %}
-            <div class="mb-6">
-                {% for message in messages %}
-                <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                    {{ message }}
-                </div>
-                {% endfor %}
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                {{ message }}
             </div>
-            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
 
+        <div class="bg-white rounded-2xl shadow-xl p-8">
             <form method="post" id="preferencesForm" class="space-y-8">
                 {% csrf_token %}
+                
+                {% if step == '1' %}
+                <!-- Step 1: Dorm Preferences -->
 
                 <!-- Location Preferences -->
                 <div class="border-b pb-6">
@@ -137,14 +166,151 @@
                 <div class="flex gap-4 pt-6">
                     <button type="submit" class="flex-1 bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
-                        <span>Save Changes</span>
+                        <span>Next: Roommate Preferences</span>
                     </button>
                     <a href="{% url 'user_profile:profile' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
                         Cancel
                     </a>
                 </div>
+                
+                {% else %}
+                <!-- Step 2: Roommate Preferences -->
+                
+                <!-- Personality & Mood -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Personality & Mood
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_mood.label }}
+                            </label>
+                            {{ form.preferred_roommate_mood }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demographics -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Demographics
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_age_range.label }}
+                            </label>
+                            {{ form.preferred_roommate_age_range }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_gender.label }}
+                            </label>
+                            {{ form.preferred_roommate_gender }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget & Location -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Budget & Location
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_budget_min.label }}
+                            </label>
+                            {{ form.preferred_roommate_budget_min }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_budget_max.label }}
+                            </label>
+                            {{ form.preferred_roommate_budget_max }}
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_location.label }}
+                            </label>
+                            {{ form.preferred_roommate_location }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lifestyle Preferences -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                        </svg>
+                        Lifestyle Preferences
+                    </h2>
+                    <p class="text-sm text-gray-600 mb-4">Select the qualities you prefer in a roommate</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex items-start p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-colors">
+                            {{ form.prefers_clean_roommate }}
+                            <label for="{{ form.prefers_clean_roommate.id_for_label }}" class="ml-3 cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900">{{ form.prefers_clean_roommate.label }}</span>
+                                <p class="text-xs text-gray-500 mt-1">Someone who keeps things tidy and organized</p>
+                            </label>
+                        </div>
+                        <div class="flex items-start p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-colors">
+                            {{ form.prefers_quiet_roommate }}
+                            <label for="{{ form.prefers_quiet_roommate.id_for_label }}" class="ml-3 cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900">{{ form.prefers_quiet_roommate.label }}</span>
+                                <p class="text-xs text-gray-500 mt-1">Someone who values peace and quiet</p>
+                            </label>
+                        </div>
+                        <div class="flex items-start p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-colors">
+                            {{ form.prefers_social_roommate }}
+                            <label for="{{ form.prefers_social_roommate.id_for_label }}" class="ml-3 cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900">{{ form.prefers_social_roommate.label }}</span>
+                                <p class="text-xs text-gray-500 mt-1">Someone outgoing who enjoys company</p>
+                            </label>
+                        </div>
+                        <div class="flex items-start p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-colors">
+                            {{ form.prefers_shared_expenses }}
+                            <label for="{{ form.prefers_shared_expenses.id_for_label }}" class="ml-3 cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900">{{ form.prefers_shared_expenses.label }}</span>
+                                <p class="text-xs text-gray-500 mt-1">Open to splitting groceries and utilities</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 pt-6">
+                    <a href="{% url 'user_profile:edit_preferences' %}?step=1" class="px-6 py-4 border-2 border-purple-300 text-purple-700 font-semibold rounded-xl hover:bg-purple-50 transition-colors flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                        </svg>
+                        Back
+                    </a>
+                    <button type="submit" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Save All Changes</span>
+                    </button>
+                    <a href="{% url 'user_profile:profile' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </a>
+                </div>
+                {% endif %}
             </form>
         </div>
     </div>

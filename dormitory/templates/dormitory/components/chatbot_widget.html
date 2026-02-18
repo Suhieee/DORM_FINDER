@@ -1,25 +1,25 @@
 {% load static %}
 
 <!-- AI Chatbot Widget -->
-<div id="chatbot-container" class="fixed bottom-0 right-0 z-[9999]">
+<div id="chatbot-container" class="fixed bottom-0 left-0 z-[9999]">
     <!-- Floating Chat Button -->
     <button 
         id="chatbotTrigger" 
-        class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 z-[9998]"
+        class="fixed bottom-5 left-5 inline-flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-xl transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 z-[9998]"
         aria-label="Open AI Assistant"
         title="Need help? Ask our AI assistant!"
     >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h.01M12 8h.01M17 8h.01M8 16h8m-9 3h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
         </svg>
-        <!-- Notification Badge (for new features, can be removed later) -->
-        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">AI</span>
+        <!-- AI badge -->
+        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[11px] font-bold rounded-full h-5 w-5 flex items-center justify-center">AI</span>
     </button>
     
     <!-- Chat Modal (Hidden by default) -->
     <div 
         id="chatbotModal" 
-        class="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-0 opacity-0 origin-bottom-right md:w-96 sm:w-80"
+        class="fixed bottom-24 left-6 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-0 opacity-0 origin-bottom-left md:w-96 sm:w-80"
         style="height: 600px; max-height: calc(100vh - 8rem);"
     >
         <!-- Header -->

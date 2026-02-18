@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta 
 
 class CustomUser(AbstractUser):
@@ -13,6 +14,15 @@ class CustomUser(AbstractUser):
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='tenant')
     contact_number = models.CharField(max_length=15, blank=True, null=True)
+    age = models.PositiveIntegerField(
+        blank=True, 
+        null=True, 
+        help_text='Your age',
+        validators=[
+            MinValueValidator(16, message='You must be at least 16 years old'),
+            MaxValueValidator(100, message='Please enter a valid age')
+        ]
+    )
     is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(null=True, blank=True, help_text='Last time user was active')
     

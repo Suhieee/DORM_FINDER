@@ -126,7 +126,7 @@ class RoommateMatchingService:
     def find_matches(post: RoommatePost, min_score: Decimal = Decimal('70.00')) -> list:
         """
         Find all potential matches for a roommate post with compatibility score >= min_score.
-        Returns a list of (RoommatePost, score) tuples sorted by score descending.
+        Returns a list of (RoommatePost, score, factors) tuples sorted by score descending.
         """
         matches = []
         # Exclude user's own post and already matched posts
@@ -141,7 +141,7 @@ class RoommateMatchingService:
         for potential_match in potential_matches:
             score, factors = RoommateMatchingService.calculate_compatibility(post, potential_match)
             if score >= min_score:
-                matches.append((potential_match, score))
+                matches.append((potential_match, score, factors))
         
         return sorted(matches, key=lambda x: x[1], reverse=True)
 

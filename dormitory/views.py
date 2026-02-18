@@ -1962,6 +1962,15 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
             is_read=False
         ).count()
         
+        # Get pending match requests (where user is the target)
+        if user_post:
+            context['pending_requests'] = RoommateMatch.objects.filter(
+                target=user_post,
+                status='pending'
+            ).select_related('initiator', 'target')
+        else:
+            context['pending_requests'] = []
+        
         return context
 
 @method_decorator([csrf_exempt, login_required], name='dispatch')
@@ -2385,3 +2394,142 @@ def cron_cancel_expired(request):
             'error': str(e),
             'timestamp': timezone.now().isoformat()
         }, status=500)
+
+
+# ============================================
+# ROOMMATE MATCHES API
+# ============================================
+
+def format_time_ago(timestamp):
+    """Format timestamp as relative time (e.g., '2m ago', '1h ago', 'Yesterday')"""
+    if not timestamp:
+        return ""
+    
+    now = timezone.now()
+    diff = now - timestamp
+    
+    seconds = diff.total_seconds()
+    
+    if seconds < 60:
+        return "Just now"
+    elif seconds < 3600:
+        minutes = int(seconds / 60)
+        return f"{minutes}m ago"
+    elif seconds < 86400:
+        hours = int(seconds / 3600)
+        return f"{hours}h ago"
+    elif seconds < 172800:  # Less than 2 days
+        return "Yesterday"
+    elif seconds < 604800:  # Less than 7 days
+        days = int(seconds / 86400)
+        return f"{days}d ago"
+    else:
+        return timestamp.strftime("%b %d")
+
+@login_required
+def api_roommate_matches(request):
+    """
+    API endpoint for fetching roommate matches data
+    Returns JSON with matches and unread count for floating messages widget
+    """
+    user_post = RoommatePost.objects.filter(user=request.user).first()
+    if not user_post:
+        return JsonResponse({'matches': [], 'unread_count': 0})
+    
+    # Get all matches (both initiator and target)
+    matches = RoommateMatch.objects.filter(
+        models.Q(initiator=user_post) | models.Q(target=user_post),
+        status='accepted'
+    ).select_related('initiator', 'target').prefetch_related('messages')
+    
+    matches_data = []
+    total_unread = 0
+    
+    for match in matches:
+        # Determine chat partner
+        if match.initiator.user == request.user:
+            partner = match.target
+        else:
+            partner = match.initiator
+        
+        # Get last message
+        last_message = match.messages.order_by('-timestamp').first()
+        if last_message:
+            if last_message.content:
+                last_message_text = last_message.content
+            elif last_message.image:
+                last_message_text = "📷 Photo"
+            else:
+                last_message_text = "Message"
+            last_message_time = format_time_ago(last_message.timestamp)
+        else:
+            last_message_text = "No messages yet"
+            last_message_time = ""
+        
+        # Check for unread messages
+        unread_count = RoommateChat.objects.filter(
+            match=match,
+            receiver=request.user,
+            is_read=False
+        ).count()
+        total_unread += unread_count
+        
+        matches_data.append({
+            'id': match.id,
+            'partner': {
+                'name': f"{partner.user.first_name} {partner.user.last_name}".strip() or partner.user.username,
+                'profile_image': partner.get_profile_image_url(),
+                'user_id': partner.user.id
+            },
+            'last_message': last_message_text[:50] + '...' if len(last_message_text) > 50 else last_message_text,
+            'last_message_time': last_message_time,
+            'timestamp': last_message.timestamp.isoformat() if last_message else '',
+            'has_unread': unread_count > 0,
+            'unread_count': unread_count,
+            'compatibility_score': match.compatibility_score
+        })
+    
+    # Sort by timestamp (most recent first)
+    matches_data.sort(key=lambda x: x['timestamp'] or '', reverse=True)
+    
+    return JsonResponse({
+        'matches': matches_data,
+        'unread_count': total_unread
+    })
+
+@login_required
+def api_roommate_chat_messages(request, match_id):
+    """
+    API endpoint to fetch messages for a specific roommate match
+    """
+    match = get_object_or_404(RoommateMatch, id=match_id)
+    
+    # Verify user is involved in the match
+    if request.user not in [match.initiator.user, match.target.user]:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    # Get all messages for this match
+    messages = match.messages.select_related('sender').order_by('timestamp')
+    
+    # Mark messages as read for the current user
+    unread_messages = messages.filter(is_read=False).exclude(sender=request.user)
+    unread_messages.update(is_read=True)
+    
+    messages_data = []
+    for msg in messages:
+        messages_data.append({
+            'id': msg.id,
+            'content': msg.content,
+            'image_url': msg.image.url if msg.image else None,
+            'has_image': bool(msg.image),
+            'sender_id': msg.sender.id,
+            'sender_name': msg.sender.get_full_name() or msg.sender.username,
+            'is_sent_by_user': msg.sender.id == request.user.id,
+            'timestamp': msg.timestamp.strftime('%I:%M %p'),
+            'created_at': msg.timestamp.isoformat()
+        })
+    
+    return JsonResponse({
+        'messages': messages_data,
+        'match_id': match_id
+    })

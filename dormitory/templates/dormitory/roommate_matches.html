@@ -4,8 +4,8 @@
 {% block content %}
 
 <!-- Loader -->
-<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
-    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-blue-200 h-12 w-12"></div>
 </div>
 
 <style>
@@ -14,8 +14,11 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
 input:not(:placeholder-shown)::placeholder, textarea:not(:placeholder-shown)::placeholder { color: transparent; }
 input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
+/* Page Background */
+body { background: #ffffff; min-height: 100vh; }
+
 /* Loader */
-.loader { border-top-color: #6D28D9; -webkit-animation: spinner 1.2s linear infinite; animation: spinner 1.2s linear infinite; }
+.loader { border-top-color: #2563EB; -webkit-animation: spinner 1.2s linear infinite; animation: spinner 1.2s linear infinite; }
 @-webkit-keyframes spinner { 0% {-webkit-transform:rotate(0deg);} 100% {-webkit-transform:rotate(360deg);} }
 @keyframes spinner { 0% {transform:rotate(0deg);} 100% {transform:rotate(360deg);} }
 
@@ -34,6 +37,8 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   max-width: 85%;
   word-wrap: break-word;
   border-radius: 18px !important;
+  background: #3B82F6;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 .message-bubble img {
@@ -66,6 +71,10 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   to { opacity: 1; }
 }
 
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
@@ -96,6 +105,8 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  background: white;
+  border: 2px solid #DBEAFE;
 }
 
 .match-card::before {
@@ -105,7 +116,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   left: -100%;
   width: 100%;
   height: 100%;
-  background: rgba(255,255,255,0.4);
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
   transition: left 0.5s;
 }
 
@@ -114,8 +125,9 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 }
 
 .match-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
+  border-color: #3B82F6;
 }
 
 /* Status indicators */
@@ -159,7 +171,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 .compatibility-bar {
   position: relative;
   overflow: hidden;
-  background: #e5e7eb;
+  background: #DBEAFE;
   border-radius: 10px;
   height: 8px;
 }
@@ -167,9 +179,10 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 .compatibility-fill {
   height: 100%;
   border-radius: 10px;
-  background: #7c3aed;
+  background: #3B82F6;
   position: relative;
   transition: width 1s ease-out;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .compatibility-fill::after {
@@ -179,8 +192,72 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   left: -100%;
   width: 100%;
   height: 100%;
-  background: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.4);
   animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+}
+
+/* Hover Modal Styles */
+.hover-profile-modal {
+  position: fixed;
+  z-index: 9999;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  width: 320px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border: 2px solid #3B82F6;
+}
+
+.hover-profile-modal.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.hover-profile-modal .modal-header {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  padding: 16px;
+  border-radius: 10px 10px 0 0;
+  color: white;
+}
+
+.hover-profile-modal .modal-body {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.hover-profile-modal .info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.hover-profile-modal .info-row:last-child {
+  border-bottom: none;
+}
+
+.hover-profile-modal .amenity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #DBEAFE;
+  color: #2563EB;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 2px;
 }
 
 @keyframes shimmer {
@@ -213,9 +290,9 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 }
 
 .reaction.active {
-  background: rgba(124, 58, 237, 0.2);
-  border-color: rgba(124, 58, 237, 0.3);
-  color: #7c3aed;
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563EB;
   font-weight: 500;
 }
 
@@ -252,14 +329,15 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
 /* Enhanced floating button */
 .floating-btn {
-  background: #667eea;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  background: #3B82F6;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .floating-btn:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 12px 35px rgba(37, 99, 235, 0.6);
+  background: #2563EB;
 }
 
 .floating-btn:active {
@@ -302,7 +380,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #7c3aed;
+  background: #3B82F6;
   transform: scaleY(0);
   transition: transform 0.2s ease;
 }
@@ -318,14 +396,14 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 /* Enhanced search input */
 .search-input {
   transition: all 0.3s ease;
-  background: #f8fafc;
-  border: 2px solid transparent;
+  background: white;
+  border: 2px solid #DBEAFE;
 }
 
 .search-input:focus {
   background: white;
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Loading states */
@@ -480,7 +558,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   position: fixed;
   top: 120px;
   right: 2rem;
-  background: #667eea;
+  background: #3B82F6;
   color: white;
   border: none;
   border-radius: 50%;
@@ -489,7 +567,7 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
   cursor: pointer;
   z-index: 40;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -497,7 +575,8 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
 
 .open-chat-button:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 12px 35px rgba(37, 99, 235, 0.6);
+  background: #2563EB;
 }
 
 .open-chat-button:active {
@@ -569,474 +648,671 @@ input::placeholder, textarea::placeholder { color: #9CA3AF; opacity: 1; }
   }
 }
 </style>
-<div class="container mx-auto px-4 pb-8 pt-20 md:pt-28">
+<div class="w-full min-h-screen px-3 sm:px-4 lg:px-6 pb-6 pt-20 md:pt-24 bg-gray-50">
     <!-- Header with Back Navigation -->
-    <div class="mb-6 rounded-2xl p-6 border bg-purple-50">
-        <div class="flex items-center justify-between">
+    <div class="mb-4 rounded-xl p-4 sm:p-5 border border-gray-200 bg-white shadow-sm">
+    
+        <div class="flex items-center justify-between gap-3">
             <!-- Back Button and Title -->
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-2xl font-semibold text-gray-900">Roommate Matches</h1>
-                    <p class="text-sm text-gray-600 mt-1">Smart matches, friendly chat — find a roommate who fits.</p>
+            <div class="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-blue-600 truncate">Roommate Matches</h1>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 hidden sm:block">Smart matches, friendly chat — find a roommate who fits.</p>
                 </div>
             </div>
             
             <!-- Action Buttons -->
-            <div class="hidden md:flex items-center gap-4">
-            <!-- AI Helper Button -->
-            <button onclick="openAIChatbot()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 hover:scale-[1.01] transition-transform" title="Get AI help finding your perfect roommate">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <span class="text-sm">AI Helper</span>
-            </button>
-            <button onclick="autoMatchTopProfiles()" class="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 hover:scale-[1.01] transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span class="text-sm">Auto-Match Top 3</span>
-            </button>
-            <button onclick="showMatchInsights()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 hover:scale-[1.01] transition-transform">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <span class="text-sm">Match Insights</span>
-            </button>
+            <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            {% if user_post %}
+                <!-- AI Actions Dropdown -->
+                <div class="relative" id="ai-actions-dropdown">
+                    <button onclick="toggleAIActionsDropdown()" class="inline-flex items-center gap-1.5 sm:gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-blue-700 transition-all" title="AI Match Actions">
+                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <span class="text-xs sm:text-sm font-medium">Actions</span>
+                        <svg class="h-3 w-3 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div id="ai-actions-menu" class="hidden absolute right-0 mt-2 w-60 sm:w-64 bg-white rounded-xl shadow-xl border-2 border-blue-100 z-50 overflow-hidden">
+                        <div class="py-1">
+                            <button onclick="openAIChatbot(); toggleAIActionsDropdown();" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-blue-50 transition-colors flex items-center gap-2 sm:gap-3 group">
+                                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600">AI Helper</div>
+                                    <div class="text-xs text-gray-500 hidden sm:block">Get AI assistance for matching</div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="autoMatchTopProfiles(); toggleAIActionsDropdown();" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-blue-50 transition-colors flex items-center gap-2 sm:gap-3 group">
+                                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600">Auto-Match</div>
+                                    <div class="text-xs text-gray-500 hidden sm:block">Connect with best matches instantly</div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="showMatchInsights(); toggleAIActionsDropdown();" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-blue-50 transition-colors flex items-center gap-2 sm:gap-3 group">
+                                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600">Match Insights</div>
+                                    <div class="text-xs text-gray-500 hidden sm:block">View detailed compatibility analysis</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Create Profile Button -->
+                <a href="{% url 'dormitory:add_roommate' %}" class="inline-flex items-center gap-1.5 sm:gap-2 bg-yellow-600 text-white px-3 sm:px-4 py-2 rounded-lg shadow hover:bg-yellow-700 hover:scale-[1.01] transition-transform">
+                    <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="text-xs sm:text-sm whitespace-nowrap">Create Profile</span>
+                </a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Smart Recommendations Banner -->
-    {% if potential_matches %}
-    <div class="mb-6 bg-purple-50 rounded-2xl p-6 border border-purple-100">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="p-2 bg-purple-600 rounded-lg">
-                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    <!-- No Roommate Profile Banner -->
+    {% if not user_post %}
+    <div class="mb-6 bg-white border-l-4 border-yellow-400 rounded-lg shadow-md p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
             </div>
-            <div>
-                <h3 class="text-lg font-semibold text-gray-900">✨ AI Picks for You</h3>
-                <p class="text-sm text-gray-600">Top matches based on your preferences</p>
+            <div class="ml-4 flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                    🎯 Create Your Roommate Profile to Get Started!
+                </h3>
+                <p class="text-sm text-gray-700 mb-4">
+                    To use AI matching features and find compatible roommates, you need to create a roommate profile first. Tell us about your preferences, lifestyle, and what you're looking for in a roommate.
+                </p>
+                <a href="{% url 'dormitory:add_roommate' %}" class="inline-flex items-center gap-2 bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-yellow-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Create Roommate Profile Now
+                </a>
             </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {% for post, score in potential_matches|slice:":3" %}
-            <div class="bg-white rounded-xl p-4 border border-purple-100 hover:shadow-lg transition-all hover:scale-[1.02]">
-                <div class="flex items-center gap-3 mb-3">
-                    <img src="{{ post.get_profile_image_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-200" alt="{{ post.name }}">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-semibold text-gray-900 truncate">{{ post.name }}</h4>
-                        <p class="text-xs text-gray-500 truncate">{{ post.preferred_location }}</p>
-                    </div>
-                    <div class="text-2xl font-bold text-purple-600">{{ score }}%</div>
-                </div>
-                <div class="flex gap-2">
-                    <a href="{% url 'accounts:view_user_profile' post.user.id %}" class="flex-1 text-center px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 hover:shadow-md transition">View</a>
-                    <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="flex-1 initiate-match-form">
-                        {% csrf_token %}
-                        <button type="submit" class="w-full px-3 py-2 bg-white border-2 border-purple-600 text-purple-600 text-xs rounded-lg hover:bg-purple-50 transition">Connect</button>
-                    </form>
-                </div>
-            </div>
-            {% endfor %}
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-600">
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
         </div>
     </div>
     {% endif %}
 
-    <!-- Floating Chat Button -->
-    <div id="roommate-chat-meta"
-         data-selected-match="{% if selected_match %}{{ selected_match.id }}{% endif %}"
-         data-open-chat="{% if request.GET.open_chat or selected_match %}true{% else %}false{% endif %}">
-    </div>
-    <button class="open-chat-button" id="open-chat-button">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        {% if unread_message_count %}
-        <span class="badge">{{ unread_message_count }}</span>
-        {% endif %}
-    </button>
-
-    <!-- Grid layout for matches and discover -->
-    <div class="matches-grid">
-        <!-- LEFT: Matches -->
-        <div class="bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
-        <div class="p-4 border-b flex items-center justify-between">
-            <h2 class="text-base font-semibold text-gray-800">Your Matches</h2>
-            <span class="text-xs text-gray-500">{{ matches|length }} total</span>
-        </div>
-
-            <!-- scrollable list -->
-            <div class="divide-y divide-gray-100 overflow-y-auto scrollbar-thin px-2 flex-1">
-            {% for match in matches %}
-            <div class="p-3">
-                    <div class="match-card flex gap-3 items-start rounded-2xl p-3 hover:bg-gray-50 transition cursor-pointer {% if selected_match and selected_match.id == match.id %}bg-purple-50 border-l-4 border-purple-600{% endif %}" 
-                         data-match-id="{{ match.id }}" 
-                         data-reasons="{{ match.get_compatibility_reasons|escapejs }}">
-                    <a href="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}" class="flex-none relative profile-hover" 
-                       data-user-id="{% if match.initiator.user == request.user %}{{ match.target.user.id }}{% else %}{{ match.initiator.user.id }}{% endif %}"
-                       data-user-name="{% if match.initiator.user == request.user %}{{ match.target.name }}{% else %}{{ match.initiator.name }}{% endif %}"
-                       data-user-type="{% if match.initiator.user == request.user %}{{ match.target.user.user_type }}{% else %}{{ match.initiator.user.user_type }}{% endif %}">
-                        <img src="{% if match.initiator.user == request.user %}{{ match.target.get_profile_image_url }}{% else %}{{ match.initiator.get_profile_image_url }}{% endif %}"
-                             class="w-12 h-12 rounded-full object-cover border shadow-sm" alt="avatar">
-                        <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
+    <!-- No Matches Info Banner (when user has profile but no matches) -->
+    {% if user_post and not potential_matches %}
+    <div class="mb-6 bg-white border-l-4 border-blue-400 rounded-lg shadow-md p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="ml-4 flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                    ℹ️ No Compatible Matches Found Yet
+                </h3>
+                <p class="text-sm text-gray-700 mb-3">
+                    You have a roommate profile, but we couldn't find compatible matches right now. This could mean:
+                </p>
+                <ul class="text-sm text-gray-700 mb-4 space-y-1 ml-4">
+                    <li>• No other roommate profiles exist yet (check back later!)</li>
+                    <li>• All other profiles have compatibility score below 70%</li>
+                    <li>• You've already matched with all available profiles</li>
+                </ul>
+                <div class="flex gap-3">
+                    <a href="{% url 'dormitory:roommate_edit' user_post.id %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit Your Preferences
                     </a>
+                    <a href="{% url 'dormitory:roommate_list' %}" class="inline-flex items-center gap-2 bg-gray-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-gray-700 transition-all shadow-md">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Browse All Roommates
+                    </a>
+                </div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-600">
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    {% endif %}
 
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <h3 class="font-medium text-gray-800 truncate">
-                                    {% if match.initiator.user == request.user %}
-                                        <a href="{% url 'accounts:view_user_profile' match.target.user.id %}" class="hover:text-purple-700 transition-colors">{{ match.target.name }}</a>
-                                    {% else %}
-                                        <a href="{% url 'accounts:view_user_profile' match.initiator.user.id %}" class="hover:text-purple-700 transition-colors">{{ match.initiator.name }}</a>
-                                    {% endif %}
+    <!-- Tabs Navigation -->
+    <div class="bg-white rounded-xl shadow-md mb-4 overflow-hidden border border-gray-200">
+        <div class="border-b border-gray-200 bg-white">
+            <nav class="flex -mb-px" aria-label="Tabs">
+                <button data-tab="current-matches" class="roommate-tab active flex-1 border-b-3 border-blue-600 py-3 px-1 text-center text-sm font-semibold text-white hover:text-white hover:border-blue-700 transition-all bg-blue-600">
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Current Matches</span>
+                        <span class="sm:hidden">Matches</span>
+                        {% if matches %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ matches|length }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </button>
+                <button data-tab="potential-matches" class="roommate-tab flex-1 border-b-3 border-transparent py-3 px-1 text-center text-sm font-semibold text-gray-600 hover:text-white hover:bg-blue-500 transition-all">
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Potential Matches</span>
+                        <span class="sm:hidden">Discover</span>
+                        {% if potential_matches %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                {{ potential_matches|length }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </button>
+                <button data-tab="match-requests" class="roommate-tab flex-1 border-b-3 border-transparent py-3 px-1 text-center text-sm font-semibold text-gray-600 hover:text-white hover:bg-blue-500 transition-all">
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span class="hidden sm:inline">Match Requests</span>
+                        <span class="sm:hidden">Requests</span>
+                        {% if pending_requests %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ pending_requests|length }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Tab Content: Current Matches -->
+    <div id="current-matches-content" class="tab-content">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {% if matches %}
+                {% for match in matches %}
+                    {% if match.initiator.user == request.user %}
+                        {% with partner=match.target %}
+                        <div class="match-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-blue-100"
+                             data-name="{{ partner.name }}"
+                             data-age="{{ partner.age }}"
+                             data-mood="{{ partner.get_mood_display }}"
+                             data-budget-min="{{ partner.preferred_budget_min }}"
+                             data-budget-max="{{ partner.preferred_budget_max }}"
+                             data-location="{{ partner.preferred_location }}"
+                             data-interests="{{ partner.hobbies }}"
+                             data-description="{{ partner.description|escapejs }}"
+                             data-amenities='[{% for amenity in partner.amenities.all %}"{{ amenity.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'>
+                            <div class="relative p-5">
+                                <!-- Match Percentage Badge -->
+                                <div class="absolute top-3 right-3 flex items-center gap-1">
+                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    <span class="text-blue-600 font-bold text-lg">{{ match.compatibility_score }}%</span>
+                                </div>
+                                
+                                <!-- Profile Image -->
+                                <div class="flex justify-center mb-4">
+                                    <img src="{{ partner.get_profile_image_url }}" 
+                                         class="w-24 h-24 rounded-full object-cover border-4 border-gray-100 shadow-sm" 
+                                         alt="{{ partner.name }}">
+                                </div>
+                                
+                                <!-- Name & Age -->
+                                <h3 class="text-center font-bold text-gray-900 text-lg mb-1">
+                                    {{ partner.name }}{% if partner.user.age %}, {{ partner.user.age }}{% endif %}
                                 </h3>
-                                <div class="text-xs text-gray-400">Updated {{ match.created_at|timesince }} ago</div>
-                            </div>
-
-                                <!-- Chat button in upper right -->
-                                <button type="button" class="p-2 rounded-full hover:bg-purple-50 text-purple-600 open-chat-sidebar-btn" data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                
+                                <!-- Location -->
+                                <p class="text-center text-sm text-gray-600 flex items-center justify-center gap-1 mb-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                     </svg>
-                                </button>
-                        </div>
-
-                        <!-- Enhanced compatibility bar with AI explanation -->
-                        <div class="mt-3">
-                            <div class="compatibility-bar">
-                                <div class="compatibility-fill" data-progress="{{ match.compatibility_score|floatformat:0 }}"></div>
-                            </div>
-                            <div class="mt-2 flex items-center justify-between">
-                                <div class="flex items-center gap-1">
-                                    <span class="text-xs font-medium text-gray-700">{{ match.compatibility_score }}% match</span>
-                                    <button class="group relative" onclick="showMatchExplanation(event, {{ match.id }})">
-                                        <svg class="w-4 h-4 text-gray-400 hover:text-purple-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap">Why we matched?</span>
+                                    {{ partner.preferred_location|truncatewords:3 }}
+                                </p>
+                                
+                                <!-- Interests -->
+                                <p class="text-sm text-gray-600 mb-4 text-center">
+                                    <span class="font-medium">Likes:</span> {{ partner.interests|default:"Not specified"|truncatewords:6 }}
+                                </p>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex gap-2 mt-4">
+                                    <button data-match-id="{{ match.id }}" data-match-name="{{ partner.name }}" data-match-image="{{ partner.get_profile_image_url }}" 
+                                       class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition open-floating-chat-btn">
+                                        Message
                                     </button>
-                                </div>
-                                <span class="text-xs">
-                                    <span class="px-2 py-1 rounded-full text-[11px] font-medium shadow-sm
-                                        {% if match.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                        {% elif match.status == 'accepted' %}bg-green-100 text-green-800
-                                        {% else %}bg-red-100 text-red-800{% endif %}">
-                                        {{ match.get_status_display }}
-                                    </span>
-                                </span>
-                            </div>
-                            
-                            <!-- Conversation Starter -->
-                            {% if match.status == 'accepted' and selected_match.id == match.id and personalized_icebreaker %}
-                            <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <div class="flex items-start gap-2">
-                                    <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-medium text-blue-900 mb-1">💬 Personalized Conversation Starter:</p>
-                                        <p class="text-xs text-blue-700">"{{ personalized_icebreaker }}"</p>
-                                    </div>
+                                    <a href="{% url 'accounts:view_user_profile' partner.user.id %}" 
+                                       class="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition">
+                                        View Profile
+                                    </a>
                                 </div>
                             </div>
-                            {% endif %}
                         </div>
-
-                        <!-- accept/reject (only when relevant) -->
-                        {% if match.target.user == request.user and match.status == 'pending' %}
-                        <div class="mt-3 flex gap-2">
-                            <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="status" value="accepted">
-                                <button type="submit" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">Accept</button>
-                            </form>
-                            <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="inline update-match-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="status" value="rejected">
-                                <button type="submit" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">Reject</button>
-                            </form>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="p-4 text-gray-500">No matches found.</div>
-            {% endfor %}
-        </div>
-        </div>
-
-        <!-- RIGHT: Discover -->
-        <div class="bg-white rounded-2xl shadow border overflow-hidden flex flex-col">
-        <div class="p-4 border-b flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-4.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <h2 class="text-base font-semibold text-gray-800">Discover</h2>
-        </div>
-
-            <div class="p-4 space-y-3 overflow-y-auto flex-1">
-            {% for post, score in potential_matches %}
-            <div class="p-3 rounded-2xl border hover:shadow-md transition flex items-start justify-between gap-3">
-                <div class="flex items-start gap-3 min-w-0">
-                    <img src="{{ post.get_profile_image_url }}" class="w-12 h-12 rounded-lg object-cover border" alt="avatar">
-                    <div class="min-w-0">
-                        <h3 class="font-medium text-gray-800 truncate"><a href="{% url 'accounts:view_user_profile' post.user.id %}" class="hover:text-blue-600">{{ post.name }}</a></h3>
-                        <p class="text-xs text-gray-500 mt-1 truncate">{{ post.preferred_location }}</p>
-                        <div class="mt-2 w-full">
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                    <div class="h-2 rounded-full bg-purple-600" data-progress="{{ score|floatformat:0 }}"></div>
-                            </div>
-                            <div class="mt-1 text-xs text-blue-700 font-medium">{{ score }}%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col items-end gap-2">
-                    <div class="flex gap-2">
-                        <a href="{% url 'accounts:view_user_profile' post.user.id %}" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs hover:bg-blue-100 transition">Profile</a>
-                        {% if request.user != post.user and post.user.user_type != 'admin' %}
-                        <a href="{% url 'accounts:report_user' post.user.id %}" class="px-3 py-1 bg-orange-50 text-orange-700 rounded-md text-xs hover:bg-orange-100 transition">Report</a>
-                        {% endif %}
-                    </div>
-
-                    <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="initiate-match-form">
-                        {% csrf_token %}
-                        <button type="submit" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md text-sm hover:scale-[1.01] transition">Connect</button>
-                    </form>
-
-                    <div class="connection-status text-sm text-center hidden">Connection request sent</div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="p-4 text-gray-500">No potential matches found.</div>
-            {% endfor %}
-        </div>
-    </div>
-    </div>
-        </div>
-<!-- Fullscreen Chat Container with Messenger Layout -->
-<div id="chat-fullscreen" class="chat-fullscreen">
-    <div class="messenger-layout">
-        <!-- Conversations Sidebar -->
-        <div class="conversations-sidebar">
-            <div class="conversations-header">
-                <h2 class="text-lg font-semibold text-gray-800">Messages</h2>
-                    </div>
-
-
-
-            <div class="conversations-search">
-                <!-- Back Button -->
-                   <button class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-all group" id="close-chat-btn" title="Back to matches">
-                        <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                    </button>
-                
-                <div class="relative">
-                    <input type="text" placeholder="Search conversations..." class="search-input w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    </div>
-                </div>
-
-            <div class="conversations-list scrollbar-thin">
-                {% if matches %}
-                    {% for match in matches %}
-                        {% if match.initiator.user == request.user %}
-                            {% with partner=match.target %}
-                            <div class="conversation-item {% if selected_match and selected_match.id == match.id %}active{% endif %}"
-                                 data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
-                                <div class="relative">
-                                    <img src="{{ partner.get_profile_image_url }}" class="conversation-avatar" alt="{{ partner.name }}">
-                                    <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
-                    </div>
-                                <div class="conversation-info">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <div class="conversation-name">{{ partner.name }}</div>
-                                        <div class="text-xs font-medium text-purple-600">{{ match.compatibility_score }}%</div>
-                    </div>
-                                    <div class="conversation-preview">
-                                        {% if match.messages.last %}
-                                            {{ match.messages.last.content|truncatechars:35 }}
-                                        {% else %}
-                                            Start a conversation...
-                                        {% endif %}
-                    </div>
-                </div>
-                                <div class="conversation-time">{{ match.created_at|timesince }} ago</div>
-                </div>
-                            {% endwith %}
-                        {% else %}
-                            {% with partner=match.initiator %}
-                            <div class="conversation-item {% if selected_match and selected_match.id == match.id %}active{% endif %}"
-                                 data-match-url="{% url 'dormitory:roommate_matches' %}?selected_match={{ match.id }}&open_chat=1">
-                                <div class="relative">
-                                    <img src="{{ partner.get_profile_image_url }}" class="conversation-avatar" alt="{{ partner.name }}">
-                                    <div class="status-indicator status-{% cycle 'online' 'away' 'offline' %}"></div>
-                                </div>
-                                <div class="conversation-info">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <div class="conversation-name">{{ partner.name }}</div>
-                                        <div class="text-xs font-medium text-purple-600">{{ match.compatibility_score }}%</div>
-                                    </div>
-                                    <div class="conversation-preview">
-                                        {% if match.messages.last %}
-                                            {{ match.messages.last.content|truncatechars:35 }}
-                                        {% else %}
-                                            Start a conversation...
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="conversation-time">{{ match.created_at|timesince }} ago</div>
-                            </div>
-                            {% endwith %}
-                        {% endif %}
-                    {% empty %}
-                        <div class="empty-chat-state text-sm">No matches yet. Start connecting to see conversations here.</div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-chat-state text-sm">No matches available.</div>
-                {% endif %}
-            </div>
-                    </div>
-        <!-- Chat Main Area -->
-        <div class="chat-main">
-            <div class="chat-header">
-                <div class="flex items-center gap-3">
-                    <!-- Back Button for Chat -->
-                    <button class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-all group" id="close-chat-btn" title="Back to matches">
-                        <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                    </button>
-                    {% if selected_match and chat_partner %}
-                    <img id="chat-avatar" src="{{ chat_partner.get_profile_image_url }}" class="w-10 h-10 rounded-full object-cover border" alt="{{ chat_partner.name }}">
-                    <div>
-                        <h3 id="chat-name" class="font-medium text-gray-800">{{ chat_partner.name }}</h3>
-                        <div id="chat-status" class="text-xs text-gray-500">
-                            {{ selected_match.get_status_display }}
-                            {% if response_time_text %}
-                            <span class="mx-1">•</span>
-                            <span class="text-green-600">{{ response_time_text }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
+                        {% endwith %}
                     {% else %}
-                    <div>
-                        <h3 class="font-medium text-gray-800">Messages</h3>
-                        <div class="text-xs text-gray-500">Select a conversation to get started</div>
-                    </div>
+                        {% with partner=match.initiator %}
+                        <div class="match-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-blue-100"
+                             data-name="{{ partner.name }}"
+                             data-age="{{ partner.age }}"
+                             data-mood="{{ partner.get_mood_display }}"
+                             data-budget-min="{{ partner.preferred_budget_min }}"
+                             data-budget-max="{{ partner.preferred_budget_max }}"
+                             data-location="{{ partner.preferred_location }}"
+                             data-interests="{{ partner.hobbies }}"
+                             data-description="{{ partner.description|escapejs }}"
+                             data-amenities='[{% for amenity in partner.amenities.all %}"{{ amenity.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'>
+                            <div class="relative p-5">
+                                <!-- Match Percentage Badge -->
+                                <div class="absolute top-3 right-3 flex items-center gap-1">
+                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    <span class="text-blue-600 font-bold text-lg">{{ match.compatibility_score }}%</span>
+                                </div>
+                                
+                                <!-- Profile Image -->
+                                <div class="flex justify-center mb-4">
+                                    <img src="{{ partner.get_profile_image_url }}" 
+                                         class="w-24 h-24 rounded-full object-cover border-4 border-gray-100 shadow-sm" 
+                                         alt="{{ partner.name }}">
+                                </div>
+                                
+                                <!-- Name & Age -->
+                                <h3 class="text-center font-bold text-gray-900 text-lg mb-1">
+                                    {{ partner.name }}{% if partner.user.age %}, {{ partner.user.age }}{% endif %}
+                                </h3>
+                                
+                                <!-- Location -->
+                                <p class="text-center text-sm text-gray-600 flex items-center justify-center gap-1 mb-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    </svg>
+                                    {{ partner.preferred_location|truncatewords:3 }}
+                                </p>
+                                
+                                <!-- Interests -->
+                                <p class="text-sm text-gray-600 mb-4 text-center">
+                                    <span class="font-medium">Likes:</span> {{ partner.interests|default:"Not specified"|truncatewords:6 }}
+                                </p>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex flex-col gap-2 mt-4">
+                                    <button data-match-id="{{ match.id }}" data-match-name="{{ partner.name }}" data-match-image="{{ partner.get_profile_image_url }}" 
+                                       class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all open-floating-chat-btn">
+                                        <span class="flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg>
+                                            Message
+                                        </span>
+                                    </button>
+                                    <a href="{% url 'accounts:view_user_profile' partner.user.id %}" 
+                                       class="w-full px-4 py-2.5 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all text-center">
+                                        View Profile
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    {% if not user_post %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No Roommate Profile Yet</h3>
+                        <p class="mt-1 text-sm text-gray-500 mb-4">Create your roommate profile to start matching!</p>
+                        <a href="{% url 'dormitory:add_roommate' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Create Roommate Profile
+                        </a>
+                    {% else %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No current matches</h3>
+                        <p class="mt-1 text-sm text-gray-500 mb-4">Start connecting with potential roommates!</p>
+                        <button onclick="document.querySelector('[data-tab=&quot;potential-matches&quot;]').click()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            Browse Potential Matches
+                        </button>
                     {% endif %}
                 </div>
-                {% if selected_match and chat_partner %}
-                <div class="flex items-center gap-2">
-                    <button class="p-2 rounded-full hover:bg-gray-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                    </button>
-                    <button class="p-2 rounded-full hover:bg-gray-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </button>
-                </div>
-                {% endif %}
-                </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- End Current Matches Tab Content -->
 
-            {% if selected_match and chat_partner %}
-            <div class="chat-messages-container scrollbar-thin" id="fullscreen-chat-messages">
-                {% if chat_messages %}
-                    {% for message in chat_messages %}
-                    <div class="mb-4 {% if message.sender == request.user %}flex justify-end{% else %}flex justify-start{% endif %}">
-                        <div class="message-bubble inline-block rounded-2xl px-4 py-3 shadow-md {% if message.sender == request.user %}bg-blue-600 text-white msg-right{% else %}bg-gray-100 text-gray-800 msg-left{% endif %}">
-                            {% if message.image %}
-                                <img src="{{ message.image.url }}" alt="Shared image" class="max-h-48 max-w-xs w-auto rounded-xl mb-2 object-cover" />
-                            {% endif %}
-                            {% if message.content %}
-                                <p class="text-sm leading-relaxed font-medium">{{ message.content }}</p>
-                            {% endif %}
-                            
-                            <!-- Message reactions -->
-                            <div class="message-reactions" data-message-id="{{ message.id }}">
-                                {% for emoji, count in message.get_reactions_summary.items %}
-                                    <span class="reaction active" data-emoji="{{ emoji }}" data-count="{{ count }}">
-                                        {{ emoji }} {{ count }}
-                                    </span>
-                                {% empty %}
-                                    <span class="reaction" data-emoji="👍">👍</span>
-                                    <span class="reaction" data-emoji="❤️">❤️</span>
-                                    <span class="reaction" data-emoji="😊">😊</span>
-                                {% endfor %}
-                            </div>
-                            
-                            <div class="flex items-center gap-2 mt-2 justify-end">
-                                <span class="text-xs {% if message.sender == request.user %}text-white opacity-90{% else %}text-gray-500{% endif %}">{{ message.timestamp|date:"g:i A" }}</span>
-                                {% if message.sender == request.user %}
-                                    <span class="text-[10px] text-white opacity-80">✓{% if message.is_read %}✓{% endif %}</span>
-                                {% endif %}
+    <!-- Tab Content: Potential Matches -->
+    <div id="potential-matches-content" class="tab-content hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {% if potential_matches %}
+                {% for post, score, factors in potential_matches %}
+                <div class="match-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-blue-100" 
+                     data-match-id="{{ post.id }}" 
+                     data-score="{{ score }}"
+                     data-name="{{ post.name }}"
+                     data-age="{{ post.age }}"
+                     data-mood="{{ post.get_mood_display }}"
+                     data-budget-min="{{ post.preferred_budget_min }}"
+                     data-budget-max="{{ post.preferred_budget_max }}"
+                     data-location="{{ post.preferred_location }}"
+                     data-interests="{{ post.hobbies }}"
+                     data-description="{{ post.description|escapejs }}"
+                     data-amenities='[{% for amenity in post.amenities.all %}"{{ amenity.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'>
+                    <div class="relative p-5">
+                        <!-- Match Percentage Badge -->
+                        <div class="absolute top-3 right-3 flex items-center gap-1">
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <span class="text-blue-600 font-bold text-lg">{{ score }}%</span>
+                        </div>
+                        
+                        <!-- Profile Image -->
+                        <div class="flex justify-center mb-4">
+                            <div class="relative">
+                                <img src="{{ post.get_profile_image_url }}" 
+                                     class="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow-md" 
+                                     alt="{{ post.name }}">
+                                <div class="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
                             </div>
                         </div>
+                        
+                        <!-- Name & Age -->
+                        <h3 class="text-center font-bold text-gray-900 text-lg mb-1" data-match-name="{{ post.name }}">
+                            {{ post.name }}{% if post.user.age %}, {{ post.user.age }}{% endif %}
+                        </h3>
+                        
+                        <!-- Location -->
+                        <p class="text-center text-sm text-gray-600 flex items-center justify-center gap-1 mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            </svg>
+                            {{ post.preferred_location|truncatewords:3 }}
+                        </p>
+                        
+                        <!-- Interests -->
+                        <p class="text-sm text-gray-600 mb-4 text-center">
+                            <span class="font-medium">Likes:</span> {{ post.interests|default:"Not specified"|truncatewords:6 }}
+                        </p>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col gap-2 mt-4">
+                            <form method="post" action="{% url 'dormitory:initiate_match' post.id %}" class="w-full initiate-match-form">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Connect
+                                </button>
+                            </form>
+                            <a href="{% url 'accounts:view_user_profile' post.user.id %}" 
+                               class="w-full px-4 py-2.5 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all text-center">
+                                View Profile
+                            </a>
+                        </div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-chat-state">
-                        <div class="empty-chat-icon">💬</div>
-                        <p>No conversation yet. Start the conversation anytime.</p>
                 </div>
-                {% endif %}
-                
-                <!-- Typing indicator (hidden by default) -->
-                <div class="typing-indicator" id="typing-indicator" style="display: none;">
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                    <span class="text-xs text-gray-500 ml-2">Someone is typing...</span>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    {% if not user_post %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No Roommate Profile Yet</h3>
+                        <p class="mt-1 text-sm text-gray-500 mb-4">Create your roommate profile to discover compatible matches!</p>
+                        <a href="{% url 'dormitory:add_roommate' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Create Roommate Profile
+                        </a>
+                    {% else %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No potential matches</h3>
+                        <p class="mt-1 text-sm text-gray-500">Check back later for new suggestions!</p>
+                    {% endif %}
                 </div>
-                </div>
-
-                {% if selected_match.status == 'accepted' %}
-            <div class="chat-input-container relative z-[9999]" style="padding-bottom: 80px;">
-                <form method="post" action="{% url 'dormitory:send_roommate_message' selected_match.id %}" class="flex items-center gap-3 bg-white" id="fullscreen-chat-form" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <label class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg border bg-gray-50 text-gray-600 hover:bg-gray-100 cursor-pointer">
-                        <input type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="fullscreen-chat-image-input" />
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m18 0H3"/></svg>
-                    </label>
-
-                    <input type="text" name="content" id="fullscreen-chat-input" class="flex-1 rounded-2xl border border-gray-200 px-4 py-2 focus:ring-1 focus:ring-purple-400" placeholder="Type a message..." autocomplete="off">
-
-                    <div id="fullscreen-file-preview-wrapper" class="hidden items-center gap-2 absolute right-28 bottom-4">
-                        <img id="fullscreen-file-preview-thumb" src="" alt="preview" class="file-preview">
-                        <button type="button" id="fullscreen-remove-preview-btn" class="remove-preview -ml-3" title="Remove">×</button>
-                    </div>
-
-                    <button type="submit" class="inline-flex items-center gap-2 text-white bg-blue-700 px-6 py-2 rounded-2xl shadow">Send</button>
-                </form>
-            </div>
-            {% elif selected_match.status == 'pending' %}
-            <div class="chat-input-container text-center text-gray-500">
-                Waiting for match acceptance to start chatting.
-            </div>
-                {% else %}
-            <div class="chat-input-container text-center text-gray-500">
-                This match has been {{ selected_match.status }}.
-        </div>
             {% endif %}
-        {% else %}
-            <div class="empty-chat-state">
-                <div class="empty-chat-icon">💬</div>
-                <p class="text-base font-medium">Select a match to view messages</p>
-                <p class="text-sm text-gray-500">Use the message buttons or conversation list to open a chat.</p>
-            </div>
-        {% endif %}
         </div>
-</div>
-</div>
+    </div>
+    <!-- End Potential Matches Tab Content -->
 
-{% block extra_js %}
+    <!-- Tab Content: Match Requests -->
+    <div id="match-requests-content" class="tab-content hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {% if pending_requests %}
+                {% for match in pending_requests %}
+                {% with roommate=match.initiator %}
+                <div class="match-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-blue-100"
+                     data-name="{{ roommate.name }}"
+                     data-age="{{ roommate.age }}"
+                     data-mood="{{ roommate.get_mood_display }}"
+                     data-budget-min="{{ roommate.preferred_budget_min }}"
+                     data-budget-max="{{ roommate.preferred_budget_max }}"
+                     data-location="{{ roommate.preferred_location }}"
+                     data-interests="{{ roommate.hobbies }}"
+                     data-description="{{ roommate.description|escapejs }}"
+                     data-amenities='[{% for amenity in roommate.amenities.all %}"{{ amenity.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'>
+                    <div class="relative p-5">
+                        <!-- Match Percentage Badge -->
+                        <div class="absolute top-3 right-3 flex items-center gap-1">
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <span class="text-blue-600 font-bold text-lg">{{ match.compatibility_score }}%</span>
+                        </div>
+                        
+                        <!-- Profile Image -->
+                        <div class="flex justify-center mb-4">
+                            <div class="relative">
+                                <img src="{{ roommate.get_profile_image_url }}" 
+                                     class="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow-md" 
+                                     alt="{{ roommate.name }}">
+                                <div class="absolute bottom-0 right-0 w-6 h-6 bg-amber-500 rounded-full border-2 border-white"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Name & Age -->
+                        <h3 class="text-center font-bold text-gray-900 text-lg mb-1">
+                            {{ roommate.name }}{% if roommate.user.age %}, {{ roommate.user.age }}{% endif %}
+                        </h3>
+                        
+                        <!-- Location -->
+                        <p class="text-center text-sm text-gray-600 flex items-center justify-center gap-1 mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            </svg>
+                            {{ roommate.preferred_location|truncatewords:3 }}
+                        </p>
+                        
+                        <!-- Interests -->
+                        <p class="text-sm text-gray-600 mb-4 text-center">
+                            <span class="font-medium">Likes:</span> {{ roommate.interests|default:"Not specified"|truncatewords:6 }}
+                        </p>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col gap-2 mt-4">
+                            <div class="flex gap-2">
+                                <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="flex-1 update-match-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="accepted">
+                                    <button type="submit" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Accept
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'dormitory:update_match_status' match.id %}" class="flex-1 update-match-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button type="submit" class="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Decline
+                                    </button>
+                                </form>
+                            </div>
+                            <a href="{% url 'accounts:view_user_profile' roommate.user.id %}" 
+                               class="w-full px-4 py-2.5 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all text-center">
+                                View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    {% if not user_post %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No Roommate Profile Yet</h3>
+                        <p class="mt-1 text-sm text-gray-500 mb-4">Create your roommate profile to receive match requests!</p>
+                        <a href="{% url 'dormitory:add_roommate' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Create Roommate Profile
+                        </a>
+                    {% else %}
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No pending requests</h3>
+                        <p class="mt-1 text-sm text-gray-500">You're all caught up!</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- End Match Requests Tab Content -->
+</div>
 
 <script>
+// AI Actions Dropdown Toggle
+function toggleAIActionsDropdown() {
+    const menu = document.getElementById('ai-actions-menu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('ai-actions-dropdown');
+    const menu = document.getElementById('ai-actions-menu');
+    
+    if (dropdown && menu && !dropdown.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.roommate-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    function switchTab(tabName) {
+        // Update tab buttons
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+                tab.classList.remove('border-transparent', 'text-gray-600', 'bg-transparent');
+                tab.classList.add('border-blue-600', 'text-white', 'bg-blue-600');
+            } else {
+                tab.classList.remove('active', 'border-blue-600', 'text-white', 'bg-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-600', 'bg-transparent');
+            }
+        });
+
+        // Update tab content
+        tabContents.forEach(content => {
+            if (content.id === tabName + '-content') {
+                content.classList.remove('hidden');
+            } else {
+                content.classList.add('hidden');
+            }
+        });
+
+        // Store active tab in localStorage
+        localStorage.setItem('activeRoommateMatchTab', tabName);
+    }
+
+    // Add click event listeners to tabs
+    tabs.forEach(tab => {
+        tab.addEventListener('click',function() {
+            switchTab(this.dataset.tab);
+        });
+    });
+
+    // Restore last active tab or default to current-matches
+    const lastActiveTab = localStorage.getItem('activeRoommateMatchTab') || 'current-matches';
+    switchTab(lastActiveTab);
+
+    // Handle update match forms with AJAX
+    document.querySelectorAll('.update-match-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new FormData(form)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    alert(data.error || 'An error occurred');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch (err) {
+                alert('An error occurred');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    });
+
     // Loader
     const loader = document.getElementById('page-loader');
     function hideLoader(){ if(!loader) return; loader.style.opacity = '0'; setTimeout(()=> loader.style.display='none',300); }
@@ -1269,6 +1545,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json();
                 if (res.ok) window.location.reload();
                 else { alert(data.error || 'An error occurred'); btn.disabled = false; }
+
+    // Open floating chat when Message button is clicked
+    document.querySelectorAll('.open-floating-chat-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const matchId = this.dataset.matchId;
+            const matchName = this.dataset.matchName;
+            const matchImage = this.dataset.matchImage;
+            
+            if (window.openFloatingChat) {
+                window.openFloatingChat(matchId, matchName, matchImage);
+            } else {
+                console.error('openFloatingChat function not available');
+            }
+        });
+    });
             } catch (err) { alert('An error occurred'); btn.disabled = false; }
         });
     });
@@ -1317,49 +1609,147 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // AI Chatbot Integration
     window.openAIChatbot = function() {
-        // Trigger your existing AI chatbot
-        const chatbotBtn = document.querySelector('[onclick*="chatbot"]') || document.querySelector('.chatbot-button');
+        // Find and click the AI chatbot trigger button
+        const chatbotBtn = document.getElementById('chatbotTrigger');
         if (chatbotBtn) {
             chatbotBtn.click();
+            // Wait for modal to open, then populate with helpful message
             setTimeout(() => {
-                const chatInput = document.querySelector('#chat-input') || document.querySelector('input[placeholder*="message"]');
+                const chatInput = document.getElementById('chatInput');
                 if (chatInput) {
                     chatInput.value = "I need help finding the perfect roommate. Can you explain my compatibility scores and give me tips?";
+                    chatInput.focus();
                 }
             }, 500);
         } else {
-            alert('AI Helper: Looking at your matches, I can help you understand compatibility scores, suggest conversation starters, and provide safety tips for meeting potential roommates!');
+            // Fallback if chatbot widget is not loaded
+            alert('AI Chatbot is not available. Please refresh the page or contact support.');
         }
     };
 
     // Auto-Match Top Profiles Function
     window.autoMatchTopProfiles = function() {
-        // Get top 3 recommended matches from the AI Picks section
-        const topMatches = document.querySelectorAll('.initiate-match-form');
+        // Get top 3 recommended matches from the Potential Matches tab
+        const topMatches = document.querySelectorAll('#potential-matches-content .initiate-match-form');
         
         if (topMatches.length === 0) {
-            alert('No matches available yet. Create a roommate profile to get matched!');
+            alert('No compatible matches found yet.\n\nThis could mean:\n- No other roommate profiles exist yet\n- All other profiles have compatibility score below 70%\n- You\'ve already matched with everyone\n\nCheck the "Potential Matches" tab or try editing your preferences!');
             return;
         }
         
-        if (confirm(`Send connection requests to your top ${Math.min(3, topMatches.length)} AI-recommended matches?`)) {
-            let sent = 0;
-            const maxMatches = Math.min(3, topMatches.length);
-            
-            Array.from(topMatches).slice(0, maxMatches).forEach((form, index) => {
-                setTimeout(() => {
-                    form.submit();
-                    sent++;
+        // Show confirmation modal instead of browser confirm
+        showAutoMatchModal(topMatches);
+    };
+
+    // Show Auto-Match Confirmation Modal
+    window.showAutoMatchModal = function(topMatches) {
+        const matchCount = Math.min(3, topMatches.length);
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'autoMatchModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto';
+        modal.innerHTML = `
+            <div class="bg-white rounded-t-3xl sm:rounded-xl shadow-2xl max-w-md w-full mx-auto transform transition-all animate-fadeIn my-auto border border-gray-200">
+                <!-- Header with Close Button -->
+                <div class="flex items-center justify-between p-5 sm:p-6 border-b border-gray-200 sticky top-0 bg-white rounded-t-3xl sm:rounded-t-xl z-10">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full flex-shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-base sm:text-xl font-bold text-blue-600">Auto-Match Top 3</h3>
+                    </div>
+                    <button onclick="closeAutoMatchModal()" class="text-gray-400 hover:text-gray-600 hover:bg-blue-100 rounded-full p-1.5 transition-colors flex-shrink-0">
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-5 sm:p-6 pb-safe">
+                    <div class="mb-5 sm:mb-6">
+                        <p class="text-gray-700 text-sm sm:text-lg text-center leading-relaxed">
+                            Send connection requests to your top <span class="font-semibold text-blue-600">${matchCount}</span> recommended match${matchCount > 1 ? 'es' : ''}?
+                        </p>
+                        <p class="text-gray-500 text-xs sm:text-sm text-center mt-2">
+                            These are the best matches based on compatibility scores
+                        </p>
+                    </div>
                     
-                    if (sent === maxMatches) {
-                        setTimeout(() => {
-                            alert(`✅ Successfully sent ${sent} connection request${sent > 1 ? 's' : ''} to your best matches!`);
-                            location.reload();
-                        }, 500);
-                    }
-                }, index * 500); // Stagger submissions
-            });
+                    <!-- Action Buttons - Optimized for mobile visibility -->
+                    <div class="flex flex-col-reverse sm:flex-row gap-3 pb-3">
+                        <button onclick="closeAutoMatchModal()" class="w-full sm:flex-1 px-5 py-3.5 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 active:scale-95 text-sm sm:text-base">
+                            Cancel
+                        </button>
+                        <button onclick="confirmAutoMatch()" class="w-full sm:flex-1 px-5 py-3.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-sm sm:text-base">
+                            <span class="flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Send Requests
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Store topMatches reference for confirmAutoMatch
+        modal.dataset.matchCount = matchCount;
+        modal.topMatchesRef = topMatches;
+        
+        // Close on background click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeAutoMatchModal();
+        });
+        
+        // Close on ESC key
+        const escHandler = function(e) {
+            if (e.key === 'Escape') closeAutoMatchModal();
+        };
+        document.addEventListener('keydown', escHandler);
+        modal.escHandler = escHandler; // Store for cleanup
+    };
+
+    // Close Auto-Match Modal
+    window.closeAutoMatchModal = function() {
+        const modal = document.getElementById('autoMatchModal');
+        if (modal) {
+            // Remove keyboard listener
+            if (modal.escHandler) {
+                document.removeEventListener('keydown', modal.escHandler);
+            }
+            modal.remove();
         }
+    };
+
+    // Confirm and Execute Auto-Match
+    window.confirmAutoMatch = function() {
+        const modal = document.getElementById('autoMatchModal');
+        const topMatches = modal.topMatchesRef;
+        const maxMatches = parseInt(modal.dataset.matchCount);
+        
+        closeAutoMatchModal();
+        
+        let sent = 0;
+        Array.from(topMatches).slice(0, maxMatches).forEach((form, index) => {
+            setTimeout(() => {
+                form.submit();
+                sent++;
+                
+                if (sent === maxMatches) {
+                    setTimeout(() => {
+                        alert(`✅ Successfully sent ${sent} connection request${sent > 1 ? 's' : ''} to your best matches!`);
+                        location.reload();
+                    }, 500);
+                }
+            }, index * 500); // Stagger submissions
+        });
     };
     
     // Match Explanation Tooltip with real data
@@ -1389,10 +1779,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const tooltip = document.createElement('div');
-        tooltip.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-blue-200 p-4 max-w-xs';
+        tooltip.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-xs';
         tooltip.innerHTML = `
             <div class="flex items-center gap-2 mb-3">
-                <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
+                <div class="p-2 bg-blue-600 rounded-lg">
                     <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -1525,19 +1915,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Show Match Insights Modal
 window.showMatchInsights = function() {
-    const topMatches = document.querySelectorAll('.initiate-match-form');
-    if (topMatches.length === 0) {
-        alert('No AI matches available yet. Complete your profile to get recommendations!');
+    const matchCards = document.querySelectorAll('#potential-matches-content [data-match-id]');
+    if (matchCards.length === 0) {
+        alert('No compatible matches found yet.\n\nThis could mean:\n- No other roommate profiles exist yet\n- All other profiles have compatibility score below 70%\n- You\'ve already matched with everyone\n\nCheck the "Potential Matches" tab or try editing your preferences!');
         return;
     }
     
     // Build insights content
     let insightsHTML = '<div class="space-y-4">';
     
-    Array.from(topMatches).slice(0, 3).forEach((form, index) => {
-        const matchCard = form.closest('[data-match-id]');
-        const matchName = matchCard.querySelector('.font-semibold')?.textContent?.trim() || 'Match ' + (index + 1);
-        const compatibilityScore = matchCard.querySelector('.text-2xl.font-bold')?.textContent?.replace('%', '') || '0';
+    Array.from(matchCards).slice(0, 3).forEach((matchCard, index) => {
+        const matchName = matchCard.querySelector('[data-match-name]')?.dataset?.matchName || 
+                         matchCard.querySelector('.font-bold')?.textContent?.trim()?.split(',')[0] || 
+                         'Match ' + (index + 1);
+        const compatibilityScore = matchCard.dataset.score || 
+                                   matchCard.querySelector('.text-white.font-bold')?.textContent?.replace('%', '') || '0';
         
         // Extract compatibility reasons
         let reasons = [];
@@ -1546,37 +1938,58 @@ window.showMatchInsights = function() {
             if (reasonsData) reasons = JSON.parse(reasonsData);
         } catch(e) {}
         
+        // Get match ID for the form submission
+        const matchId = matchCard.dataset.matchId || '';
+        
         insightsHTML += `
-            <div class="border border-purple-200 rounded-lg p-4 bg-purple-50">
+            <div class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="font-semibold text-gray-900">#${index + 1}: ${matchName}</h4>
-                    <span class="text-xl font-bold text-purple-600">${compatibilityScore}%</span>
+                    <span class="text-xl font-bold text-blue-600">${compatibilityScore}%</span>
                 </div>
                 
                 <!-- Compatibility Breakdown -->
                 <div class="mb-3">
                     <p class="text-xs font-semibold text-gray-600 mb-2">COMPATIBILITY BREAKDOWN</p>
-                    ${reasons.length > 0 ? reasons.map(r => `
-                        <div class="flex items-start gap-2 mb-1">
-                            <svg class="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="text-sm text-gray-700">${r}</span>
+                            <span class="text-gray-700">Compatible Lifestyle</span>
                         </div>
-                    `).join('') : '<p class="text-sm text-gray-500">Compatibility based on profile analysis</p>'}
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Matching Budget</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Similar Preferences</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Good Match Score</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Conversation Tips -->
                 <div class="mb-3">
                     <p class="text-xs font-semibold text-gray-600 mb-2">💡 CONVERSATION STARTER</p>
-                    <p class="text-sm text-gray-700 bg-white p-2 rounded border border-purple-100">
-                        ${getConversationTip(reasons)}
+                    <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-200">
+                        Start by introducing yourself and asking about their daily routine and preferences for shared living spaces.
                     </p>
                 </div>
                 
                 <!-- Quick Action -->
-                <button onclick="document.querySelectorAll('.initiate-match-form')[${index}].submit(); closeInsightsModal();" 
-                        class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                <button onclick="document.querySelector('#potential-matches-content [data-match-id=\\\"${matchId}\\\"] .initiate-match-form').submit(); closeInsightsModal();" 
+                        class="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all">
                     Send Connection Request
                 </button>
             </div>
@@ -1590,10 +2003,10 @@ window.showMatchInsights = function() {
     modal.id = 'insightsModal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
     modal.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                <h3 class="text-lg font-bold text-gray-900">Your Top Match Insights</h3>
-                <button onclick="closeInsightsModal()" class="text-gray-400 hover:text-gray-600">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-xl">
+                <h3 class="text-lg font-bold text-blue-600">Your Top Match Insights</h3>
+                <button onclick="closeInsightsModal()" class="text-gray-400 hover:text-gray-600 hover:bg-blue-100 rounded-full p-1.5 transition-colors">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -1643,7 +2056,238 @@ window.closeInsightsModal = function() {
     const modal = document.getElementById('insightsModal');
     if (modal) modal.remove();
 };
+
+// ========== HOVER PROFILE MODAL FUNCTIONALITY ==========
+let hoverModal = null;
+let hoverTimeout = null;
+let currentCard = null;
+
+function createHoverModal() {
+    if (!hoverModal) {
+        hoverModal = document.createElement('div');
+        hoverModal.className = 'hover-profile-modal';
+        document.body.appendChild(hoverModal);
+    }
+    return hoverModal;
+}
+
+function showHoverModal(cardElement, profileData) {
+    clearTimeout(hoverTimeout);
+    currentCard = cardElement;
+    
+    const modal = createHoverModal();
+    
+    // Build amenities HTML
+    let amenitiesHTML = '';
+    if (profileData.amenities && profileData.amenities.length > 0) {
+        amenitiesHTML = profileData.amenities.map(amenity => `
+            <span class="amenity-badge">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                ${amenity}
+            </span>
+        `).join('');
+    } else {
+        amenitiesHTML = '<span class="text-sm text-gray-500">No amenities specified</span>';
+    }
+    
+    // Build modal content
+    modal.innerHTML = `
+        <div class="modal-header">
+            <h4 class="font-bold text-lg mb-1">${profileData.name}${profileData.age ? ', ' + profileData.age : ''}</h4>
+            <p class="text-sm text-blue-100">${profileData.mood_display || 'Friendly'} Personality</p>
+        </div>
+        <div class="modal-body">
+            <!-- Budget -->
+            <div class="info-row">
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-500 font-medium">Budget Range</p>
+                    <p class="text-sm font-semibold text-gray-900">₱${profileData.budget_min || '0'} - ₱${profileData.budget_max || '0'}</p>
+                </div>
+            </div>
+            
+            <!-- Location -->
+            <div class="info-row">
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-500 font-medium">Preferred Location</p>
+                    <p class="text-sm font-semibold text-gray-900">${profileData.location || 'Not specified'}</p>
+                </div>
+            </div>
+            
+            <!-- Hobbies/Interests -->
+            ${profileData.interests ? `
+            <div class="info-row">
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-500 font-medium">Hobbies & Interests</p>
+                    <p class="text-sm text-gray-700">${profileData.interests}</p>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Amenities -->
+            <div class="info-row flex-col items-start">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <p class="text-xs text-gray-500 font-medium">Preferred Amenities</p>
+                </div>
+                <div class="flex flex-wrap gap-1 w-full">
+                    ${amenitiesHTML}
+                </div>
+            </div>
+            
+            <!-- Description -->
+            ${profileData.description ? `
+            <div class="info-row flex-col items-start">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                    </svg>
+                    <p class="text-xs text-gray-500 font-medium">About</p>
+                </div>
+                <p class="text-sm text-gray-700">${profileData.description}</p>
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Position the modal
+    positionHoverModal(cardElement, modal);
+    
+    // Add event listeners to keep modal open when hovering over it
+    modal.addEventListener('mouseenter', function() {
+        clearTimeout(hoverTimeout);
+        modal.classList.add('show');
+    });
+    
+    modal.addEventListener('mouseleave', function() {
+        hideHoverModal();
+    });
+    
+    // Show modal after brief delay
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 50);
+}
+
+function positionHoverModal(cardElement, modal) {
+    const rect = cardElement.getBoundingClientRect();
+    const modalWidth = 320;
+    const modalHeight = modal.offsetHeight || 400;
+    const padding = 16;
+    
+    let left = rect.right + padding;
+    let top = rect.top;
+    
+    // Check if modal goes off right edge of screen
+    if (left + modalWidth > window.innerWidth) {
+        left = rect.left - modalWidth - padding;
+    }
+    
+    // Check if modal goes off bottom edge of screen
+    if (top + modalHeight > window.innerHeight) {
+        top = window.innerHeight - modalHeight - padding;
+    }
+    
+    // Check if modal goes off top edge of screen
+    if (top < padding) {
+        top = padding;
+    }
+    
+    modal.style.left = `${left}px`;
+    modal.style.top = `${top}px`;
+}
+
+function hideHoverModal() {
+    clearTimeout(hoverTimeout);
+    if (hoverModal) {
+        hoverModal.classList.remove('show');
+    }
+}
+
+// Initialize hover modal for all match cards
+function initializeHoverModals() {
+    const matchCards = document.querySelectorAll('.match-card');
+    console.log('Initializing hover modals for', matchCards.length, 'cards');
+    
+    matchCards.forEach(card => {
+        // Skip if already initialized
+        if (card.dataset.hoverInitialized === 'true') return;
+        card.dataset.hoverInitialized = 'true';
+        
+        let enterTimeout;
+        let leaveTimeout;
+        
+        card.addEventListener('mouseenter', function(e) {
+            clearTimeout(leaveTimeout);
+            console.log('Mouse enter on card:', this.dataset.name);
+            
+            // Get profile data from data attributes
+            const profileData = {
+                name: this.dataset.name || 'Unknown',
+                age: this.dataset.age || '',
+                mood_display: this.dataset.mood || '',
+                budget_min: this.dataset.budgetMin || '0',
+                budget_max: this.dataset.budgetMax || '0',
+                location: this.dataset.location || 'Not specified',
+                interests: this.dataset.interests || '',
+                description: this.dataset.description || '',
+                amenities: []
+            };
+            
+            // Parse amenities safely
+            try {
+                if (this.dataset.amenities) {
+                    profileData.amenities = JSON.parse(this.dataset.amenities);
+                }
+            } catch (e) {
+                console.error('Error parsing amenities:', e);
+                profileData.amenities = [];
+            }
+            
+            enterTimeout = setTimeout(() => {
+                console.log('Showing hover modal for:', profileData.name);
+                showHoverModal(this, profileData);
+            }, 300);
+        });
+        
+        card.addEventListener('mouseleave', function(e) {
+            clearTimeout(enterTimeout);
+            console.log('Mouse leave from card');
+            leaveTimeout = setTimeout(() => {
+                hideHoverModal();
+            }, 100);
+        });
+    });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing hover modals');
+    initializeHoverModals();
+    
+    // Re-initialize when tab changes (for dynamic content)
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+        tab.addEventListener('click', function() {
+            console.log('Tab clicked, re-initializing hover modals');
+            setTimeout(() => {
+                initializeHoverModals();
+            }, 100);
+        });
+    });
+});
+
 </script>
 
-{% endblock %}
 {% endblock %}
