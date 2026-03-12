@@ -16,13 +16,28 @@ function getSessionId() {
 // Toggle chatbot modal
 function toggleChatbot() {
     const modal = document.getElementById('chatbotModal');
+    const backdrop = document.getElementById('chatbotBackdrop');
     const isHidden = modal.classList.contains('scale-0');
     
     if (isHidden) {
         // Open chatbot
         modal.classList.remove('scale-0', 'opacity-0');
-        modal.classList.add('scale-100', 'opacity-100');
-        document.getElementById('chatInput').focus();
+        modal.classList.add('scale-100', 'opacity-100', 'show');
+        
+        // Show backdrop on mobile
+        if (window.innerWidth < 768 && backdrop) {
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Focus input after animation
+        setTimeout(() => {
+            document.getElementById('chatInput')?.focus();
+        }, 100);
     } else {
         // Close chatbot
         closeChatbot();
@@ -31,9 +46,26 @@ function toggleChatbot() {
 
 function closeChatbot() {
     const modal = document.getElementById('chatbotModal');
+    const backdrop = document.getElementById('chatbotBackdrop');
+    
     modal.classList.add('scale-0', 'opacity-0');
-    modal.classList.remove('scale-100', 'opacity-100');
+    modal.classList.remove('scale-100', 'opacity-100', 'show');
+    
+    // Hide backdrop
+    if (backdrop) {
+        backdrop.classList.remove('opacity-100');
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => {
+            backdrop.classList.add('hidden');
+        }, 300);
+    }
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
 }
+
+// Close chatbot when clicking backdrop
+document.getElementById('chatbotBackdrop')?.addEventListener('click', closeChatbot);
 
 // Open chatbot (called from button)
 document.getElementById('chatbotTrigger')?.addEventListener('click', toggleChatbot);

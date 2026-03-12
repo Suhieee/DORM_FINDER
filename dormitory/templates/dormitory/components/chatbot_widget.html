@@ -2,10 +2,13 @@
 
 <!-- AI Chatbot Widget -->
 <div id="chatbot-container" class="fixed bottom-0 left-0 z-[9999]">
+    <!-- Backdrop overlay for mobile (hidden by default) -->
+    <div id="chatbotBackdrop" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9997] transition-opacity duration-300 opacity-0"></div>
+    
     <!-- Floating Chat Button -->
     <button 
         id="chatbotTrigger" 
-        class="fixed bottom-5 left-5 inline-flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-xl transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 z-[9998]"
+        class="fixed bottom-5 left-5 inline-flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 z-[9998] hover:scale-110 active:scale-95"
         aria-label="Open AI Assistant"
         title="Need help? Ask our AI assistant!"
     >
@@ -20,7 +23,7 @@
     <div 
         id="chatbotModal" 
         class="fixed bottom-24 left-6 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-0 opacity-0 origin-bottom-left md:w-96 sm:w-80"
-        style="height: 600px; max-height: calc(100vh - 8rem);"
+        style="height: min(600px, calc(100vh - 180px)); max-height: calc(100vh - 180px);"
     >
         <!-- Header -->
         <div class="bg-blue-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
@@ -194,17 +197,219 @@
 }
 
 /* Mobile responsive adjustments */
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
     #chatbotModal {
-        width: calc(100vw - 2rem) !important;
-        right: 1rem;
-        bottom: 5rem;
-        height: 500px !important;
+        width: 360px !important;
+        max-height: calc(100vh - 160px);
+        height: min(550px, calc(100vh - 160px)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #chatbotModal {
+        width: calc(100vw - 3rem) !important;
+        left: 1.5rem;
+        bottom: 5.5rem;
+        max-height: calc(100vh - 140px);
+        height: min(500px, calc(100vh - 140px)) !important;
     }
     
     #chatbotTrigger {
-        bottom: 1.5rem;
-        right: 1.5rem;
+        bottom: 1.25rem;
+        left: 1.25rem;
+        width: 52px;
+        height: 52px;
+    }
+    
+    #chatbotTrigger svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    #chatbotTrigger .absolute {
+        font-size: 10px;
+        width: 18px;
+        height: 18px;
     }
 }
+
+@media (max-width: 640px) {
+    #chatbotModal {
+        width: calc(100vw - 2rem) !important;
+        left: 1rem;
+        right: 1rem;
+        bottom: 5rem;
+        max-height: calc(100vh - 120px);
+        height: min(480px, calc(100vh - 120px)) !important;
+        border-radius: 1rem;
+    }
+    
+    #chatbotTrigger {
+        bottom: 1rem;
+        left: 1rem;
+        width: 50px;
+        height: 50px;
+    }
+    
+    #chatMessages {
+        padding: 0.75rem;
+    }
+    
+    .bg-blue-600.text-white.p-4 {
+        padding: 0.875rem !important;
+    }
+    
+    .border-t.border-gray-200.p-4 {
+        padding: 0.875rem !important;
+    }
+    
+    #chatForm input {
+        font-size: 14px;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    #chatForm button {
+        padding: 0.5rem 0.75rem;
+        font-size: 14px;
+    }
+    
+    #chatForm button svg {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #chatbotModal {
+        width: calc(100vw - 1.5rem) !important;
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: 4.5rem;
+        max-height: calc(100vh - 100px);
+        height: min(450px, calc(100vh - 100px)) !important;
+    }
+    
+    #chatbotTrigger {
+        bottom: 0.875rem;
+        left: 0.875rem;
+        width: 48px;
+        height: 48px;
+    }
+    
+    #chatbotTrigger svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    #chatMessages {
+        padding: 0.625rem;
+        gap: 0.75rem;
+    }
+    
+    .bg-blue-600.text-white.p-4 {
+        padding: 0.75rem !important;
+    }
+    
+    .border-t.border-gray-200.p-4 {
+        padding: 0.75rem !important;
+    }
+    
+    #chatForm {
+        gap: 0.5rem;
+    }
+    
+    #chatForm input {
+        font-size: 13px;
+        padding: 0.5rem;
+    }
+    
+    #chatForm button {
+        padding: 0.5rem;
+    }
+    
+    #chatForm button span {
+        display: none;
+    }
+    
+    .quick-reply-btn {
+        font-size: 11px;
+        padding: 0.375rem 0.625rem !important;
+    }
+}
+
+@media (max-width: 375px) {
+    #chatbotModal {
+        width: calc(100vw - 1rem) !important;
+        left: 0.5rem;
+        right: 0.5rem;
+        bottom: 4rem;
+        max-height: calc(100vh - 90px);
+        height: min(420px, calc(100vh - 90px)) !important;
+    }
+    
+    #chatbotTrigger {
+        bottom: 0.75rem;
+        left: 0.75rem;
+        width: 46px;
+        height: 46px;
+    }
+}
+
+/* Ensure smooth transitions */
+#chatbotModal {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+#chatbotModal.show {
+    transform: scale(1) !important;
+    opacity: 1 !important;
+}
+
+/* Backdrop transitions */
+#chatbotBackdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#chatbotBackdrop.opacity-100 {
+    opacity: 1 !important;
+}
+
+/* Prevent content overflow */
+#chatMessages {
+    overflow-x: hidden;
+    word-wrap: break-word;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure chatbot doesn't overlap navbar */
+@media (max-height: 700px) {
+    #chatbotModal {
+        max-height: calc(100vh - 100px) !important;
+        height: min(450px, calc(100vh - 100px)) !important;
+    }
+}
+
+@media (max-height: 600px) {
+    #chatbotModal {
+        max-height: calc(100vh - 90px) !important;
+        height: min(400px, calc(100vh - 90px)) !important;
+    }
+    
+    #chatMessages {
+        padding: 0.5rem;
+    }
+}
+
+/* Button hover and focus states */
+#chatbotTrigger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+#chatbotTrigger:active {
+    transform: scale(0.95);
+}
+
+
 </style>

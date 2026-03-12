@@ -1,7 +1,11 @@
 {% load static %}
 
+<!-- Backdrop overlay for mobile (outside container for proper z-index layering) -->
+<div id="floating-messages-backdrop" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 opacity-0"></div>
+
 <!-- Global Floating Messages Component -->
 <div id="floating-messages-container" class="fixed bottom-6 right-6 z-50">
+    
     <!-- Floating Chat Button -->
     <button id="floating-chat-toggle" class="floating-chat-button group" title="Messages">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -11,7 +15,8 @@
     </button>
 
     <!-- Floating Messages Panel -->
-    <div id="floating-messages-panel" class="floating-messages-panel hidden">
+    <div id="floating-messages-panel" class="floating-messag
+    es-panel hidden">
         <!-- Conversations List View -->
         <div id="conversations-view" class="conversations-view">
             <div class="floating-messages-header">
@@ -154,11 +159,13 @@
 .floating-chat-button:hover {
     background: #1d4ed8;
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    transform: translateY(-2px) scale(1.05);
 }
 
 .floating-chat-button:active {
     background: #1e40af;
     box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    transform: translateY(0) scale(0.95);
 }
 
 .floating-badge {
@@ -191,19 +198,42 @@
 
 /* Floating Messages Panel */
 .floating-messages-panel {
-    position: absolute;
-    bottom: 70px;
-    right: 0;
+    position: fixed;
+    bottom: 6.5rem;
+    right: 24px;
     width: 420px;
-    max-width: calc(100vw - 32px);
-    max-height: 600px;
+    max-width: calc(100vw - 48px);
+    height: min(600px, calc(100vh - 180px));
+    max-height: calc(100vh - 180px);
     background: white;
     border-radius: 20px;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     transform-origin: bottom right;
-    animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(0, 0, 0, 0.05);
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    pointer-events: none;
+    z-index: 50;
+}
+
+.floating-messages-panel.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+    animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.floating-messages-panel.hidden {
+    display: none;
 }
 
 @keyframes slideUpFade {
@@ -227,7 +257,7 @@
 }
 
 .floating-conversations-list {
-    max-height: 450px;
+    flex: 1;
     overflow-y: auto;
     background: #fafbfc;
     position: relative;
@@ -256,7 +286,8 @@
 .conversations-view, .chat-view {
     display: flex;
     flex-direction: column;
-    height: 600px;
+    height: 100%;
+    max-height: 100%;
 }
 
 .conversations-view.hidden, .chat-view.hidden {
@@ -266,8 +297,11 @@
 .chat-messages-container {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 20px;
     background: linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%);
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .chat-messages-container::-webkit-scrollbar {
@@ -283,6 +317,22 @@
     border-radius: 10px;
 }
 
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+@media (max-width: 640px) {
+    .chat-messages-container {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-messages-container {
+        padding: 12px;
+    }
+}
+
 .chat-input-container {
     position: relative;
     padding: 16px 20px;
@@ -291,10 +341,62 @@
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
 }
 
+#message-input {
+    min-height: 40px;
+    max-height: 100px !important;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    #message-input {
+        min-height: 38px;
+        max-height: 80px !important;
+        font-size: 14px;
+        padding: 10px 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #message-input {
+        min-height: 36px;
+        max-height: 70px !important;
+        font-size: 14px;
+        padding: 9px 11px !important;
+    }
+    
+    #send-message-form button[type="submit"] {
+        padding: 10px !important;
+    }
+    
+    #send-message-form button[type="submit"] svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    #send-message-form label svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
 .message-bubble {
     max-width: 80%;
     margin-bottom: 16px;
     animation: slideInMessage 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (max-width: 640px) {
+    .message-bubble {
+        max-width: 85%;
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-bubble {
+        max-width: 90%;
+        margin-bottom: 10px;
+    }
 }
 
 @keyframes slideInMessage {
@@ -337,14 +439,49 @@
 .message-content {
     padding: 12px 16px;
     word-wrap: break-word;
+    word-break: break-word;
     max-width: 100%;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .message-content {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-content {
+        padding: 9px 12px;
+        font-size: 13px;
+    }
 }
 
 .message-image {
     max-width: 220px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
     border-radius: 12px;
     margin-top: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+}
+
+@media (max-width: 640px) {
+    .message-image {
+        max-width: 180px;
+        max-height: 240px;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-image {
+        max-width: 150px;
+        max-height: 200px;
+    }
 }
 
 .message-time {
@@ -444,22 +581,149 @@
 }
 
 /* Responsive */
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
     .floating-messages-panel {
-        width: calc(100vw - 24px);
-        bottom: 70px;
-        right: -6px;
-        max-height: 80vh;
+        width: 380px !important;
+        max-width: calc(100vw - 40px) !important;
+        right: 20px !important;
+        height: min(550px, calc(100vh - 160px)) !important;
+        max-height: calc(100vh - 160px);
+    }
+}
+
+@media (max-width: 768px) {
+    .floating-messages-panel {
+        left: 1.5rem !important;
+        right: 1.5rem !important;
+        width: auto !important;
+        max-width: none !important;
+        bottom: 7rem !important;
+        height: min(500px, calc(100vh - 140px)) !important;
+        max-height: calc(100vh - 140px);
     }
     
     .floating-chat-button {
         width: 56px;
         height: 56px;
+        bottom: 1.25rem;
+        right: 1.25rem;
     }
     
-    .conversations-view, .chat-view {
-        height: 70vh;
+    .floating-messages-header {
+        padding: 14px 16px;
     }
+    
+    .chat-input-container {
+        padding: 12px 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .floating-messages-panel {
+        left: 1rem !important;
+        right: 1rem !important;
+        width: auto !important;
+        max-width: none !important;
+        bottom: 6.5rem !important;
+        height: min(480px, calc(100vh - 120px)) !important;
+        max-height: calc(100vh - 120px);
+        border-radius: 1rem;
+    }
+    
+    .floating-chat-button {
+        width: 54px;
+        height: 54px;
+        bottom: 1rem;
+        right: 1rem;
+    }
+    
+    .chat-messages-container {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .floating-messages-panel {
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+        width: auto !important;
+        max-width: none !important;
+        bottom: 6rem !important;
+        height: min(450px, calc(100vh - 100px)) !important;
+        max-height: calc(100vh - 100px);
+    }
+    
+    .floating-chat-button {
+        width: 52px;
+        height: 52px;
+        bottom: 0.875rem;
+        right: 0.875rem;
+    }
+    
+    .floating-conversation-item {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+    
+    .floating-conversation-avatar {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .chat-messages-container {
+        padding: 12px;
+    }
+    
+    .floating-messages-header {
+        padding: 12px 14px;
+    }
+    
+    .chat-input-container {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 375px) {
+    .floating-messages-panel {
+        left: 0.5rem !important;
+        right: 0.5rem !important;
+        width: auto !important;
+        max-width: none !important;
+        bottom: 5.5rem !important;
+        height: min(420px, calc(100vh - 90px)) !important;
+        max-height: calc(100vh - 90px);
+    }
+    
+    .floating-chat-button {
+        width: 50px;
+        height: 50px;
+        bottom: 0.75rem;
+        right: 0.75rem;
+    }
+}
+
+/* Height-based responsive for short screens */
+@media (max-height: 700px) {
+    .floating-messages-panel {
+        height: min(450px, calc(100vh - 100px)) !important;
+        max-height: calc(100vh - 100px);
+    }
+}
+
+@media (max-height: 600px) {
+    .floating-messages-panel {
+        height: min(400px, calc(100vh - 90px)) !important;
+        max-height: calc(100vh - 90px);
+    }
+}
+
+/* Backdrop transitions */
+#floating-messages-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#floating-messages-backdrop.opacity-100 {
+    opacity: 1 !important;
 }
 </style>
 
@@ -468,6 +732,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('floating-chat-toggle');
     const messagesPanel = document.getElementById('floating-messages-panel');
     const closeBtn = document.getElementById('close-floating-messages');
+    const backdrop = document.getElementById('floating-messages-backdrop');
     const conversationsList = document.getElementById('floating-conversations-list');
     const searchInput = document.getElementById('floating-search-conversations');
     const unreadBadge = document.getElementById('floating-unread-badge');
@@ -489,33 +754,75 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPartnerName = '';
     let messageRefreshInterval = null;
 
-    // Toggle floating messages panel
+    // Handle window resize to hide backdrop on larger screens
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768 && backdrop && !backdrop.classList.contains('hidden')) {
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Toggle floating messages panel with smooth animation
     if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
             const isHidden = messagesPanel.classList.contains('hidden');
             if (isHidden) {
+                // Open panel
                 messagesPanel.classList.remove('hidden');
+                messagesPanel.classList.add('show');
+                
+                // Show backdrop on mobile
+                if (window.innerWidth < 768 && backdrop) {
+                    backdrop.classList.remove('hidden');
+                    setTimeout(() => {
+                        backdrop.classList.remove('opacity-0');
+                        backdrop.classList.add('opacity-100');
+                    }, 10);
+                    document.body.style.overflow = 'hidden';
+                }
+                
                 showConversationsView();
                 loadConversations();
             } else {
-                messagesPanel.classList.add('hidden');
+                closeMessagesPanel();
             }
         });
     }
 
     // Close floating messages
+    function closeMessagesPanel() {
+        messagesPanel.classList.remove('show');
+        messagesPanel.classList.add('hidden');
+        
+        // Hide backdrop
+        if (backdrop) {
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        stopMessageRefresh();
+    }
+
     if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            messagesPanel.classList.add('hidden');
-            stopMessageRefresh();
-        });
+        closeBtn.addEventListener('click', closeMessagesPanel);
     }
 
     if (closeChatViewBtn) {
-        closeChatViewBtn.addEventListener('click', function() {
-            messagesPanel.classList.add('hidden');
-            stopMessageRefresh();
-        });
+        closeChatViewBtn.addEventListener('click', closeMessagesPanel);
+    }
+
+    // Close when clicking backdrop
+    if (backdrop) {
+        backdrop.addEventListener('click', closeMessagesPanel);
     }
 
     // Back to conversations
@@ -526,11 +833,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Close when clicking outside
+    // Close when clicking outside (but not on backdrop already handled)
     document.addEventListener('click', function(e) {
-        if (toggleBtn && messagesPanel && !toggleBtn.contains(e.target) && !messagesPanel.contains(e.target)) {
-            messagesPanel.classList.add('hidden');
-            stopMessageRefresh();
+        if (toggleBtn && messagesPanel && 
+            !toggleBtn.contains(e.target) && 
+            !messagesPanel.contains(e.target) &&
+            !backdrop.contains(e.target)) {
+            if (!messagesPanel.classList.contains('hidden')) {
+                closeMessagesPanel();
+            }
         }
     });
 

@@ -6,7 +6,7 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity
+    RoommateAmenity, PaymentConfiguration
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
 from django.db.models import Avg , Q
@@ -149,6 +149,28 @@ class PublicDormListView(ListView):
         verified = self.request.GET.get('verified')
         if verified == 'true':
             queryset = queryset.filter(landlord__is_identity_verified=True)
+
+        # Minimum rating filter
+        min_rating = self.request.GET.get('min_rating')
+        if min_rating:
+            try:
+                queryset = queryset.filter(avg_rating__gte=float(min_rating))
+            except (ValueError, TypeError):
+                pass
+
+        # Payment terms filter (advance/deposit months — filter dorms where config <= selected max)
+        advance_months = self.request.GET.get('advance_months')
+        if advance_months:
+            try:
+                queryset = queryset.filter(payment_config__advance_months__lte=int(advance_months))
+            except (ValueError, TypeError):
+                pass
+        deposit_months = self.request.GET.get('deposit_months')
+        if deposit_months:
+            try:
+                queryset = queryset.filter(payment_config__deposit_months__lte=int(deposit_months))
+            except (ValueError, TypeError):
+                pass
 
         # Sorting
         sort_by = self.request.GET.get('sort')
@@ -321,6 +343,17 @@ class AddDormView(LoginRequiredMixin, CreateView):
         for image in images:
             DormImage.objects.create(dorm=self.object, image=image)
 
+        # Save payment configuration
+        advance_months = int(form.data.get('advance_months', 1))
+        deposit_months = int(form.data.get('deposit_months', 2))
+        PaymentConfiguration.objects.update_or_create(
+            dorm=self.object,
+            defaults={
+                'advance_months': advance_months,
+                'deposit_months': deposit_months,
+            }
+        )
+
         # Send different notifications based on verification status
         if self.request.user.is_identity_verified:
             # Landlord is verified - dorm is auto-approved
@@ -431,7 +464,37 @@ class DormListView(LoginRequiredMixin, ListView):
         if verified == 'true':
             queryset = queryset.filter(landlord__is_identity_verified=True)
             print(f"Applying verified landlord filter")
-            
+
+        # Apply min_price filter if provided
+        min_price = self.request.GET.get('min_price')
+        if min_price:
+            try:
+                queryset = queryset.filter(price__gte=Decimal(min_price))
+            except (ValueError, TypeError):
+                pass
+
+        # Apply minimum rating filter
+        min_rating = self.request.GET.get('min_rating')
+        if min_rating:
+            try:
+                queryset = queryset.filter(avg_rating__gte=float(min_rating))
+            except (ValueError, TypeError):
+                pass
+
+        # Payment terms filter
+        advance_months = self.request.GET.get('advance_months')
+        if advance_months:
+            try:
+                queryset = queryset.filter(payment_config__advance_months__lte=int(advance_months))
+            except (ValueError, TypeError):
+                pass
+        deposit_months = self.request.GET.get('deposit_months')
+        if deposit_months:
+            try:
+                queryset = queryset.filter(payment_config__deposit_months__lte=int(deposit_months))
+            except (ValueError, TypeError):
+                pass
+
         # Apply amenities filter if provided
         if amenities:
             queryset = queryset.filter(amenities__id__in=amenities).distinct()
@@ -633,13 +696,36 @@ class EditDormView(LoginRequiredMixin, UpdateView):
                 
                 dorm.save()
                 form.save_m2m()  # Save amenities
-                
+
+                # Save payment configuration
+                advance_months = int(self.request.POST.get('advance_months', 1))
+                deposit_months = int(self.request.POST.get('deposit_months', 2))
+                PaymentConfiguration.objects.update_or_create(
+                    dorm=dorm,
+                    defaults={
+                        'advance_months': advance_months,
+                        'deposit_months': deposit_months,
+                    }
+                )
+
                 messages.success(self.request, "Dorm updated successfully!")
                 return super().form_valid(form)
                 
         except Exception as e:
             messages.error(self.request, f"Error updating dorm: {str(e)}")
             return self.form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['all_amenities'] = Amenity.objects.all()
+        try:
+            config = self.object.payment_config
+            context['payment_advance_months'] = config.advance_months
+            context['payment_deposit_months'] = config.deposit_months
+        except Exception:
+            context['payment_advance_months'] = 1
+            context['payment_deposit_months'] = 2
+        return context
 
     def handle_files(self, dorm):
         """Handle all file operations"""

@@ -1,7 +1,14 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Dorm
+from .models import Dorm, PaymentConfiguration
 from accounts.models import Notification  # Import Notification model
+
+
+@receiver(post_save, sender=Dorm)
+def create_payment_configuration(sender, instance, created, **kwargs):
+    """Auto-create a PaymentConfiguration with defaults whenever a new Dorm is saved."""
+    if created:
+        PaymentConfiguration.objects.get_or_create(dorm=instance)
 
 @receiver(post_save, sender=Dorm)
 def dorm_approval_notification(sender, instance, created, **kwargs):

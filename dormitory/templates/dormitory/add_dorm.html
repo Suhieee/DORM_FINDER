@@ -99,9 +99,40 @@
 
     <!-- Payment Terms -->
     <div>
-        <label for="payment_terms" class="block text-sm font-medium text-gray-700">Payment Terms</label>
-        <textarea name="payment_terms" id="payment_terms" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 3 months deposit, 1 month advance">{{ form.payment_terms.value|default:'' }}</textarea>
-        <p class="mt-1 text-sm text-gray-500">Describe deposits, advance payments, or other move-in requirements (optional).</p>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="advance_months" class="block text-xs text-gray-500 mb-1">Advance Payment</label>
+                <select name="advance_months" id="advance_months" onchange="updatePaymentPreview()"
+                        class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="0">None</option>
+                    <option value="1" selected>1 month</option>
+                    <option value="2">2 months</option>
+                    <option value="3">3 months</option>
+                </select>
+            </div>
+            <div>
+                <label for="deposit_months" class="block text-xs text-gray-500 mb-1">Security Deposit</label>
+                <select name="deposit_months" id="deposit_months" onchange="updatePaymentPreview()"
+                        class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="0">None</option>
+                    <option value="1">1 month</option>
+                    <option value="2" selected>2 months</option>
+                    <option value="3">3 months</option>
+                </select>
+            </div>
+        </div>
+        <!-- Live Preview -->
+        <div id="paymentPreview" class="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+            <p class="font-semibold text-blue-800 mb-2">Move-in Cost Preview</p>
+            <div class="space-y-1 text-gray-700">
+                <div class="flex justify-between"><span>Monthly Rent</span><span id="previewRent">&#8369;—</span></div>
+                <div class="flex justify-between"><span id="previewAdvanceLabel">Advance (1 month)</span><span id="previewAdvance">&#8369;—</span></div>
+                <div class="flex justify-between"><span id="previewDepositLabel">Deposit (2 months)</span><span id="previewDeposit">&#8369;—</span></div>
+                <div class="flex justify-between border-t pt-1 font-bold text-blue-900"><span>Estimated Total</span><span id="previewTotal">&#8369;—</span></div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">* Excludes processing fee. Shown to tenants on checkout.</p>
+        </div>
     </div>
 
     <!-- Key Features -->
@@ -384,6 +415,22 @@ document.addEventListener("DOMContentLoaded", () => {
     accommodationType.addEventListener("change", toggleOptions);
     toggleOptions(); // Load state on open
 });
+
+// Payment Terms Live Preview
+function updatePaymentPreview() {
+    const price = parseFloat(document.querySelector('[name="price"]').value) || 0;
+    const advance = parseInt(document.getElementById('advance_months').value) || 0;
+    const deposit = parseInt(document.getElementById('deposit_months').value) || 0;
+    const fmt = v => '\u20b1' + v.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('previewRent').textContent = price ? fmt(price) : '\u20b1\u2014';
+    document.getElementById('previewAdvanceLabel').textContent = `Advance (${advance} month${advance !== 1 ? 's' : ''})`;
+    document.getElementById('previewAdvance').textContent = price ? fmt(price * advance) : '\u20b1\u2014';
+    document.getElementById('previewDepositLabel').textContent = `Deposit (${deposit} month${deposit !== 1 ? 's' : ''})`;
+    document.getElementById('previewDeposit').textContent = price ? fmt(price * deposit) : '\u20b1\u2014';
+    document.getElementById('previewTotal').textContent = price ? fmt(price + price * advance + price * deposit) : '\u20b1\u2014';
+}
+document.querySelector('[name="price"]').addEventListener('input', updatePaymentPreview);
+document.addEventListener('DOMContentLoaded', updatePaymentPreview);
 </script>
 
 {% endblock %}

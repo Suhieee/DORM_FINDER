@@ -62,20 +62,21 @@ class GeminiChatbotService:
         
         # Get available dorms from database
         try:
-            dorms = Dorm.objects.filter(
+            dorms = list(Dorm.objects.filter(
                 approval_status='approved',
                 available=True
-            ).select_related('landlord')[:20]
+            ).select_related('landlord').order_by('name'))
             
-            if dorms.exists():
+            total_dorms = len(dorms)
+            if total_dorms > 0:
                 dorm_list = []
                 for d in dorms:
-                    location = d.address[:50]  # Use address field
+                    location = d.address[:60]  # Use address field
                     dorm_list.append(
                         f"  - {d.name}: ₱{d.price:,.2f}/month, {location}, "
                         f"Type: {d.get_accommodation_type_display()}"
                     )
-                dorm_info = "\n".join(dorm_list)
+                dorm_info = f"(Showing all {total_dorms} available dorms)\n" + "\n".join(dorm_list)
             else:
                 dorm_info = "  No dorms currently available in the system."
         except Exception as e:
@@ -129,7 +130,8 @@ Focus on:
 - Use casual, natural language (mix English and Filipino when appropriate)
 - Show empathy and understanding of student concerns
 - Be enthusiastic about helping them find their perfect home
-- Keep responses concise but complete (2-4 sentences unless details needed)
+- Keep responses appropriately sized: brief (2-4 sentences) for simple questions, but ALWAYS complete and thorough when listing dorms, steps, or detailed information — never cut off mid-list or mid-sentence
+- When asked to list all dorms or all items of any kind, list EVERY single one — do not summarize or truncate
 - Use emojis occasionally to be friendly 
 
 **Current User**: {user_name} ({user_type.upper()})
@@ -318,7 +320,7 @@ Remember: You're not just answering questions - you're helping students find the
                         system_instruction=system_instruction,
                         temperature=0.7,  # Balanced creativity
                         top_p=0.95,
-                        max_output_tokens=500,  # Limit response length
+                        max_output_tokens=2048,  # Enough for full lists/detailed responses
                     )
                 )
                 

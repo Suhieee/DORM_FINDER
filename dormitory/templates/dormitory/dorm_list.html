@@ -34,22 +34,304 @@
 </div>
 {% endif %}
 
-<!-- Hero Section -->
-<div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 mb-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-4xl text-blue-500 md:text-5xl font-bold mb-4">Browse Available Dorms</h1>
-        <p class="text-xl  text-gray-800 max-w-3xl mx-auto">
-            Find your perfect tenant accommodation from our carefully curated selection of verified dormitories.
-        </p>
+<!-- Search Section -->
+<div class="py-10 px-4">
+    <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-900">Find Your Dormitory</h1>
+            <p class="text-blue-500 mt-2">Search for the perfect dorm</p>
+        </div>
+
+        <form method="get" id="filterForm">
+            <!-- Search Bar -->
+            <div class="flex gap-3 mb-5">
+                <div class="relative flex-1">
+                    <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search location or college"
+                           class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400">
+                </div>
+                <button type="submit" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors whitespace-nowrap">Search</button>
+            </div>
+
+            <!-- Hidden filter fields (set by dropdown JS) -->
+            <input type="hidden" name="min_price"          id="hMinPrice"  value="{{ request.GET.min_price|default:'' }}">
+            <input type="hidden" name="target_price"       id="hMaxPrice"  value="{{ request.GET.target_price|default:'' }}">
+            <input type="hidden" name="accommodation_type" id="hAccType"   value="{{ request.GET.accommodation_type|default:'' }}">
+            <input type="hidden" name="sort"               id="hSort"      value="{{ request.GET.sort|default:'' }}">
+            <input type="hidden" name="verified"           id="hVerified"  value="{{ request.GET.verified|default:'' }}">
+            <input type="hidden" name="min_rating"         id="hMinRating" value="{{ request.GET.min_rating|default:'' }}">
+            <input type="hidden" name="advance_months"     id="hAdvanceMonths" value="{{ request.GET.advance_months|default:'' }}">
+            <input type="hidden" name="deposit_months"     id="hDepositMonths" value="{{ request.GET.deposit_months|default:'' }}">
+            <div id="hAmenitiesContainer">{% for aid in selected_amenities %}<input type="hidden" name="amenities" value="{{ aid }}">{% endfor %}</div>
+            <input type="hidden" name="lat"      id="filterLat"      value="{{ request.GET.lat|default:'' }}">
+            <input type="hidden" name="lng"      id="filterLng"      value="{{ request.GET.lng|default:'' }}">
+            <input type="hidden" name="location" id="filterLocation" value="{{ request.GET.location|default:'' }}">
+
+            <!-- Pill Buttons -->
+            <div class="flex flex-wrap gap-2 justify-center" id="pillRow">
+
+                <!-- Price -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('pricePanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.min_price or request.GET.target_price %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        Price <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="pricePanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Price Range (&#8369;/month)</p>
+                        <div class="flex gap-2 mb-3">
+                            <input type="number" id="localMinPrice" min="1000" max="50000" step="500" placeholder="Min &#8369;" value="{{ request.GET.min_price|default:'' }}" class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                            <span class="text-gray-400 self-center">&#8212;</span>
+                            <input type="number" id="localMaxPrice" min="1000" max="50000" step="500" placeholder="Max &#8369;" value="{{ request.GET.target_price|default:'' }}" class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        </div>
+                        <input type="range" id="localPriceSlider" min="1000" max="50000" step="500" value="{{ request.GET.target_price|default:'50000' }}" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer mb-1">
+                        <div class="flex justify-between text-xs text-gray-400 mb-4"><span>&#8369;1,000</span><span>&#8369;50,000</span></div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="applyPriceFilter()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="clearPriceFilter()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room Type -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('roomTypePanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.accommodation_type %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        Room Type <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="roomTypePanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-52">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Accommodation Type</p>
+                        <div class="space-y-1">
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"><input type="radio" name="_rt" value="" {% if not request.GET.accommodation_type %}checked{% endif %} class="text-blue-600"><span class="text-sm text-gray-700">All Types</span></label>
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"><input type="radio" name="_rt" value="whole_unit" {% if request.GET.accommodation_type == 'whole_unit' %}checked{% endif %} class="text-blue-600"><span class="text-sm text-gray-700">Whole Unit</span></label>
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"><input type="radio" name="_rt" value="bedspace" {% if request.GET.accommodation_type == 'bedspace' %}checked{% endif %} class="text-blue-600"><span class="text-sm text-gray-700">Bed Space</span></label>
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"><input type="radio" name="_rt" value="room_sharing" {% if request.GET.accommodation_type == 'room_sharing' %}checked{% endif %} class="text-blue-600"><span class="text-sm text-gray-700">Room Sharing</span></label>
+                        </div>
+                        <button type="button" onclick="applyRoomType()" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('amenitiesPanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if selected_amenities %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        Amenities <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="amenitiesPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-64">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Required Amenities</p>
+                        <div class="space-y-1 max-h-48 overflow-y-auto">
+                            {% for amenity in amenities %}
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="_amenity" value="{{ amenity.id }}" {% if amenity.id in selected_amenities %}checked{% endif %} class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">{{ amenity.name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <button type="button" onclick="applyAmenities()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="clearAmenities()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('locationPanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.lat %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                        Location <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="locationPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 w-80">
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Click on map to filter by location</p>
+                        <p class="text-xs text-gray-400 mb-3">All dorms within 5km radius will be shown</p>
+                        <div id="filterMap" class="w-full h-56 rounded-lg mb-2 z-30"></div>
+                        <p id="filterLocationDisplay" class="text-xs text-gray-500 mb-3">{% if request.GET.lat %}&#128205; {{ request.GET.lat }}, {{ request.GET.lng }}{% else %}No location selected{% endif %}</p>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="document.getElementById('filterForm').submit()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="clearLocationAndSubmit()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Terms -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('paymentTermsPanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.advance_months or request.GET.deposit_months %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        Payment Terms <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="paymentTermsPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-64">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Move-in Requirements</p>
+                        <div class="mb-3">
+                            <label class="block text-xs text-gray-500 mb-1">Advance Payment (max)</label>
+                            <select id="localAdvance" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400">
+                                <option value="">Any</option>
+                                <option value="1" {% if request.GET.advance_months == '1' %}selected{% endif %}>Up to 1 month</option>
+                                <option value="2" {% if request.GET.advance_months == '2' %}selected{% endif %}>Up to 2 months</option>
+                                <option value="3" {% if request.GET.advance_months == '3' %}selected{% endif %}>Up to 3 months</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs text-gray-500 mb-1">Security Deposit (max)</label>
+                            <select id="localDeposit" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400">
+                                <option value="">Any</option>
+                                <option value="1" {% if request.GET.deposit_months == '1' %}selected{% endif %}>Up to 1 month</option>
+                                <option value="2" {% if request.GET.deposit_months == '2' %}selected{% endif %}>Up to 2 months</option>
+                                <option value="3" {% if request.GET.deposit_months == '3' %}selected{% endif %}>Up to 3 months</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="applyPaymentTerms()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="clearPaymentTerms()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More Filters -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('morePanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        More Filters <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="morePanel" class="pill-panel hidden absolute top-12 right-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
+                            <select id="localSort" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                                <option value=""           {% if not request.GET.sort %}selected{% endif %}>Newest First</option>
+                                <option value="price_asc"  {% if request.GET.sort == 'price_asc'  %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                                <option value="rating"     {% if request.GET.sort == 'rating'     %}selected{% endif %}>Highest Rated</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
+                            <div class="flex gap-1" id="ratingStars">
+                                <button type="button" data-star="1" onclick="setRating(1)" class="star-btn text-2xl transition-colors {% if request.GET.min_rating %}text-blue-600{% else %}text-gray-300{% endif %} hover:text-blue-500">&#9733;</button>
+                                <button type="button" data-star="2" onclick="setRating(2)" class="star-btn text-2xl transition-colors {% if request.GET.min_rating == '2' or request.GET.min_rating == '3' or request.GET.min_rating == '4' or request.GET.min_rating == '5' %}text-blue-600{% else %}text-gray-300{% endif %} hover:text-blue-500">&#9733;</button>
+                                <button type="button" data-star="3" onclick="setRating(3)" class="star-btn text-2xl transition-colors {% if request.GET.min_rating == '3' or request.GET.min_rating == '4' or request.GET.min_rating == '5' %}text-blue-600{% else %}text-gray-300{% endif %} hover:text-blue-500">&#9733;</button>
+                                <button type="button" data-star="4" onclick="setRating(4)" class="star-btn text-2xl transition-colors {% if request.GET.min_rating == '4' or request.GET.min_rating == '5' %}text-blue-600{% else %}text-gray-300{% endif %} hover:text-blue-500">&#9733;</button>
+                                <button type="button" data-star="5" onclick="setRating(5)" class="star-btn text-2xl transition-colors {% if request.GET.min_rating == '5' %}text-blue-600{% else %}text-gray-300{% endif %} hover:text-blue-500">&#9733;</button>
+                            </div>
+                        </div>
+                        <div class="mb-5">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="localVerified" {% if request.GET.verified == 'true' %}checked{% endif %} class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">Verified landlords only</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="applyMoreFilters()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors">Apply Filters</button>
+                            <button type="button" onclick="clearMoreFilters()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2.5 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- end pill row -->
+        </form>
     </div>
 </div>
+
+<script>
+function togglePill(panelId) {
+    const panel = document.getElementById(panelId);
+    const isHidden = panel.classList.contains('hidden');
+    document.querySelectorAll('.pill-panel').forEach(p => p.classList.add('hidden'));
+    if (isHidden) {
+        panel.classList.remove('hidden');
+        if (panelId === 'locationPanel') {
+            setTimeout(function() {
+                initializeFilterMap();
+                if (typeof filterMap !== 'undefined' && filterMap) filterMap.invalidateSize();
+            }, 150);
+        }
+    }
+}
+function clearLocationAndSubmit() {
+    clearLocationFilter();
+    const disp = document.getElementById('filterLocationDisplay');
+    if (disp) disp.textContent = 'No location selected';
+    document.getElementById('filterForm').submit();
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#pillRow')) {
+        document.querySelectorAll('.pill-panel').forEach(p => p.classList.add('hidden'));
+    }
+});
+document.getElementById('localPriceSlider').addEventListener('input', function() {
+    document.getElementById('localMaxPrice').value = this.value;
+});
+function applyPriceFilter() {
+    document.getElementById('hMinPrice').value = document.getElementById('localMinPrice').value;
+    document.getElementById('hMaxPrice').value = document.getElementById('localMaxPrice').value;
+    document.getElementById('filterForm').submit();
+}
+function clearPriceFilter() {
+    document.getElementById('hMinPrice').value = '';
+    document.getElementById('hMaxPrice').value = '';
+    document.getElementById('filterForm').submit();
+}
+function applyRoomType() {
+    const sel = document.querySelector('input[name="_rt"]:checked');
+    document.getElementById('hAccType').value = sel ? sel.value : '';
+    document.getElementById('filterForm').submit();
+}
+function buildAmenitiesHidden() {
+    const c = document.getElementById('hAmenitiesContainer');
+    c.innerHTML = '';
+    document.querySelectorAll('input[name="_amenity"]:checked').forEach(cb => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'amenities'; inp.value = cb.value;
+        c.appendChild(inp);
+    });
+}
+function applyAmenities() { buildAmenitiesHidden(); document.getElementById('filterForm').submit(); }
+function clearAmenities() {
+    document.querySelectorAll('input[name="_amenity"]').forEach(cb => cb.checked = false);
+    document.getElementById('hAmenitiesContainer').innerHTML = '';
+    document.getElementById('filterForm').submit();
+}
+let currentRating = parseInt('{{ request.GET.min_rating|default:"0" }}') || 0;
+function setRating(n) {
+    currentRating = (currentRating === n) ? 0 : n;
+    document.querySelectorAll('.star-btn').forEach(btn => {
+        const s = parseInt(btn.dataset.star);
+        btn.classList.toggle('text-blue-600', s <= currentRating);
+        btn.classList.toggle('text-gray-300', s > currentRating);
+    });
+}
+function applyMoreFilters() {
+    document.getElementById('hSort').value    = document.getElementById('localSort').value;
+    document.getElementById('hVerified').value  = document.getElementById('localVerified').checked ? 'true' : '';
+    document.getElementById('hMinRating').value = currentRating > 0 ? currentRating : '';
+    buildAmenitiesHidden();
+    document.getElementById('filterForm').submit();
+}
+function clearMoreFilters() {
+    document.getElementById('hSort').value = '';
+    document.getElementById('hVerified').value = '';
+    document.getElementById('hMinRating').value = '';
+    currentRating = 0;
+    document.querySelectorAll('.star-btn').forEach(btn => { btn.classList.add('text-gray-300'); btn.classList.remove('text-blue-600'); });
+    document.getElementById('filterForm').submit();
+}
+function applyPaymentTerms() {
+    document.getElementById('hAdvanceMonths').value = document.getElementById('localAdvance').value;
+    document.getElementById('hDepositMonths').value = document.getElementById('localDeposit').value;
+    document.getElementById('filterForm').submit();
+}
+function clearPaymentTerms() {
+    document.getElementById('hAdvanceMonths').value = '';
+    document.getElementById('hDepositMonths').value = '';
+    document.getElementById('filterForm').submit();
+}
+</script>
 
 
 
 <!-- Main Content -->
 <div class="w-full">
-    <!-- Filter Section -->
-    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+    <!-- Filter Section (handled by search section above) -->
+    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden" style="display:none">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,7 +433,7 @@
                                     </svg>
                                     Location Filter
                                 </h3>
-                                <div id="filterMap" class="w-full h-80 bg-gray-100 rounded-lg mb-3 z-30">
+                                <div id="filterMapOld" class="w-full h-80 bg-gray-100 rounded-lg mb-3 z-30">
                                     <!-- Map will be loaded here -->
                                     <div class="w-full h-full flex items-center justify-center">
                                         <div class="text-center">

@@ -7,69 +7,9 @@
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
     <div class="max-w-4xl mx-auto px-4">
         
-        <!-- Choice Modal (shown only on first visit when step=1 and no choice made) -->
-        {% if step == 1 and show_choice_modal %}
-        <div id="choiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-                    <h2 class="text-2xl font-bold flex items-center gap-3">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        What are you looking for?
-                    </h2>
-                    <p class="mt-2 text-blue-100">Help us personalize your experience</p>
-                </div>
-                
-                <div class="p-6 space-y-4">
-                    <p class="text-gray-700 mb-6">Choose what best fits your needs. You can always change this later!</p>
-                    
-                    <form method="post" action="{% url 'user_profile:setup_preferences' %}?step=1">
-                        {% csrf_token %}
-                        <input type="hidden" name="choice_step" value="1">
-                        
-                        <button type="submit" name="preference_choice" value="dorm_only" class="w-full mb-4 p-6 border-2 border-blue-300 rounded-xl hover:border-blue-600 hover:bg-blue-50 transition-all group">
-                            <div class="flex items-start gap-4">
-                                <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                                    </svg>
-                                </div>
-                                <div class="text-left flex-1">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-1">Find Dorm Only</h3>
-                                    <p class="text-sm text-gray-600">I'm just looking for a place to stay. I'll set my dorm preferences.</p>
-                                </div>
-                            </div>
-                        </button>
-                        
-                        <button type="submit" name="preference_choice" value="dorm_and_roommate" class="w-full p-6 border-2 border-purple-300 rounded-xl hover:border-purple-600 hover:bg-purple-50 transition-all group">
-                            <div class="flex items-start gap-4">
-                                <div class="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200">
-                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                    </svg>
-                                </div>
-                                <div class="text-left flex-1">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-1">Find Dorm + Roommate</h3>
-                                    <p class="text-sm text-gray-600">I want to find both a dorm and compatible roommates. I'll set both preferences.</p>
-                                </div>
-                            </div>
-                        </button>
-                    </form>
-                    
-                    <p class="text-xs text-gray-500 text-center mt-4">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        Your choice helps us customize your experience
-                    </p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+
         
         <!-- Progress Indicator -->
-        {% if preference_choice == 'dorm_and_roommate' %}
         <div class="mb-8">
             <div class="flex items-center justify-center space-x-4">
                 <div class="flex items-center {% if step == 1 %}text-blue-600{% else %}text-green-600{% endif %}">
@@ -93,18 +33,6 @@
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="mb-8">
-            <div class="flex items-center justify-center space-x-4">
-                <div class="flex items-center text-blue-600">
-                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 border-blue-600 bg-blue-100">
-                        <span class="text-lg font-bold">1</span>
-                    </div>
-                    <span class="ml-2 font-semibold">Dorm Preferences</span>
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
         <!-- Header -->
         <div class="text-center mb-8">
@@ -122,14 +50,7 @@
                 Tell us about your ideal roommate to get better matches
                 {% endif %}
             </p>
-            {% if preference_choice %}
-            <div class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <span>{% if preference_choice == 'dorm_only' %}Finding Dorm Only{% else %}Finding Dorm + Roommate{% endif %}</span>
-            </div>
-            {% endif %}
+
         </div>
 
         <!-- Messages -->
@@ -378,7 +299,6 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-4 pt-6">
                     {% if step == 1 %}
-                        {% if preference_choice == 'dorm_and_roommate' %}
                         <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                             <span>Next: Roommate Preferences</span>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,17 +308,6 @@
                         <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
                             Skip for Now
                         </a>
-                        {% else %}
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Complete Setup</span>
-                        </button>
-                        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
-                            Skip for Now
-                        </a>
-                        {% endif %}
                     {% else %}
                     <a href="{% url 'user_profile:setup_preferences' %}?step=1" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

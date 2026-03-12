@@ -25,17 +25,30 @@ class DormForm(forms.ModelForm):
         initial=120.9842  # Default Manila coordinates
     )
 
+    MONTH_CHOICES = [(i, f'{i} month{"s" if i > 1 else ""}') for i in range(0, 4)]
+
+    advance_months = forms.ChoiceField(
+        choices=MONTH_CHOICES,
+        initial=1,
+        label='Advance Payment',
+        help_text='How many months advance payment is required'
+    )
+    deposit_months = forms.ChoiceField(
+        choices=MONTH_CHOICES,
+        initial=2,
+        label='Security Deposit',
+        help_text='How many months security deposit is required'
+    )
+
     class Meta:
         model = Dorm
         fields = [
-            'name', 'address', 'latitude', 'longitude', 'price', 'description', 'payment_terms',
+            'name', 'address', 'latitude', 'longitude', 'price', 'description',
             'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
-            'total_beds', 'available_beds','max_occupants', 'key_features',
-
+            'total_beds', 'available_beds', 'max_occupants', 'key_features',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
-            'payment_terms': forms.Textarea(attrs={'rows': 2, 'placeholder': 'e.g., 3 months deposit, 1 month advance'}),
             'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
             'address': forms.Textarea(attrs={'rows': 3}),
             'price': forms.NumberInput(attrs={'step': '0.01'}),
@@ -50,7 +63,6 @@ class DormForm(forms.ModelForm):
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
             'price': 'Enter the price per month in PHP',
-            'payment_terms': 'Enter payment terms (e.g., "3 months deposit, 1 month advance")',
             'total_beds': 'Total number of beds in the unit',
             'available_beds': 'Number of beds currently available for rent',
             'max_occupants': 'Maximum number of people allowed in the unit',
@@ -65,6 +77,13 @@ class DormForm(forms.ModelForm):
         if self.instance.pk:
             self.fields['latitude'].initial = self.instance.latitude
             self.fields['longitude'].initial = self.instance.longitude
+            # Pre-populate advance/deposit from existing PaymentConfiguration
+            try:
+                config = self.instance.payment_config
+                self.fields['advance_months'].initial = config.advance_months
+                self.fields['deposit_months'].initial = config.deposit_months
+            except Exception:
+                pass
 
 class DormImageForm(forms.ModelForm):
     class Meta:

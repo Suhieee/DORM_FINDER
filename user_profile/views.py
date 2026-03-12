@@ -10,6 +10,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from dormitory.models import Dorm
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+import random
 import logging
 
 logger = logging.getLogger(__name__)
@@ -131,21 +137,21 @@ class SetupPreferencesView(LoginRequiredMixin, View):
         # Get or create preferences
         preferences, created = TenantPreferences.objects.get_or_create(user=request.user)
         
+        # Default to dorm_and_roommate so edit_preferences step 2 stays accessible
+        if not preferences.preference_choice:
+            preferences.preference_choice = 'dorm_and_roommate'
+            preferences.save(update_fields=['preference_choice'])
+        
         # Determine current step (default to step 1)
         step = request.GET.get('step', '1')
         
-        # Check if we should show the choice modal
-        show_choice_modal = not preferences.preference_choice or preferences.preference_choice == 'dorm_only' and step == '1' and created
-        
-        if step == '2' and preferences.preference_choice == 'dorm_and_roommate':
-            # Show Step 2 only if user chose dorm_and_roommate
+        if step == '2':
+            # Show Step 2: Roommate preferences
             form = RoommatePreferencesForm(instance=preferences)
             context = {
                 'form': form,
                 'step': 2,
                 'preferences': preferences,
-                'preference_choice': preferences.preference_choice,
-                'show_choice_modal': False,
             }
         else:
             # Step 1: Dorm preferences
@@ -154,8 +160,6 @@ class SetupPreferencesView(LoginRequiredMixin, View):
                 'form': form,
                 'step': 1,
                 'preferences': preferences,
-                'preference_choice': preferences.preference_choice,
-                'show_choice_modal': show_choice_modal,
             }
         
         return render(request, self.template_name, context)
@@ -164,14 +168,10 @@ class SetupPreferencesView(LoginRequiredMixin, View):
         # Get or create preferences
         preferences, created = TenantPreferences.objects.get_or_create(user=request.user)
         
-        # Check if this is the choice step (from modal)
-        if request.POST.get('choice_step') == '1':
-            choice = request.POST.get('preference_choice')
-            if choice in ['dorm_only', 'dorm_and_roommate']:
-                preferences.preference_choice = choice
-                preferences.save()
-                messages.success(request, f'Great! Let\'s set up your preferences.')
-                return redirect('user_profile:setup_preferences')
+        # Ensure preference_choice is always set
+        if not preferences.preference_choice:
+            preferences.preference_choice = 'dorm_and_roommate'
+            preferences.save(update_fields=['preference_choice'])
         
         # Determine current step
         step = request.POST.get('step', '1')
@@ -181,23 +181,14 @@ class SetupPreferencesView(LoginRequiredMixin, View):
             form = TenantPreferencesForm(request.POST, instance=preferences)
             if form.is_valid():
                 form.save()
-                
-                # If user chose dorm_only, finish here
-                if preferences.preference_choice == 'dorm_only':
-                    messages.success(request, 'Dorm preferences saved! You\'re all set to find your perfect dorm!')
-                    return redirect('accounts:dashboard')
-                else:
-                    # If user chose dorm_and_roommate, go to step 2
-                    messages.success(request, 'Dorm preferences saved! Now set your roommate preferences.')
-                    return redirect(reverse('user_profile:setup_preferences') + '?step=2')
+                messages.success(request, 'Dorm preferences saved! Now set your roommate preferences.')
+                return redirect(reverse('user_profile:setup_preferences') + '?step=2')
             else:
                 messages.error(request, 'There was an error saving your preferences. Please try again.')
                 context = {
                     'form': form,
                     'step': 1,
                     'preferences': preferences,
-                    'preference_choice': preferences.preference_choice,
-                    'show_choice_modal': False,
                 }
                 return render(request, self.template_name, context)
         
@@ -221,14 +212,129 @@ class SetupPreferencesView(LoginRequiredMixin, View):
                     'form': form,
                     'step': 2,
                     'preferences': preferences,
-                    'preference_choice': preferences.preference_choice,
-                    'show_choice_modal': False,
                 }
                 return render(request, self.template_name, context)
         
         # Default fallback
         return redirect('user_profile:setup_preferences')
 
+
+
+# ─────────────────────────────────────────────
+# Change Password via OTP (email)
+# ─────────────────────────────────────────────
+
+class RequestPasswordOTPView(LoginRequiredMixin, View):
+    """Generate a 6-digit OTP, store it in the session, and send it via SendGrid."""
+
+    def post(self, request):
+        user = request.user
+        otp  = str(random.randint(100000, 999999))
+
+        # Store OTP + expiry (10 minutes) in session
+        request.session['pwd_otp']         = otp
+        request.session['pwd_otp_expires'] = (
+            timezone.now() + timezone.timedelta(minutes=10)
+        ).isoformat()
+        request.session['pwd_otp_uid']     = user.pk
+        request.session.modified = True
+
+        subject  = 'Your Password Change OTP – Dorm Finder'
+        message  = (
+            f'Hi {user.first_name or user.username},\n\n'
+            f'Your one-time password (OTP) to change your Dorm Finder account password is:\n\n'
+            f'    {otp}\n\n'
+            f'This code expires in 10 minutes. If you did not request this, '
+            f'you can safely ignore this email.\n\n'
+            f'– The Dorm Finder Team'
+        )
+        html_message = f"""
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
+            <div style="background:#2563eb;padding:24px 32px;border-radius:12px 12px 0 0;">
+                <h2 style="color:#fff;margin:0;font-size:20px;">Password Change OTP</h2>
+            </div>
+            <div style="background:#f8fafc;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
+                <p style="color:#374151;font-size:15px;">Hi <strong>{user.first_name or user.username}</strong>,</p>
+                <p style="color:#374151;font-size:15px;">Use the code below to change your password. It expires in <strong>10 minutes</strong>.</p>
+                <div style="text-align:center;margin:28px 0;">
+                    <span style="font-size:40px;font-weight:800;letter-spacing:10px;color:#1d4ed8;">{otp}</span>
+                </div>
+                <p style="color:#6b7280;font-size:13px;">If you didn't request this, ignore this email.</p>
+                <p style="color:#6b7280;font-size:13px;">– The Dorm Finder Team</p>
+            </div>
+        </div>
+        """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            return JsonResponse({'status': 'ok', 'email': user.email})
+        except Exception as e:
+            logger.error(f'OTP email failed for user {user.pk}: {e}', exc_info=True)
+            return JsonResponse({'status': 'error', 'message': 'Failed to send OTP. Please try again.'}, status=500)
+
+
+class ChangePasswordWithOTPView(LoginRequiredMixin, View):
+    """Validate the OTP from session, then change the password."""
+
+    def post(self, request):
+        user        = request.user
+        otp_input   = request.POST.get('otp', '').strip()
+        new_password = request.POST.get('new_password', '')
+        confirm_pw  = request.POST.get('confirm_password', '')
+
+        stored_otp     = request.session.get('pwd_otp')
+        expires_str    = request.session.get('pwd_otp_expires')
+        stored_uid     = request.session.get('pwd_otp_uid')
+
+        # Basic checks
+        if not stored_otp or not expires_str or stored_uid != user.pk:
+            return JsonResponse({'status': 'error', 'message': 'No OTP request found. Please request a new code.'}, status=400)
+
+        # Expiry check
+        expires_at = timezone.datetime.fromisoformat(expires_str)
+        if timezone.is_naive(expires_at):
+            expires_at = timezone.make_aware(expires_at)
+        if timezone.now() > expires_at:
+            self._clear_otp(request)
+            return JsonResponse({'status': 'error', 'message': 'OTP has expired. Please request a new one.'}, status=400)
+
+        # OTP match
+        if otp_input != stored_otp:
+            return JsonResponse({'status': 'error', 'message': 'Incorrect OTP. Please try again.'}, status=400)
+
+        # Password match
+        if new_password != confirm_pw:
+            return JsonResponse({'status': 'error', 'message': 'Passwords do not match.'}, status=400)
+
+        # Django password validation
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as e:
+            return JsonResponse({'status': 'error', 'message': ' '.join(e.messages)}, status=400)
+
+        # All good — change password
+        user.set_password(new_password)
+        user.save()
+        self._clear_otp(request)
+
+        # Keep the user logged in after password change
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, user)
+
+        return JsonResponse({'status': 'ok', 'message': 'Password changed successfully!'})
+
+    @staticmethod
+    def _clear_otp(request):
+        for key in ('pwd_otp', 'pwd_otp_expires', 'pwd_otp_uid'):
+            request.session.pop(key, None)
+        request.session.modified = True
 
 
 class EditPreferencesView(LoginRequiredMixin, View):
