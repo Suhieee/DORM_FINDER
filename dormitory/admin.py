@@ -4,7 +4,7 @@ from .models import (
     Room, RoomImage, Reservation, PaymentConfiguration,
     ChatbotConversation, ChatbotMessage, ChatbotFAQ
 )
-from .models_transaction import TransactionLog
+from .models_transaction import TransactionLog, PaymentEventLog
 
 admin.site.register(Dorm)
 admin.site.register(Amenity)
@@ -20,6 +20,29 @@ class TransactionLogAdmin(admin.ModelAdmin):
     search_fields = ('landlord__email', 'dorm__name', 'tenant__email', 'description')
     readonly_fields = ('created_at',)
     date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+
+
+@admin.register(PaymentEventLog)
+class PaymentEventLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'provider',
+        'event_type',
+        'status',
+        'reservation',
+        'payment_intent_id',
+        'request_id',
+        'created_at',
+    )
+    list_filter = ('provider', 'status', 'event_type', 'created_at')
+    search_fields = (
+        'request_id',
+        'correlation_id',
+        'external_event_id',
+        'payment_intent_id',
+        'reservation__id',
+    )
+    readonly_fields = ('created_at',)
     ordering = ('-created_at',)
 
 class RoomImageInline(admin.TabularInline):

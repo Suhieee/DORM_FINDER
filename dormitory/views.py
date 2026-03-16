@@ -37,6 +37,7 @@ from .forms import RoomForm, RoomImageForm
 from django.forms import modelformset_factory
 from django.views.generic import TemplateView
 import json
+import re
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
@@ -52,6 +53,39 @@ def notify_user(user, message, related_object_id=None):
         message=message,
         related_object_id=related_object_id
     )
+
+
+def _build_school_acronym(school_name):
+    """Generate school acronym for keyword matching (e.g., University of Santo Tomas -> ust)."""
+    stop_words = {"of", "the", "and", "for", "at", "in", "on", "de", "la", "ng", "sa"}
+    tokens = [
+        token for token in re.split(r"[^a-zA-Z0-9]+", (school_name or "").lower())
+        if token and token not in stop_words
+    ]
+    return "".join(token[0] for token in tokens)
+
+
+def _get_matching_school_ids(search_query):
+    """Find schools by name/address and common acronym inputs like UST, FEU, PUP."""
+    if not search_query:
+        return []
+
+    normalized_query = re.sub(r"[^a-zA-Z0-9]+", "", search_query.lower())
+    matching_school_ids = set(
+        School.objects.filter(
+            Q(name__icontains=search_query) |
+            Q(address__icontains=search_query)
+        ).values_list("id", flat=True)
+    )
+
+    # Acronym fallback covers cases where users type short campus codes (UST, FEU, etc.).
+    if normalized_query and normalized_query.isalpha() and len(normalized_query) <= 8:
+        for school in School.objects.only("id", "name"):
+            acronym = _build_school_acronym(school.name)
+            if acronym and (acronym == normalized_query or acronym.startswith(normalized_query)):
+                matching_school_ids.add(school.id)
+
+    return list(matching_school_ids)
 
 
 class LoginRequiredActionMixin:
@@ -88,11 +122,17 @@ class PublicDormListView(ListView):
         # Search functionality
         search_query = self.request.GET.get('search')
         if search_query:
-            queryset = queryset.filter(
+            school_match_ids = _get_matching_school_ids(search_query)
+            search_filters = (
                 models.Q(name__icontains=search_query) |
                 models.Q(address__icontains=search_query) |
-                models.Q(description__icontains=search_query)
+                models.Q(description__icontains=search_query) |
+                models.Q(nearby_schools__name__icontains=search_query) |
+                models.Q(nearby_schools__address__icontains=search_query)
             )
+            if school_match_ids:
+                search_filters |= models.Q(nearby_schools__id__in=school_match_ids)
+            queryset = queryset.filter(search_filters).distinct()
 
         # Price filtering
         min_price = self.request.GET.get('min_price')
@@ -434,11 +474,17 @@ class DormListView(LoginRequiredMixin, ListView):
         
         # Apply search filter if provided
         if search_query:
-            queryset = queryset.filter(
+            school_match_ids = _get_matching_school_ids(search_query)
+            search_filters = (
                 Q(name__icontains=search_query) | 
                 Q(address__icontains=search_query) |
-                Q(description__icontains=search_query)
+                Q(description__icontains=search_query) |
+                Q(nearby_schools__name__icontains=search_query) |
+                Q(nearby_schools__address__icontains=search_query)
             )
+            if school_match_ids:
+                search_filters |= Q(nearby_schools__id__in=school_match_ids)
+            queryset = queryset.filter(search_filters)
             
         # Apply price filter if provided and not default max value
         if target_price and target_price != '50000':

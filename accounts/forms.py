@@ -260,28 +260,33 @@ class UserReportForm(forms.ModelForm):
         fields = ['reason', 'description', 'evidence', 'evidence_image']
         widgets = {
             'reason': forms.Select(attrs={
-                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
+                'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Type here the details of your report'
+                'class': 'w-full h-16 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200',
+                'placeholder': 'Type here the details of your report',
+                'rows': 2
             }),
             'evidence': forms.Textarea(attrs={
-                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500',
+                'class': 'w-full h-12 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200',
                 'placeholder': 'Any additional evidence or context (optional)',
-                'rows': 3
+                'rows': 2
             }),
             'evidence_image': forms.FileInput(attrs={
-                'class': 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500',
+                'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700',
                 'accept': 'image/*'
             }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['reason'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
-        self.fields['description'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:ring-blue-500 focus:border-blue-500'
-        self.fields['evidence'].widget.attrs['class'] = 'w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500'
+        shared_input = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+        self.fields['reason'].widget.attrs['class'] = shared_input
+        self.fields['description'].widget.attrs['class'] = f'{shared_input} h-16 resize-none'
+        self.fields['description'].widget.attrs['rows'] = 2
+        self.fields['evidence'].widget.attrs['class'] = f'{shared_input} h-12 resize-none'
+        self.fields['evidence'].widget.attrs['rows'] = 2
+        self.fields['evidence_image'].widget.attrs['class'] = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700'
 
 
 class BanUserForm(forms.Form):
@@ -328,11 +333,17 @@ class ResolveReportForm(forms.Form):
     
     action = forms.ChoiceField(
         choices=ACTION_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+        }),
         help_text='Select the action to take'
     )
     notes = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Admin notes...'}),
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200',
+            'placeholder': 'Admin notes...'
+        }),
         required=False,
         help_text='Additional notes about the resolution'
     )

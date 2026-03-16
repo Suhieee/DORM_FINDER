@@ -102,7 +102,13 @@ class RoommatePostForm(forms.ModelForm):
         min_value=0,
         max_digits=8,
         decimal_places=2,
-        help_text="Minimum monthly budget"
+        help_text="Minimum monthly budget",
+        widget=forms.NumberInput(attrs={
+            'min': 0,
+            'step': 500,
+            'placeholder': 'e.g. 3500',
+            'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+        })
     )
     
     preferred_budget_max = forms.DecimalField(
@@ -110,7 +116,13 @@ class RoommatePostForm(forms.ModelForm):
         min_value=0,
         max_digits=8,
         decimal_places=2,
-        help_text="Maximum monthly budget"
+        help_text="Maximum monthly budget",
+        widget=forms.NumberInput(attrs={
+            'min': 0,
+            'step': 500,
+            'placeholder': 'e.g. 7000',
+            'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+        })
     )
 
     class Meta:
@@ -120,13 +132,67 @@ class RoommatePostForm(forms.ModelForm):
             "preferred_location", "amenities", "description",
             "preferred_budget_min", "preferred_budget_max"
         ]
+        widgets = {
+            "name": forms.TextInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'placeholder': 'Enter your full name',
+                'autocomplete': 'name'
+            }),
+            "age": forms.NumberInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'min': 16,
+                'max': 100,
+                'placeholder': 'Enter your age'
+            }),
+            "profile_image": forms.ClearableFileInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800',
+                'accept': 'image/*'
+            }),
+            "contact_number": forms.TextInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'placeholder': '9XXXXXXXXX',
+                'inputmode': 'numeric',
+                'maxlength': 13,
+                'autocomplete': 'tel'
+            }),
+            "hobbies": forms.Textarea(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'rows': 2,
+                'placeholder': 'e.g. Reading, Music, Gaming'
+            }),
+            "mood": forms.Select(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+            }),
+            "preferred_location": forms.TextInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'placeholder': 'e.g. Espana, Manila near UST',
+                'autocomplete': 'street-address'
+            }),
+            "description": forms.Textarea(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'rows': 4,
+                'placeholder': 'Describe your lifestyle and preferred roommate setup'
+            }),
+        }
+
+    def clean_contact_number(self):
+        """Normalize common phone formats to the model format (9XXXXXXXXX)."""
+        contact_number = (self.cleaned_data.get('contact_number') or '').strip()
+        normalized = ''.join(ch for ch in contact_number if ch.isdigit())
+
+        if normalized.startswith('63'):
+            normalized = normalized[2:]
+        if normalized.startswith('09'):
+            normalized = normalized[1:]
+
+        return normalized
 
     def clean(self):
         cleaned_data = super().clean()
         min_budget = cleaned_data.get('preferred_budget_min')
         max_budget = cleaned_data.get('preferred_budget_max')
 
-        if min_budget and max_budget:
+        if min_budget is not None and max_budget is not None:
             if max_budget < min_budget:
                 raise forms.ValidationError("Maximum budget cannot be less than minimum budget")
             # Calculate average budget for the model

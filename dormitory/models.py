@@ -429,6 +429,8 @@ class Reservation(models.Model):
     
     PAYMENT_METHOD_CHOICES = (
         ('gateway', 'Payment Gateway'),
+        ('gcash', 'GCash (PayMongo Source)'),
+        ('paymongo_checkout', 'PayMongo Checkout Session'),
         ('manual', 'Manual Upload'),
         ('cash', 'Cash Payment'),
     )
@@ -437,6 +439,7 @@ class Reservation(models.Model):
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('success', 'Success'),
+        ('paid', 'Paid (Legacy)'),
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
     )
@@ -619,15 +622,14 @@ class PaymentConfiguration(models.Model):
         return total * (self.partial_payment_percent / 100)
     
     def calculate_refund(self, days_before_movein):
-        """Calculate refund amount based on cancellation policy"""
+        """Calculate refund amount based on fixed anti-abuse tiers."""
         total = self.calculate_total_amount()['total']
-        
-        if days_before_movein >= self.refund_before_days:
-            # Full refund
+
+        if days_before_movein >= 7:
             return total
-        else:
-            # Partial refund
-            return total * (self.partial_refund_percent / 100)
+        if days_before_movein >= 3:
+            return total * 0.5
+        return 0
 
 class Review(models.Model):
     RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]  # Rating from 1 to 5

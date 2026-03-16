@@ -20,46 +20,70 @@
 
 <!-- Main Container REMOVED -->
 <!-- Header Section -->
-<div class="w-full bg-white from-blue-600 to-purple-600 rounded-xl text-white p-6 md:p-8 mb-8 shadow-md">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-            <h1 class="text-2xl md:text-3xl text-blue-800  font-bold">Find Your Perfect Roommate</h1>
-            <p class="mt-1 text-md md:text-base text-gray-800">Connect with people who match your budget, location, and vibe.</p>
+<div class="relative overflow-hidden rounded-2xl shadow-xl mb-8 roommate-hero">
+    <div class="pointer-events-none absolute inset-0">
+        <div class="absolute -top-14 -right-10 w-72 h-72 rounded-full bg-white opacity-[0.08]"></div>
+        <div class="absolute -bottom-24 -left-10 w-96 h-96 rounded-full bg-cyan-300 opacity-[0.09]"></div>
+        <div class="absolute inset-0 opacity-[0.08]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 28px 28px;"></div>
     </div>
-        <div class="flex flex-wrap items-center gap-3">
-        <a href="{% url 'dormitory:roommate_matches' %}" 
-               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 shadow">
-            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
-            </svg>
-            View Matches
-        </a>
-        <a href="{% url 'dormitory:add_roommate' %}" 
-               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-green-500 hover:bg-green-600 text-white shadow">
-            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            Create Listing
-        </a>
+
+    <div class="relative z-10 p-6 md:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div class="flex-1 min-w-0">
+                <p class="text-cyan-200 text-xs font-semibold uppercase tracking-[0.18em]">Roommate Finder</p>
+                <h1 class="mt-2 text-3xl md:text-4xl font-extrabold text-white tracking-tight">Find Your Perfect Roommate</h1>
+                <p class="mt-2 text-cyan-100/80 text-sm md:text-base max-w-2xl">Connect with people who match your budget, location, personality, and lifestyle preferences.</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="roommate-hero-chip">{{ roommates|length|default:0 }} active listing{{ roommates|length|pluralize }}</span>
+                    {% if user_post %}
+                    <span class="roommate-hero-chip">Your listing is active</span>
+                    {% else %}
+                    <span class="roommate-hero-chip">Create a listing to unlock better match scoring</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 sm:w-[320px]">
+                <a href="{% url 'dormitory:roommate_matches' %}" class="roommate-hero-stat hover:bg-white/20 transition-colors">
+                    <svg class="h-5 w-5 text-white mx-auto mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="roommate-hero-stat-label">View Matches</p>
+                </a>
+                <a href="{% url 'dormitory:add_roommate' %}" class="roommate-hero-stat hover:bg-white/20 transition-colors">
+                    <svg class="h-5 w-5 text-white mx-auto mb-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="roommate-hero-stat-label">Create Listing</p>
+                </a>
+                <div class="roommate-hero-stat">
+                    <p class="roommate-hero-stat-value">{{ roommates|length|default:0 }}</p>
+                    <p class="roommate-hero-stat-label">Listed Profiles</p>
+                </div>
+                <div class="roommate-hero-stat">
+                    <p class="roommate-hero-stat-value">{{ user_post|yesno:"On,Off" }}</p>
+                    <p class="roommate-hero-stat-label">My Listing</p>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 </div>
 
 <!-- Search Hero (Collapsible) -->
 <div class="bg-white rounded-xl shadow-md mb-8 border border-gray-100 overflow-hidden">
     <!-- Header / Toggle -->
-    <button type="button" id="filtersToggle" class="w-full flex items-center justify-between px-4 md:px-6 py-4 hover:bg-gray-50">
+    <button type="button" id="filtersToggle" class="w-full flex items-center justify-between px-4 md:px-6 py-4 hover:bg-slate-50">
         <div class="flex items-center gap-3">
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-100 text-cyan-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/></svg>
             </span>
             <div class="text-left">
                 <div class="text-sm font-semibold text-gray-900">Search & Filters</div>
-                <div class="text-xs text-gray-500">Refine by location, budget, and mood</div>
+                <div class="text-xs text-gray-500">Refine by location, budget range, and mood</div>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <span id="activeFilterBadge" class="hidden text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700"></span>
+            <span id="activeFilterBadge" class="hidden text-xs px-2 py-1 rounded-full bg-cyan-100 text-cyan-800"></span>
             <svg id="filtersChevron" class="w-5 h-5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
     </button>
@@ -73,7 +97,7 @@
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 111.314 0z"/></svg>
                     </span>
-                    <input type="text" id="filterLocationInput" placeholder="e.g., España, UST"
+                          <input type="text" id="filterLocationInput" placeholder="e.g., Espana, UST"
                            class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                 </div>
             </div>
@@ -100,7 +124,7 @@
                 </select>
         </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Find Roommates</button>
+                <button type="submit" class="flex-1 md:flex-none px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800">Find Roommates</button>
                 <button type="button" id="filterClear" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Clear</button>
         </div>
         </form>
@@ -110,12 +134,12 @@
 <!-- Roommate Cards Grid -->
 <div id="roommate-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {% for roommate in roommates %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 relative z-10"
+        <div class="roommate-card bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 relative z-10"
              data-location="{{ roommate.preferred_location|default_if_none:''|lower }}"
              data-budget="{{ roommate.preferred_budget|default:0 }}"
              data-mood="{{ roommate.mood }}">
             <!-- Image Section -->
-            <div class="relative h-48 bg-blue-200">
+            <div class="roommate-card-media relative h-48 bg-blue-200">
                 <!-- 3-dot Dropdown Top Left -->
                 <div class="absolute top-4 left-1 pl-3">
                     <div class="relative inline-block text-left">
@@ -146,42 +170,46 @@
                     </div>
                 {% endif %}
                 
-                <!-- Compatibility Badge (if user has a post) -->
-                {% if user_post and roommate.user != request.user %}
-                    {% with compatibility=roommate.get_compatibility_score %}
-                        {% if compatibility %}
-                            <div class="absolute top-4 right-4">
-                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium 
-                                    {% if compatibility >= 80 %}bg-green-100 text-green-800
-                                    {% elif compatibility >= 60 %}bg-yellow-100 text-yellow-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ compatibility }}% Match
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endwith %}
-                {% endif %}
             </div>
 
             <!-- Content Section -->
             <div class="p-6">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                            <a href="{% url 'accounts:view_user_profile' roommate.user.id %}" class="hover:text-blue-600 transition-colors">{{ roommate.name }}</a>
-                            {% if roommate.user.userprofile.is_verified %}
-                                <span class="ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full align-middle font-semibold">Verified</span>
-                            {% endif %}
+                <div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2 min-w-0">
+                            <a href="{% url 'accounts:view_user_profile' roommate.user.id %}" class="hover:text-blue-600 transition-colors truncate">{{ roommate.name }}</a>
                         </h3>
                         <p class="text-sm text-gray-600">{{ roommate.age }} years old</p>
                     </div>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                        {% if roommate.mood == 'quiet' %}bg-blue-100 text-blue-800
-                        {% elif roommate.mood == 'friendly' %}bg-green-100 text-green-800
-                        {% elif roommate.mood == 'adventurous' %}bg-purple-100 text-purple-800
-                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                        {{ roommate.get_mood_display }}
-                    </span>
+
+                    <div class="flex flex-col items-end gap-1.5 shrink-0">
+                        {% if roommate.user.userprofile.is_verified %}
+                            <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold leading-none bg-green-100 text-green-800">
+                                Verified
+                            </span>
+                        {% endif %}
+
+                        {% if user_post and roommate.user != request.user %}
+                            {% with compatibility=roommate.get_compatibility_score %}
+                                {% if compatibility %}
+                                    <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold leading-none 
+                                        {% if compatibility >= 80 %}bg-green-100 text-green-800
+                                        {% elif compatibility >= 60 %}bg-amber-100 text-amber-800
+                                        {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                        {{ compatibility }}% Match
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+
+                        <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium leading-none 
+                            {% if roommate.mood == 'quiet' %}bg-sky-100 text-sky-800
+                            {% elif roommate.mood == 'friendly' %}bg-emerald-100 text-emerald-800
+                            {% elif roommate.mood == 'adventurous' %}bg-blue-100 text-blue-800
+                            {% else %}bg-amber-100 text-amber-800{% endif %}">
+                            {{ roommate.get_mood_display }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Details -->
@@ -191,7 +219,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
-                        <span class="text-sm">{{ roommate.preferred_location }}</span>
+                        <span class="text-sm line-clamp-1" title="{{ roommate.preferred_location }}">{{ roommate.preferred_location|truncatechars:42 }}</span>
                     </div>
                     <div class="flex items-center text-gray-600">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,8 +252,8 @@
 
                 <!-- Action Buttons -->
                 <div class="mt-6 flex gap-3">
-                    <a href="{% url 'dormitory:roommate_detail' roommate.pk %}" 
-                       class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                          <a href="{% url 'dormitory:roommate_detail' roommate.pk %}" 
+                              class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         View Details
                     </a>
 
@@ -233,7 +261,7 @@
                         <form method="post" action="{% url 'dormitory:initiate_match' roommate.pk %}" class="flex-1 initiate-match-form">
                             {% csrf_token %}
                             <button type="submit" 
-                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Connect
                             </button>
                         </form>
@@ -247,7 +275,7 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No Roommate Listings Yet</h3>
                 <p class="text-gray-500 mb-4">Be the first to create a roommate listing!</p>
                 <a href="{% url 'dormitory:add_roommate' %}" 
-                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-800 hover:bg-white-700">
+                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800">
                     Create Your Listing
                 </a>
             </div>
@@ -256,15 +284,15 @@
 </div>
 
 <!-- Report Modal (hidden by default, outside the roommate cards) -->
-<div id="reportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 overflow-y-auto hidden">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 relative mx-2 my-8">
-        <button onclick="closeReportModal()" class="absolute top-4 right-6 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-        <h2 class="text-2xl font-bold mb-6">Report User</h2>
-        <form id="reportUserForm" method="post" action="#" enctype="multipart/form-data" class="space-y-6">
+<div id="reportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center overflow-hidden bg-black/45 px-3 pb-3 pt-8 sm:px-4 sm:pb-4 sm:pt-10">
+    <div class="relative w-full max-w-md sm:max-w-lg rounded-2xl bg-white shadow-2xl p-3 sm:p-4 md:p-5 mx-2 sm:mx-0">
+        <button onclick="closeReportModal()" class="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+        <h2 class="text-lg sm:text-xl font-bold mb-2">Report User</h2>
+        <form id="reportUserForm" method="post" action="#" enctype="multipart/form-data" class="space-y-2">
             {% csrf_token %}
             <div>
-                <label for="id_reason" class="block font-semibold text-blue-700 mb-1">What are you reporting about?</label>
-                <select name="reason" id="id_reason" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                <label for="id_reason" class="block text-sm font-semibold text-blue-700 mb-0.5">What are you reporting about?</label>
+                <select name="reason" id="id_reason" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
                     <option value="">---------</option>
                     <option value="inappropriate_content">Inappropriate Content</option>
                     <option value="spam">Spam</option>
@@ -275,20 +303,20 @@
                 </select>
             </div>
             <div>
-                <label for="id_description" class="block font-semibold text-blue-700 mb-1">Tell us more</label>
-                <textarea name="description" id="id_description" class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:ring-blue-500 focus:border-blue-500" placeholder="Type here the details of your report"></textarea>
+                <label for="id_description" class="block text-sm font-semibold text-blue-700 mb-0.5">Tell us more</label>
+                <textarea name="description" id="id_description" class="w-full h-16 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" placeholder="Type here the details of your report"></textarea>
             </div>
             <div>
-                <label for="id_evidence" class="block font-semibold text-blue-700 mb-1">Additional Evidence (Optional)</label>
-                <textarea name="evidence" id="id_evidence" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Any additional evidence or context (optional)" rows="3"></textarea>
+                <label for="id_evidence" class="block text-sm font-semibold text-blue-700 mb-0.5">Additional Evidence (Optional)</label>
+                <textarea name="evidence" id="id_evidence" class="w-full h-12 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" placeholder="Any additional evidence or context (optional)" rows="2"></textarea>
             </div>
             <div>
-                <label for="id_evidence_image" class="block font-semibold text-blue-700 mb-1">Upload Screenshot (Optional)</label>
-                <input type="file" name="evidence_image" accept="image/*" id="id_evidence_image" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
-                <p class="text-xs text-gray-500 mt-1">Upload a screenshot or image as evidence (PNG, JPG, max 5MB)</p>
+                <label for="id_evidence_image" class="block text-sm font-semibold text-blue-700 mb-0.5">Upload Screenshot (Optional)</label>
+                <input type="file" name="evidence_image" accept="image/*" id="id_evidence_image" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700">
+                <p class="text-[11px] text-gray-500 mt-0.5">PNG/JPG, max 5MB.</p>
             </div>
             <input type="hidden" name="reported_user_id" id="reported_user_id" value="">
-            <button type="submit" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold text-lg">Submit Report</button>
+            <button type="submit" class="w-full mt-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-bold text-sm sm:text-base">Submit Report</button>
         </form>
     </div>
 </div>
@@ -536,12 +564,29 @@ document.addEventListener('click', function(event) {
 
 function openReportModal(userId) {
     document.getElementById('reportModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
     document.getElementById('reported_user_id').value = userId;
     // Set the form action dynamically
     document.getElementById('reportUserForm').action = '/accounts/report-user/' + userId + '/';
 }
 function closeReportModal() {
     document.getElementById('reportModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Close report modal on backdrop click and Escape key.
+const reportModal = document.getElementById('reportModal');
+if (reportModal) {
+    reportModal.addEventListener('click', function(e) {
+        if (e.target === reportModal) {
+            closeReportModal();
+        }
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !reportModal.classList.contains('hidden')) {
+            closeReportModal();
+        }
+    });
 }
 // AJAX Report Form Submission
 const reportForm = document.getElementById('reportUserForm');
@@ -609,6 +654,75 @@ if (reportForm) {
 </script>
 
 <style>
+.roommate-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+}
+
+.roommate-hero-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+    color: #dbeafe;
+    border-radius: 999px;
+    padding: 0.28rem 0.72rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.roommate-hero-stat {
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 0.8rem 0.9rem;
+    text-align: center;
+    backdrop-filter: blur(2px);
+}
+
+.roommate-hero-stat-value {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.roommate-hero-stat-label {
+    color: #bfdbfe;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+}
+
+.roommate-card {
+    position: relative;
+    border: 1px solid rgba(8, 145, 178, 0.2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(247, 252, 255, 0.99) 100%);
+}
+
+.roommate-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    z-index: 5;
+}
+
+.roommate-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 36px rgba(12, 61, 107, 0.2);
+}
+
+.roommate-card-media {
+    background: radial-gradient(circle at 15% 20%, rgba(186, 230, 253, 0.82), rgba(224, 242, 254, 0.62) 45%, rgba(239, 246, 255, 0.82));
+}
+
 .loader {
     border-top-color: #2724e7;
     -webkit-animation: spinner 1.5s linear infinite;
@@ -638,6 +752,14 @@ if (reportForm) {
 }
 .animate-fade-out {
   animation: fadeOut 0.5s forwards;
+}
+
+.line-clamp-1 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        line-clamp: 1;
+        -webkit-line-clamp: 1;
 }
 </style>
 {% endblock %}

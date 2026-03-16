@@ -20,27 +20,37 @@
 <div class="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="mb-6">
-            <div class="flex items-center justify-between">
+        <div class="relative mb-6 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl landlord-hero">
+            <div class="pointer-events-none absolute inset-0">
+                <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+                <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+                <div class="absolute inset-0 opacity-[0.07] landlord-hero-grid"></div>
+            </div>
+
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <div class="flex items-center space-x-3">
-                        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                        <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Landlord Dashboard</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1 class="text-3xl font-bold text-white">Dashboard</h1>
                         {% if request.user.is_identity_verified %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-600 text-white shadow-md">
+                            <span class="landlord-status-chip landlord-status-chip--verified inline-flex items-center px-3 py-1 rounded-full text-sm font-bold shadow-md">
                                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                 </svg>
                                 Verified Landlord
                             </span>
                         {% elif request.user.verification_status == 'pending' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                            <span class="landlord-status-chip landlord-status-chip--pending inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 Verification Pending
                             </span>
                         {% elif request.user.verification_status == 'rejected' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 border border-red-300">
+                            <span class="landlord-status-chip landlord-status-chip--rejected inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -48,24 +58,35 @@
                             </span>
                         {% endif %}
                     </div>
-                    <p class="text-gray-600 mt-1">Welcome back, {{ request.user.first_name|default:request.user.username }}!</p>
+                    <p class="text-cyan-100/85 mt-2">Welcome back, {{ request.user.first_name|default:request.user.username }}!</p>
                 </div>
-                
-                {% if not request.user.is_identity_verified and request.user.verification_status != 'pending' %}
-                    <a href="{% url 'accounts:submit_verification' %}" 
-                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium">
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button"
+                            onclick="openLandlordHowItWorks()"
+                            class="landlord-hero-cta landlord-hero-cta--guide inline-flex items-center px-4 py-2 transition-colors shadow-md font-medium">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
                         </svg>
-                        Get Verified
-                    </a>
-                {% endif %}
+                        How It Works
+                    </button>
+
+                    {% if not request.user.is_identity_verified and request.user.verification_status != 'pending' %}
+                        <a href="{% url 'accounts:submit_verification' %}" 
+                           class="landlord-hero-cta inline-flex items-center px-4 py-2 transition-colors shadow-md font-medium">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            Get Verified
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
         <!-- Key Metrics Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
+            <div class="dashboard-metric-card dashboard-metric-card--revenue p-6">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Monthly Revenue</p>
@@ -77,7 +98,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-blue-500">
+            <div class="dashboard-metric-card dashboard-metric-card--reservations p-6">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Total Reservations</p>
@@ -87,12 +108,12 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-purple-500">
+            <div class="dashboard-metric-card dashboard-metric-card--views p-6">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Property Views</p>
                         <h3 class="text-2xl font-bold text-gray-900">{{ total_views|default:0 }}</h3>
-                        <p class="text-xs {% if views_growth >= 0 %}text-purple-600{% else %}text-red-600{% endif %} mt-1">
+                        <p class="text-xs {% if views_growth >= 0 %}text-cyan-600{% else %}text-red-600{% endif %} mt-1">
                             {{ views_growth|floatformat:1 }}% this week
                         </p>
                     </div>
@@ -100,7 +121,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-orange-500">
+            <div class="dashboard-metric-card dashboard-metric-card--occupancy p-6">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Occupancy Rate</p>
@@ -111,10 +132,77 @@
             </div>
         </div>
 
+        <!-- Hero-triggered How It Works Modal -->
+        <div id="landlordHowModal" class="fixed inset-0 z-[120] hidden">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeLandlordHowItWorks()"></div>
+
+            <div class="relative h-full flex items-end sm:items-start justify-center p-0 sm:px-6 sm:pb-6 sm:pt-16 md:pt-20">
+                <div class="landlord-how-modal-card w-full sm:max-w-5xl max-h-[90vh] sm:max-h-[calc(100vh-7rem)] md:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-t-2xl sm:rounded-2xl">
+                    <div class="landlord-how-modal-head top-5 z-10 px-5 py-4 sm:px-6 sm:py-5 border-b border-sky-100/80">
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-xl sm:text-2xl font-bold text-white">How It Works for Landlords</h3>
+                                <p class="text-cyan-100/85 text-sm mt-1">From listing to move-in, here is your full operating flow.</p>
+                            </div>
+                            <button type="button" onclick="closeLandlordHowItWorks()" class="landlord-how-close-btn" aria-label="Close">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-5 sm:p-6 bg-gradient-to-b from-white to-sky-50/40">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <article class="landlord-how-step" style="--how-accent:#2563eb;">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="landlord-how-step-no">Step 1</span>
+                                    <span class="landlord-how-chip">List</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">Create Dorm Listing</h4>
+                                <p class="text-sm text-slate-600 mb-4">Add property details, amenities, pricing, and photos to attract quality tenants.</p>
+                                <a href="{% url 'dormitory:add_dorm' %}" class="landlord-how-link">Go to Add Dorm</a>
+                            </article>
+
+                            <article class="landlord-how-step" style="--how-accent:#0891b2;">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="landlord-how-step-no">Step 2</span>
+                                    <span class="landlord-how-chip">Manage</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">Keep Listings Updated</h4>
+                                <p class="text-sm text-slate-600 mb-4">Track active dorms and keep room availability accurate.</p>
+                                <a href="{% url 'dormitory:my_dorms' %}" class="landlord-how-link">Open My Dorms</a>
+                            </article>
+
+                            <article class="landlord-how-step" style="--how-accent:#0ea5e9;">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="landlord-how-step-no">Step 3</span>
+                                    <span class="landlord-how-chip">Review</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">Process Reservations</h4>
+                                <p class="text-sm text-slate-600 mb-4">Review requests quickly, then approve or decline with clear status updates.</p>
+                                <a href="{% url 'dormitory:landlord_reservations' %}" class="landlord-how-link">View Reservations</a>
+                            </article>
+
+                            <article class="landlord-how-step" style="--how-accent:#10b981;">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="landlord-how-step-no">Step 4</span>
+                                    <span class="landlord-how-chip">Connect</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">Message and Follow Through</h4>
+                                <p class="text-sm text-slate-600 mb-4">Coordinate with tenants and finalize move-in arrangements.</p>
+                                <a href="{% url 'dormitory:messages' %}" class="landlord-how-link">Open Messages</a>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabbed Content -->
-        <div class="bg-white rounded-xl shadow">
+        <div class="dashboard-panel rounded-2xl shadow-xl">
             <!-- Tab Navigation -->
-            <div class="border-b border-gray-200">
+            <div class="dashboard-tab-nav border-b border-sky-100/80">
                 <nav class="flex -mb-px overflow-x-auto">
                     <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn whitespace-nowrap py-4 px-6 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
                         <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,19 +305,19 @@
                 <!-- Properties Tab -->
                 <div id="content-properties" class="tab-content hidden">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                        <div class="dashboard-mini-stat dashboard-mini-stat--pending rounded-lg p-4 text-center">
                             <p class="text-sm text-gray-600 mb-1">Pending</p>
                             <p class="text-2xl font-bold text-yellow-600">{{ pending_count }}</p>
                         </div>
-                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                        <div class="dashboard-mini-stat dashboard-mini-stat--confirmed rounded-lg p-4 text-center">
                             <p class="text-sm text-gray-600 mb-1">Confirmed</p>
                             <p class="text-2xl font-bold text-green-600">{{ confirmed_count }}</p>
                         </div>
-                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                        <div class="dashboard-mini-stat dashboard-mini-stat--completed rounded-lg p-4 text-center">
                             <p class="text-sm text-gray-600 mb-1">Completed</p>
                             <p class="text-2xl font-bold text-blue-600">{{ completed_count }}</p>
                         </div>
-                        <div class="bg-red-50 rounded-lg p-4 text-center">
+                        <div class="dashboard-mini-stat dashboard-mini-stat--declined rounded-lg p-4 text-center">
                             <p class="text-sm text-gray-600 mb-1">Declined</p>
                             <p class="text-2xl font-bold text-red-600">{{ declined_count }}</p>
                         </div>
@@ -240,7 +328,7 @@
                         {% for d in top_dorms_by_views %}
                         <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                             <span class="font-medium text-gray-900">{{ d.name }}</span>
-                            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">{{ d.recent_views }} views</span>
+                            <span class="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm font-semibold">{{ d.recent_views }} views</span>
                         </div>
                         {% empty %}
                         <p class="text-center py-8 text-gray-500">No properties yet</p>
@@ -318,9 +406,9 @@
                             <p class="text-xs text-gray-600">Move-ins</p>
                             <p class="text-xl font-bold text-green-600">{{ upcoming_move_ins|default:0 }}</p>
                         </div>
-                        <div class="bg-purple-50 rounded-lg p-3">
+                        <div class="bg-cyan-50 rounded-lg p-3">
                             <p class="text-xs text-gray-600">Active Tenants</p>
-                            <p class="text-xl font-bold text-purple-600">{{ active_tenants|default:0 }}</p>
+                            <p class="text-xl font-bold text-cyan-600">{{ active_tenants|default:0 }}</p>
                         </div>
                     </div>
                 </div>
@@ -332,6 +420,26 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+function openLandlordHowItWorks() {
+    const modal = document.getElementById('landlordHowModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeLandlordHowItWorks() {
+    const modal = document.getElementById('landlordHowModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLandlordHowItWorks();
+    }
+});
+
 // Tab Switching
 function switchTab(tabName) {
     // Hide all content
@@ -526,6 +634,204 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+.landlord-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.landlord-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.landlord-hero-cta {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: #ffffff;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
+.landlord-hero-cta:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.landlord-hero-cta--guide {
+    background: rgba(8, 145, 178, 0.22);
+    border-color: rgba(125, 211, 252, 0.4);
+}
+
+.landlord-status-chip {
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    backdrop-filter: blur(2px);
+}
+
+.landlord-status-chip--verified {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+.landlord-status-chip--pending {
+    background: rgba(245, 158, 11, 0.18);
+    border-color: rgba(253, 230, 138, 0.45);
+    color: #fef3c7;
+}
+
+.landlord-status-chip--rejected {
+    background: rgba(244, 63, 94, 0.2);
+    border-color: rgba(254, 205, 211, 0.45);
+    color: #ffe4e6;
+}
+
+.dashboard-metric-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.1);
+}
+
+.dashboard-metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--metric-accent, #0ea5e9);
+}
+
+.dashboard-metric-card--revenue { --metric-accent: #10b981; }
+.dashboard-metric-card--reservations { --metric-accent: #2563eb; }
+.dashboard-metric-card--views { --metric-accent: #0891b2; }
+.dashboard-metric-card--occupancy { --metric-accent: #f59e0b; }
+
+.dashboard-panel {
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.dashboard-tab-nav {
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.72) 0%, rgba(255, 255, 255, 0.92) 100%);
+}
+
+.dashboard-mini-stat {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-mini-stat--pending {
+    background: linear-gradient(135deg, rgba(254, 249, 195, 0.85), rgba(254, 243, 199, 0.82));
+}
+
+.dashboard-mini-stat--confirmed {
+    background: linear-gradient(135deg, rgba(220, 252, 231, 0.84), rgba(209, 250, 229, 0.8));
+}
+
+.dashboard-mini-stat--completed {
+    background: linear-gradient(135deg, rgba(224, 242, 254, 0.84), rgba(219, 234, 254, 0.82));
+}
+
+.dashboard-mini-stat--declined {
+    background: linear-gradient(135deg, rgba(255, 228, 230, 0.86), rgba(255, 241, 242, 0.82));
+}
+
+.landlord-how-modal-card {
+    border: 1px solid rgba(147, 197, 253, 0.55);
+    background: #ffffff;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.28);
+}
+
+.landlord-how-modal-head {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 52%, #0891b2 100%);
+}
+
+.landlord-how-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    width: 2rem;
+    height: 2rem;
+    color: #e0f2fe;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.landlord-how-close-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.landlord-how-step {
+    --how-accent: #0891b2;
+    position: relative;
+    border-radius: 0.95rem;
+    border: 1px solid #dbeafe;
+    background: #ffffff;
+    padding: 1rem;
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.landlord-how-step::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 0.95rem 0 0 0.95rem;
+    background: var(--how-accent);
+}
+
+.landlord-how-step:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(21, 101, 192, 0.14);
+    border-color: #93c5fd;
+}
+
+.landlord-how-step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.landlord-how-chip {
+    border-radius: 999px;
+    border: 1px solid var(--how-accent);
+    color: var(--how-accent);
+    background: #ffffff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.58rem;
+}
+
+.landlord-how-link {
+    color: #1565c0;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.landlord-how-link:hover {
+    color: #0c3d6b;
+    text-decoration: underline;
+}
+
 .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
 }

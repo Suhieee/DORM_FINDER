@@ -4,22 +4,31 @@
 {% block title %}Verification Requests{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8 px-4">
+<div class="min-h-screen bg-gray-50 py-8 px-4 admin-verification-shell">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
+        <div class="relative mb-8 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl admin-verification-hero">
+            <div class="pointer-events-none absolute inset-0">
+                <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+                <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+                <div class="absolute inset-0 opacity-[0.07] admin-verification-hero-grid"></div>
+            </div>
+            <div class="relative z-10 flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-                        <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                        <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Admin Controls</span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white flex items-center">
+                        <svg class="w-8 h-8 text-cyan-200 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
                         Identity Verification Requests
                     </h1>
-                    <p class="text-gray-600 mt-1">Review and approve landlord verification requests</p>
+                    <p class="text-cyan-100/85 mt-2">Review and approve landlord verification requests</p>
                 </div>
                 <a href="{% url 'accounts:dashboard' %}" 
-                   class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                   class="admin-verification-cta px-4 py-2 rounded-lg transition-colors">
                     Back to Dashboard
                 </a>
             </div>
@@ -27,7 +36,7 @@
 
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-stat-card rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Pending Requests</p>
@@ -40,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-stat-card rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Approved</p>
@@ -53,7 +62,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-stat-card rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Rejected</p>
@@ -69,7 +78,7 @@
         </div>
 
         <!-- Tabs -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div class="admin-surface rounded-xl shadow-sm border border-gray-200 mb-6">
             <div class="border-b border-gray-200">
                 <nav class="flex space-x-8 px-6" aria-label="Tabs">
                     <button onclick="switchTab('pending')" id="tab-pending" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
@@ -95,7 +104,7 @@
         {% if verification_requests %}
             <div class="space-y-4">
                 {% for landlord in verification_requests %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="admin-surface rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between">
                         <div class="flex items-start space-x-4 flex-1">
                             <!-- Profile Picture -->
@@ -176,7 +185,7 @@
             </div>
         {% else %}
             <!-- Empty State -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div class="admin-surface rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -194,7 +203,7 @@
                 {% if verified_landlords %}
                     <div class="space-y-3">
                         {% for landlord in verified_landlords %}
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                        <div class="admin-surface rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
                                     {% if landlord.userprofile.profile_picture %}
@@ -269,7 +278,7 @@
                 {% if rejected_landlords %}
                     <div class="space-y-3">
                         {% for landlord in rejected_landlords %}
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                        <div class="admin-surface rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
                                     {% if landlord.userprofile.profile_picture %}
@@ -364,4 +373,46 @@ document.addEventListener('DOMContentLoaded', function() {
     switchTab('pending');
 });
 </script>
+
+<style>
+.admin-verification-shell {
+    background:
+        radial-gradient(520px 220px at 102% -40px, rgba(59, 130, 246, 0.12), transparent 60%),
+        radial-gradient(420px 180px at -6% 18%, rgba(96, 165, 250, 0.1), transparent 58%);
+}
+
+.admin-verification-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.admin-verification-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.admin-verification-cta {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
+.admin-verification-cta:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.admin-stat-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #dbeafe;
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.1);
+}
+
+.admin-surface {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #dbeafe;
+}
+</style>
 {% endblock %}

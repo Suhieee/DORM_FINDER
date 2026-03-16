@@ -151,7 +151,7 @@
                 </div>
 
                 <!-- Notifications List -->
-                <div id="notifications-container" class="space-y-4">
+                <div id="notifications-container" class="space-y-4 notifications-scroll">
                     <div class="text-center py-8">
                         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                         <p class="mt-4 text-gray-500">Loading notifications...</p>
@@ -456,6 +456,29 @@ document.addEventListener('DOMContentLoaded', function() {
 @keyframes spinner {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.notifications-scroll {
+    max-height: min(65vh, 34rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #93c5fd #eff6ff;
+}
+
+.notifications-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notifications-scroll::-webkit-scrollbar-track {
+    background: #eff6ff;
+    border-radius: 999px;
+}
+
+.notifications-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #60a5fa 0%, #0ea5e9 100%);
+    border-radius: 999px;
 }
 </style>
 {% endblock %}

@@ -1,243 +1,282 @@
-{% extends 'accounts/base.html' %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | Smart Dorm Finder</title>
+    <style>
+        :root {
+            --bg-a: #0c3d6b;
+            --bg-b: #1565c0;
+            --bg-c: #0891b2;
+            --panel: #ffffff;
+            --line: #dbeafe;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --action: #0b5fd3;
+            --action-2: #0e7490;
+        }
 
-{% block title %}Page Not Found{% endblock %}
+        * {
+            box-sizing: border-box;
+        }
 
-{% block content %}
-<div class="min-h-[90vh] flex items-center justify-center px-4 py-8">
-    <div class="max-w-6xl w-full">
-        <!-- Animated Background Elements -->
-        <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-40 -right-40 w-80 h-80 bg-red-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-black rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 1s"></div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-900 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse" style="animation-delay: 4s"></div>
-        </div>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(620px 260px at 102% -30px, rgba(59, 130, 246, 0.18), transparent 62%),
+                radial-gradient(500px 220px at -10% 20%, rgba(6, 182, 212, 0.16), transparent 58%),
+                #f2f7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 16px;
+        }
 
-        <!-- Main Content -->
-<div class="relative">
-    <!-- Header Section -->
-    <div class="text-center mb-16">
-        <div class="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-2xl mb-8 transform hover:scale-105 transition-transform duration-500">
-        </div>
-        
-        <!-- Centered Image Container -->
-        <div class="flex justify-center items-center mb-4">
-            <img src="{% static 'images/404.svg' %}" alt="Logo" class="max-w-md">
-        </div>
-        <br>
-        <p class="text-xl text-black max-w-5xl mx-auto leading-relaxed mb-4">
-            Looks like you've ventured into uncharted territory. 
-        </p>
-    </div>
-</div>
+        .shell {
+            width: 100%;
+            max-width: 980px;
+            border-radius: 22px;
+            overflow: hidden;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+        }
 
-            <!-- Navigation Grid -->
-            <div class="grid lg:grid-cols-2 gap-8 mb-12">
-                <!-- Left: User-specific Navigation -->
-                <div class="space-y-6">
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                               
-                            </div>
-                            Quick Navigation
-                        </h2>
-                        
-                        <div class="space-y-4">
-                            {% if user.is_authenticated %}
-                                {% if user.user_type == 'tenant' %}
-                                    <a href="{% url 'accounts:dashboard' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                           
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Dashboard</h3>
-                                            <p class="text-sm text-gray-500">Your personal hub</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-blue-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                    <a href="{% url 'dormitory:dorm_list' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-green-50 hover:to-green-100 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                          
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Browse Dorms</h3>
-                                            <p class="text-sm text-gray-500">Find your perfect place</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-green-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                    <a href="{% url 'dormitory:roommate_list' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-purple-50 hover:to-purple-100 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                           
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Find Roommates</h3>
-                                            <p class="text-sm text-gray-500">Connect with others</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-purple-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                {% elif user.user_type == 'landlord' %}
-                                    <a href="{% url 'accounts:dashboard' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                           
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Dashboard</h3>
-                                            <p class="text-sm text-gray-500">Property overview</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-blue-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                    <a href="{% url 'dormitory:my_dorms' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-green-50 hover:to-green-100 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                           
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">My Properties</h3>
-                                            <p class="text-sm text-gray-500">Manage your listings</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-green-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                    <a href="{% url 'dormitory:add_dorm' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-orange-50 hover:to-orange-100 border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Add New Dorm</h3>
-                                            <p class="text-sm text-gray-500">Create new listing</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-orange-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                {% elif user.user_type == 'admin' %}
-                                    <a href="{% url 'accounts:dashboard' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <span class="text-blue-600">🏠</span>
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Admin Dashboard</h3>
-                                            <p class="text-sm text-gray-500">System overview</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-blue-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                    <a href="{% url 'accounts:manage_users' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-red-50 hover:to-red-100 border border-gray-200 hover:border-red-300 transition-all duration-300 hover:shadow-lg">
-                                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <span class="text-red-600">👥</span>
-                                        </div>
-                                        <div class="flex-1 text-left">
-                                            <h3 class="font-semibold text-gray-900">Manage Users</h3>
-                                            <p class="text-sm text-gray-500">User administration</p>
-                                        </div>
-                                        <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                            <span class="text-red-500">→</span>
-                                        </div>
-                                    </a>
-                                    
-                                {% endif %}
-                            {% else %}
-                                <!-- Guest Links -->
-                                <a href="{% url 'accounts:login' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                      
-                                    </div>
-                                    <div class="flex-1 text-left">
-                                        <h3 class="font-semibold text-gray-900">Sign In</h3>
-                                        <p class="text-sm text-gray-500">Access your account</p>
-                                    </div>
-                                    <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                        <span class="text-blue-500">→</span>
-                                    </div>
-                                </a>
-                                
-                                <a href="{% url 'accounts:register' %}" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-green-50 hover:to-green-100 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-lg">
-                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        
-                                    </div>
-                                    <div class="flex-1 text-left">
-                                        <h3 class="font-semibold text-gray-900">Create Account</h3>
-                                        <p class="text-sm text-gray-500">Join our platform</p>
-                                    </div>
-                                    <div class="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
-                                        <span class="text-green-500">→</span>
-                                    </div>
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+        .hero {
+            position: relative;
+            padding: 34px 28px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
+        }
 
-                <!-- Right: Illustration and Actions -->
-                <div class="space-y-6">
-                    <div class="bg-gradient-to-br from-blue-500 to-black-600 rounded-2xl p-8 text-black shadow-2xl">
-                        <div class="text-center mb-6">
-                            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
-                              
-                            </div>
-                            <h3 class="text-2xl font-bold">Need Help?</h3>
-                            <p class="text-blue-100">We're here to guide you back</p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <a href="javascript:history.back()" class="group flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xl">↶</span>
-                                    <div>
-                                        <div class="font-semibold">Go Back</div>
-                                        <div class="text-blue-100 text-sm">Return to previous page</div>
-                                    </div>
-                                </div>
-                                <span class="group-hover:translate-x-1 transition-transform">→</span>
-                            </a>
-                            
-                            <a href="{% url 'accounts:dashboard' %}" class="group flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm">
-                                <div class="flex items-center gap-3">
-                                  
-                                    <div>
-                                        <div class="font-semibold">Dashboard</div>
-                                        <div class="text-white text-sm">Main navigation hub</div>
-                                    </div>
-                                </div>
-                                <span class="group-hover:translate-x-1 transition-transform">→</span>
-                            </a>
-                        </div>
-                    </div>
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.45) 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.12;
+            pointer-events: none;
+        }
 
-                </div>
-            </div>  
-<br><br>
-            <!-- Bottom CTA -->
-            <div class="text-center">
-                <div class="inline-flex flex-col sm:flex-row gap-4">
-                    <a href="javascript:history.back()" class="group px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold">
-                        <span class="group-hover:-translate-x-1 transition-transform">←</span>
-                        Go Back
-                    </a>
-                    <a href="{% url 'accounts:dashboard' %}" class="group px-8 py-4 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3 font-bold">
-                        Go to Dashboard
-                        <span class="group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #d7f4ff;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #67e8f9;
+        }
+
+        h1 {
+            margin: 16px 0 0;
+            font-size: clamp(52px, 9vw, 88px);
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            margin: 10px 0 0;
+            font-size: clamp(24px, 4.2vw, 34px);
+        }
+
+        .lead {
+            margin: 12px 0 0;
+            max-width: 62ch;
+            font-size: 15px;
+            line-height: 1.65;
+            color: #d8efff;
+        }
+
+        .content {
+            padding: 22px;
+        }
+
+        .actions,
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .links {
+            margin-top: 14px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--action), #0ea5e9);
+            box-shadow: 0 10px 18px rgba(14, 116, 144, 0.22);
+        }
+
+        .btn-secondary {
+            color: #0f172a;
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+
+        .btn-muted {
+            color: #0f172a;
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            min-width: 210px;
+            flex: 1 1 230px;
+            border: 1px solid #dbeafe;
+            border-radius: 14px;
+            background: #ffffff;
+            padding: 14px;
+            box-shadow: 0 8px 16px rgba(30, 64, 175, 0.08);
+            transition: transform 0.18s ease, border-color 0.18s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #93c5fd;
+        }
+
+        .card-title {
+            display: block;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .card-meta {
+            display: block;
+            margin-top: 5px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        @media (max-width: 640px) {
+            .hero {
+                padding: 26px 20px;
+            }
+
+            .content {
+                padding: 18px;
+            }
+
+            .btn,
+            .card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell" role="main" aria-labelledby="page-title">
+        <section class="hero">
+            <div class="hero-inner">
+                <span class="tag"><span class="dot"></span> System Navigation</span>
+                <h1 id="page-title">404</h1>
+                <h2>Page Not Found</h2>
+                <p class="lead">
+                    The page you requested cannot be found. It may have been moved, renamed, or removed.
+                    Use the actions below to continue using Smart Dorm Finder.
+                </p>
             </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+        </section>
+
+        <section class="content" aria-label="Recovery actions">
+            <div class="actions">
+                <button class="btn btn-muted" type="button" onclick="history.back()">Go Back</button>
+                <a class="btn btn-secondary" href="{% url 'dormitory:home' %}">Home</a>
+                {% if request.user.is_authenticated %}
+                    <a class="btn btn-primary" href="{% url 'accounts:dashboard' %}">Open Dashboard</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{% url 'accounts:login' %}">Sign In</a>
+                    <a class="btn btn-secondary" href="{% url 'accounts:register' %}">Create Account</a>
+                {% endif %}
+            </div>
+
+            <div class="links">
+                {% if request.user.is_authenticated %}
+                    {% if request.user.user_type == 'landlord' %}
+                        <a class="card" href="{% url 'dormitory:my_dorms' %}">
+                            <span class="card-title">My Properties</span>
+                            <span class="card-meta">Manage your dorm listings and rooms.</span>
+                        </a>
+                        <a class="card" href="{% url 'dormitory:landlord_reservations' %}">
+                            <span class="card-title">Reservations</span>
+                            <span class="card-meta">Review pending and confirmed bookings.</span>
+                        </a>
+                    {% elif request.user.user_type == 'admin' %}
+                        <a class="card" href="{% url 'accounts:manage_users' %}">
+                            <span class="card-title">Manage Users</span>
+                            <span class="card-meta">Review and maintain platform accounts.</span>
+                        </a>
+                        <a class="card" href="{% url 'accounts:verification_requests' %}">
+                            <span class="card-title">Verification Requests</span>
+                            <span class="card-meta">Handle identity and landlord verification.</span>
+                        </a>
+                    {% else %}
+                        <a class="card" href="{% url 'dormitory:dorm_list' %}">
+                            <span class="card-title">Browse Dorms</span>
+                            <span class="card-meta">Find available dorms and compare options.</span>
+                        </a>
+                        <a class="card" href="{% url 'dormitory:roommate_list' %}">
+                            <span class="card-title">Find Roommates</span>
+                            <span class="card-meta">Discover compatible roommate profiles.</span>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a class="card" href="{% url 'dormitory:public_dorm_list' %}">
+                        <span class="card-title">Browse Public Dorms</span>
+                        <span class="card-meta">View available listings without signing in.</span>
+                    </a>
+                    <a class="card" href="{% url 'dormitory:public_roommate_list' %}">
+                        <span class="card-title">Find Public Roommates</span>
+                        <span class="card-meta">Check roommate profiles and compatibility info.</span>
+                    </a>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

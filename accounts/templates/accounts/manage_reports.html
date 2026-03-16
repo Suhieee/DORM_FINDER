@@ -4,22 +4,33 @@
 {% block title %}Manage Reports{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8 px-2">
-    <div class="max-w-6xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-flag text-orange-500"></i> Manage User Reports
-                </h2>
-                <a href="{% url 'accounts:dashboard' %}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+<div class="min-h-screen bg-slate-50 py-8 px-3 sm:px-6 admin-reports-shell">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <section class="admin-surface rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+            <div class="relative rounded-xl p-5 sm:p-6 overflow-hidden admin-reports-hero flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="pointer-events-none absolute inset-0">
+                    <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+                    <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+                    <div class="absolute inset-0 opacity-[0.07] admin-reports-hero-grid"></div>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Admin Panel</p>
+                    <h1 class="mt-1 text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-flag text-cyan-200"></i>
+                        Manage Reports
+                    </h1>
+                    <p class="mt-1 text-sm text-cyan-100/85">Review user-submitted reports, track progress, and take action quickly.</p>
+                </div>
+                <a href="{% url 'accounts:dashboard' %}" class="admin-reports-cta relative z-10 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
                 </a>
             </div>
-            <!-- Filter and Count -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-                <form method="get" class="flex items-center gap-2">
-                    <label for="status" class="text-gray-700 font-medium">Filter by Status:</label>
-                    <select name="status" id="status" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" onchange="this.form.submit()">
+
+            <div class="mt-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between admin-report-filterbar">
+                <form method="get" class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label for="status" class="text-sm font-semibold text-slate-700">Status</label>
+                    <select name="status" id="status" class="w-full sm:w-64 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" onchange="this.form.submit()">
                         <option value="">All Reports</option>
                         <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="investigating" {% if request.GET.status == 'investigating' %}selected{% endif %}>Investigating</option>
@@ -27,52 +38,77 @@
                         <option value="dismissed" {% if request.GET.status == 'dismissed' %}selected{% endif %}>Dismissed</option>
                     </select>
                 </form>
-                <span class="inline-block bg-blue-100 text-blue-800 px-4 py-1 rounded-full font-semibold">{{ reports.count }} Total Reports</span>
+
+                <div class="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800">
+                    <span>Total Reports</span>
+                    <span class="rounded-full bg-cyan-600 px-2 py-0.5 text-xs text-white">
+                        {% if is_paginated %}
+                            {{ page_obj.paginator.count }}
+                        {% else %}
+                            {{ reports|length }}
+                        {% endif %}
+                    </span>
+                </div>
             </div>
-            <!-- Reports Table -->
-            {% if reports %}
-            <div class="overflow-x-auto rounded-lg shadow">
-                <table class="min-w-full bg-white rounded-lg">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-700 text-left">
-                            <th class="py-3 px-4 font-semibold">Date</th>
-                            <th class="py-3 px-4 font-semibold">Reporter</th>
-                            <th class="py-3 px-4 font-semibold">Reported User</th>
-                            <th class="py-3 px-4 font-semibold">Reason</th>
-                            <th class="py-3 px-4 font-semibold">Status</th>
-                            <th class="py-3 px-4 font-semibold">Actions</th>
+        </section>
+
+        {% if reports %}
+        <section class="admin-surface overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-xs tracking-wider">
+                        <tr>
+                            <th class="px-5 py-4 text-left font-semibold">Date</th>
+                            <th class="px-5 py-4 text-left font-semibold">Reporter</th>
+                            <th class="px-5 py-4 text-left font-semibold">Reported User</th>
+                            <th class="px-5 py-4 text-left font-semibold">Reason</th>
+                            <th class="px-5 py-4 text-left font-semibold">Status</th>
+                            <th class="px-5 py-4 text-right font-semibold">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-200">
                         {% for report in reports %}
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4 whitespace-nowrap">{{ report.created_at|date:"M d, Y H:i" }}</td>
-                            <td class="py-3 px-4">
-                                <a href="{% url 'accounts:view_user_profile' report.reporter.id %}" class="text-blue-700 hover:underline font-semibold">{{ report.reporter.username }}</a>
-                                <div class="text-xs text-gray-500">{{ report.reporter.get_user_type_display }}</div>
+                        <tr class="bg-white transition hover:bg-slate-50/80">
+                            <td class="px-5 py-4 whitespace-nowrap text-slate-700">
+                                <p class="font-medium">{{ report.created_at|date:"M d, Y" }}</p>
+                                <p class="text-xs text-slate-500">{{ report.created_at|date:"H:i" }}</p>
                             </td>
-                            <td class="py-3 px-4">
-                                <a href="{% url 'accounts:view_user_profile' report.reported_user.id %}" class="text-blue-700 hover:underline font-semibold">{{ report.reported_user.username }}</a>
-                                <div class="text-xs text-gray-500">{{ report.reported_user.get_user_type_display }}</div>
+
+                            <td class="px-5 py-4">
+                                <a href="{% url 'accounts:view_user_profile' report.reporter.id %}" class="font-semibold text-slate-800 hover:text-cyan-700 hover:underline">
+                                    {{ report.reporter.username }}
+                                </a>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ report.reporter.get_user_type_display }}</p>
                             </td>
-                            <td class="py-3 px-4">
-                                <span class="font-semibold">{{ report.get_reason_display }}</span>
-                                <div class="text-xs text-gray-500">{{ report.description|truncatechars:50 }}</div>
+
+                            <td class="px-5 py-4">
+                                <a href="{% url 'accounts:view_user_profile' report.reported_user.id %}" class="font-semibold text-slate-800 hover:text-cyan-700 hover:underline">
+                                    {{ report.reported_user.username }}
+                                </a>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ report.reported_user.get_user_type_display }}</p>
                             </td>
-                            <td class="py-3 px-4">
+
+                            <td class="px-5 py-4 min-w-[230px]">
+                                <p class="font-semibold text-slate-800">{{ report.get_reason_display }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ report.description|truncatechars:70 }}</p>
+                            </td>
+
+                            <td class="px-5 py-4 whitespace-nowrap">
                                 {% if report.status == 'pending' %}
-                                    <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">Pending</span>
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Pending</span>
                                 {% elif report.status == 'investigating' %}
-                                    <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">Investigating</span>
+                                    <span class="inline-flex items-center rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-800">Investigating</span>
                                 {% elif report.status == 'resolved' %}
-                                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Resolved</span>
+                                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Resolved</span>
                                 {% elif report.status == 'dismissed' %}
-                                    <span class="inline-block bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">Dismissed</span>
+                                    <span class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">Dismissed</span>
                                 {% endif %}
                             </td>
-                            <td class="py-3 px-4">
-                                <a href="{% url 'accounts:report_detail' report.id %}" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold transition">
-                                    <i class="fas fa-eye mr-1"></i> View Details
+
+                            <td class="px-5 py-4 text-right">
+                                <a href="{% url 'accounts:report_detail' report.id %}" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">
+                                    <i class="fas fa-eye text-[11px]"></i>
+                                    View Details
                                 </a>
                             </td>
                         </tr>
@@ -80,40 +116,87 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <nav class="mt-6 flex justify-center" aria-label="Reports pagination">
-                <ul class="inline-flex items-center -space-x-px">
-                    {% if page_obj.has_previous %}
-                    <li>
-                        <a class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
-                    </li>
-                    <li>
-                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <span class="px-3 py-2 leading-tight text-gray-700 bg-gray-200 border border-gray-300">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    </li>
-                    {% if page_obj.has_next %}
-                    <li>
-                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
-                    </li>
-                    <li>
-                        <a class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-            {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-flag fa-3x text-gray-300 mb-3"></i>
-                <h5 class="text-lg font-semibold">No reports found</h5>
-                <p class="text-gray-500">There are no reports matching your criteria.</p>
-            </div>
-            {% endif %}
-        </div>
+        </section>
+
+        {% if is_paginated %}
+        <nav class="flex justify-center" aria-label="Reports pagination">
+            <ul class="inline-flex flex-wrap items-center justify-center gap-2">
+                {% if page_obj.has_previous %}
+                <li>
+                    <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
+                </li>
+                <li>
+                    <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                <li>
+                    <span class="inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                <li>
+                    <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                </li>
+                <li>
+                    <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <section class="admin-surface rounded-2xl border border-dashed border-slate-300 px-6 py-14 text-center shadow-sm">
+            <i class="fas fa-flag text-4xl text-slate-300"></i>
+            <h2 class="mt-4 text-lg font-semibold text-slate-800">No reports found</h2>
+            <p class="mt-1 text-sm text-slate-500">There are no reports matching your current filter.</p>
+        </section>
+        {% endif %}
     </div>
 </div>
-{% endblock %} 
+
+<style>
+.admin-reports-shell {
+    background:
+        radial-gradient(520px 220px at 102% -40px, rgba(59, 130, 246, 0.12), transparent 60%),
+        radial-gradient(420px 180px at -6% 18%, rgba(96, 165, 250, 0.1), transparent 58%);
+}
+
+.admin-reports-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.admin-reports-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.admin-reports-cta {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    backdrop-filter: blur(4px);
+}
+
+.admin-reports-cta:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.admin-report-filterbar {
+    border: 1px solid #dbeafe;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.admin-surface {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #dbeafe;
+}
+</style>
+{% endblock %}

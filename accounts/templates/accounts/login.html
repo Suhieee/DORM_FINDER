@@ -3,54 +3,56 @@
 {% load static %}
 {% block content %}
 
-<div class="min-h-screen bg-gradient-to-br  relative overflow-hidden">
- 
+<div class="min-h-screen relative overflow-hidden">
+
     <!-- Main Container -->
-    <div class="flex flex-col md:flex-row justify-center items-stretch min-h-screen relative">
+    <div class="relative mx-auto flex flex-col md:flex-row justify-center items-stretch min-h-screen max-w-7xl">
         <!-- Left Section (Logo / Branding) -->
-        <div class="w-full md:w-2/5 flex flex-col justify-center items-center p-6 md:p-10 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <img src="{% static 'images/SMART.png' %}" alt="Logo" class="w-full max-w-xs md:max-w-sm mb-4">
+        <div class="w-full md:w-2/5 flex flex-col justify-center items-center p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-200">
+            <img src="{% static 'images/SMART.png' %}" alt="Logo" class="w-full max-w-xs md:max-w-sm mb-3 login-logo-float">
+            <p class="text-center text-sm text-gray-600 max-w-xs">
+                Secure access for dorm reservations, roommate matching, and account management.
+            </p>
         </div>
 
         <!-- Right Section (Login Form) -->
-        <div class="w-full md:w-3/5 flex items-center justify-center bg-gradient-to-br from-blue-700 to-blue-900 p-6 md:p-10">
-            <div class="w-full max-w-md">
+        <div class="w-full md:w-3/5 flex items-center justify-center p-6 md:p-10">
+            <div id="loginTiltZone" class="w-full max-w-md login-panel">
+                <div id="loginCard" class="w-full rounded-2xl border border-blue-100 bg-white p-6 md:p-7 shadow-2xl login-card-3d">
 
                 {% if messages %}
                     <div class="mb-6 space-y-2">
                         {% for message in messages %}
                             <div class="p-4 text-white rounded-md shadow-lg
-                                        {% if message.tags == 'error' %}bg-red-600{% elif message.tags == 'success' %}bg-green-600{% endif %}">
+                                        {% if message.tags == 'error' %}bg-red-600{% elif message.tags == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %}">
                                 {{ message }}
                             </div>
                         {% endfor %}
                     </div>
                 {% endif %}
 
-                <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-black">Sign In</h2>
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-2 text-gray-900">Sign In</h2>
+                <p class="text-center text-sm text-gray-500 mb-7">Welcome back. Access your Smart Dorm account.</p>
 
-                <form method="post" class="space-y-6">
+                <form id="loginForm" method="post" class="space-y-6">
                     {% csrf_token %}
 
                     <!-- Username Field -->
                     <div>
-                        <label for="username" class="block mb-2 text-sm font-semibold text-black">Username</label>
+                        <label for="username" class="block mb-2 text-sm font-semibold text-gray-700">Username</label>
                         <div class="relative w-full">
-                            <!-- SVG Icon -->
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                     <path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
-                            <!-- Input Field -->
                             <input type="text" id="username" name="username" value="{{ form.username.value|default:'' }}"
-                                   class="w-full p-2.5 pl-10 rounded-lg border border-gray-300 bg-white text-gray-900 
-                                          focus:ring-blue-500 focus:border-blue-500"
+                                   class="w-full h-12 px-3 pl-10 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 
+                                          focus:ring-4 focus:ring-blue-100 focus:border-blue-500 focus:bg-white transition-all"
                                    placeholder="Username" required />
                         </div>
-                        <!-- Error Messages -->
                         {% if form.username.errors %}
-                            <div class="mt-1 text-sm text-red-300">
+                            <div class="mt-1 text-sm text-red-600">
                                 {% for error in form.username.errors %}
                                     <p>{{ error }}</p>
                                 {% endfor %}
@@ -60,26 +62,24 @@
 
                     <!-- Password Field -->
                     <div>
-                        <label for="password" class="block mb-2 text-sm font-semibold text-black">Password</label>
+                        <label for="password" class="block mb-2 text-sm font-semibold text-gray-700">Password</label>
                         <div class="relative w-full">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <!-- SVG Icon -->
                                 <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <path fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z"/>
                                 </svg>
                             </div>
-                            <!-- Input Field -->
                             <input type="password" id="password" name="password" value="{{ form.password.value|default:'' }}"
-                                   class="w-full p-2.5 pl-10 pr-10 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full h-12 px-3 pl-10 pr-10 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 
+                                    focus:ring-4 focus:ring-blue-100 focus:border-blue-500 focus:bg-white transition-all"
                                    placeholder="Password" required />
                             <button type="button" onclick="togglePassword('password', this)" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 focus:outline-none hover:text-gray-600">
                                 <svg id="icon-password" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                         </div>
-                        <!-- Error Messages -->
                         {% if form.password.errors %}
-                            <div class="mt-1 text-sm text-red-300">
+                            <div class="mt-1 text-sm text-red-600">
                                 {% for error in form.password.errors %}
                                     <p>{{ error }}</p>
                                 {% endfor %}
@@ -89,11 +89,11 @@
 
                     <!-- Submit Button -->
                     <button type="submit" id="loginBtn"
-                    class="w-full h-12 rounded-xl bg-blue-500 text-white font-semibold text-lg
-                           hover:bg-blue-600
-                           transform hover:scale-105 active:scale-95
+                          class="w-full h-12 rounded-xl bg-blue-600 text-white font-semibold text-lg
+                              hover:bg-blue-700
+                              transform hover:scale-[1.01] active:scale-95
                            transition-all duration-200 ease-in-out
-                           shadow-lg flex items-center justify-center gap-2">
+                              shadow-xl shadow-blue-900/25 flex items-center justify-center gap-2">
                     <span id="btnText">Sign In</span>
                     <svg id="btnSpinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -102,14 +102,67 @@
                 </button>
 
                     <p class="mt-4 text-center">
-                        <button type="button" onclick="openForgotPasswordModal()" class="text-blue-900 hover:text-blue-900 hover:underline transition-colors">Forgot your password?</button>
+                        <button type="button" onclick="openForgotPasswordModal()" class="text-blue-700 hover:text-blue-800 hover:underline transition-colors">Forgot your password?</button>
                     </p>
 
-                    <p class="mt-6 text-center text-blue-100 text-blue-900">
+                    <p class="mt-6 text-center text-gray-600">
                         Don't have an account?
-                        <a href="{% url 'accounts:register' %}" class="text-black   font-semibold hover:underline">Register here</a>
+                        <a href="{% url 'accounts:register' %}" class="text-blue-700 font-semibold hover:underline">Register here</a>
                     </p>
                 </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rate Limit Modal -->
+    <div id="rateLimitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-start justify-center overflow-y-auto p-3 pt-16 sm:items-center sm:p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-blue-100 w-full max-w-[21rem] sm:max-w-lg md:max-w-xl transform transition-all scale-95 opacity-0 overflow-hidden max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col my-auto" id="rateLimitModalContent">
+            <div class="px-4 py-3.5 text-center bg-blue-600 shrink-0">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 mb-1">Security Limit</p>
+                <h2 class="text-lg font-bold text-white mb-1.5">Too Many Requests</h2>
+                <p class="mx-auto max-w-md text-xs sm:text-sm text-blue-100 leading-5">
+                    {{ rate_limit_message|default:"Too many login attempts. Please wait before trying again." }}
+                </p>
+            </div>
+
+            <div class="p-3.5 sm:p-4 overflow-y-auto">
+                <div class="grid gap-2.5 md:grid-cols-2">
+                    <div class="bg-blue-50 border border-blue-100 p-2.5 text-left rounded-xl">
+                        <p class="text-sm text-blue-900 mb-1.5 font-semibold">Why did this happen?</p>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-0.5 leading-5">
+                            <li>• Too many login attempts</li>
+                            <li>• Rapid repeated requests from the same device</li>
+                            <li>• Temporary abuse protection triggered</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 p-2.5 text-left rounded-xl">
+                        <p class="text-sm text-slate-800 mb-1.5 font-semibold">What can you do?</p>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-0.5 leading-5">
+                            <li>• Wait for the timer to finish</li>
+                            <li>• Try password reset if you forgot your password</li>
+                            <li>• Slow down repeated login attempts</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-2.5 grid gap-2.5 sm:grid-cols-[0.85fr_1.15fr] sm:items-stretch">
+                    <div class="text-center rounded-xl bg-amber-50 border border-amber-100 px-3 py-2.5 flex flex-col justify-center">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">You can try again in</p>
+                        <div id="rateLimitCountdown" class="text-xl font-bold text-slate-800 mt-1">{{ rate_limit_seconds|default:60 }}</div>
+                        <p id="rateLimitCountdownLabel" class="text-xs text-slate-500">seconds</p>
+                    </div>
+
+                    <div class="space-y-2.5 sm:flex sm:flex-col sm:justify-center">
+                        <button type="button" onclick="closeRateLimitModal()" class="block w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+                            Back to Login
+                        </button>
+                        <button type="button" onclick="closeRateLimitModal(); openForgotPasswordModal();" class="block w-full bg-white border border-blue-200 text-blue-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors">
+                            Reset Password
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -117,7 +170,6 @@
     <!-- Forgot Password Modal -->
     <div id="forgotPasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all scale-95 opacity-0" id="modalContent">
-            <!-- Modal Header -->
             <div class="bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="bg-blue-100 p-2 rounded-lg">
@@ -134,14 +186,12 @@
                 </button>
             </div>
 
-            <!-- Modal Body -->
             <div class="p-6">
                 <p class="text-gray-600 mb-6 text-sm">Enter your email address and we'll send you a link to reset your password.</p>
 
                 <form method="post" action="{% url 'accounts:password_reset' %}" id="forgotPasswordForm" class="space-y-5">
                     {% csrf_token %}
                     
-                    <!-- Email Field -->
                     <div>
                         <label for="reset_email" class="block mb-2 text-sm font-semibold text-gray-800">Email Address</label>
                         <div class="relative">
@@ -158,7 +208,6 @@
                         <p class="mt-2 text-xs text-gray-500">We'll send a reset link to this email address</p>
                     </div>
 
-                    <!-- Submit Button -->
                     <button type="submit" id="resetBtn"
                             class="w-full h-12 rounded-xl bg-blue-600 text-white font-semibold text-base
                                    hover:bg-blue-700
@@ -176,7 +225,6 @@
                         </svg>
                     </button>
 
-                    <!-- Back to Login -->
                     <p class="text-center text-sm text-gray-600 pt-2">
                         Remember your password? 
                         <button type="button" onclick="closeForgotPasswordModal()" class="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
@@ -191,7 +239,6 @@
     <!-- Success Modal -->
     <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all scale-95 opacity-0" id="successModalContent">
-            <!-- Success Header -->
             <div class="bg-blue-600 px-8 py-6 text-center rounded-t-2xl">
                 <div class="mx-auto mb-3 h-16 w-16 rounded-full bg-white flex items-center justify-center">
                     <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -201,7 +248,6 @@
                 <h1 class="text-2xl font-bold text-white">Check Your Inbox</h1>
             </div>
 
-            <!-- Success Body -->
             <div class="px-8 py-6 text-center">
                 <div class="mb-6">
                     <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-4">
@@ -214,7 +260,6 @@
                     </p>
                 </div>
 
-                <!-- Info Box -->
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                     <div class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +276,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="space-y-3">
                     <button onclick="closeSuccessModal()" 
                             class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transform hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-lg">
@@ -261,11 +305,77 @@
     66% { transform: translateY(10px) rotate(240deg); }
 }
 
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .animate-float { animation: float 6s ease-in-out infinite; }
+.login-logo-float { animation: logoFloat 5s ease-in-out infinite; }
+.login-panel { perspective: 1100px; }
+.login-card-3d {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+    animation: riseIn 0.6s ease-out both;
+}
+
+.login-card-3d::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(37, 99, 235, 0.16);
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-logo-float,
+    .login-card-3d,
+    .animate-float {
+        animation: none !important;
+        transition: none !important;
+    }
+}
 </style>
 
-{% block extra_js %}
 <script>
+let rateLimitTimer = null;
+
+const loginTiltZone = document.getElementById('loginTiltZone');
+const loginCard = document.getElementById('loginCard');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (loginTiltZone && loginCard && !reduceMotion && window.matchMedia('(hover: hover)').matches) {
+    const maxTilt = 6;
+
+    loginTiltZone.addEventListener('mousemove', function(event) {
+        const rect = loginTiltZone.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width;
+        const y = (event.clientY - rect.top) / rect.height;
+
+        const tiltY = (x - 0.5) * maxTilt;
+        const tiltX = (0.5 - y) * maxTilt;
+
+        loginCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-2px)`;
+    });
+
+    loginTiltZone.addEventListener('mouseleave', function() {
+        loginCard.style.transform = '';
+    });
+}
+
 function togglePassword(fieldId, btn) {
     const input = document.getElementById(fieldId);
     const icon = btn.querySelector('svg');
@@ -278,15 +388,92 @@ function togglePassword(fieldId, btn) {
     }
 }
 
-document.querySelector("form").addEventListener("submit", function() {
-    const btn = document.getElementById("loginBtn");
-    const btnText = document.getElementById("btnText");
-    const btnSpinner = document.getElementById("btnSpinner");
+function openRateLimitModal() {
+    const modal = document.getElementById('rateLimitModal');
+    const modalContent = document.getElementById('rateLimitModalContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeRateLimitModal() {
+    const modal = document.getElementById('rateLimitModal');
+    const modalContent = document.getElementById('rateLimitModalContent');
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+function updateRateLimitUI(seconds) {
+    const countdown = document.getElementById('rateLimitCountdown');
+    const countdownLabel = document.getElementById('rateLimitCountdownLabel');
+    const loginBtn = document.getElementById('loginBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    if (countdown) {
+        countdown.textContent = seconds;
+    }
+
+    if (seconds > 0) {
+        loginBtn.disabled = true;
+        loginBtn.dataset.rateLimited = 'true';
+        loginBtn.classList.add('opacity-70');
+        btnText.textContent = `Wait ${seconds}s`;
+        btnSpinner.classList.add('hidden');
+        if (countdownLabel) {
+            countdownLabel.textContent = 'seconds';
+        }
+    } else {
+        loginBtn.disabled = false;
+        loginBtn.dataset.rateLimited = 'false';
+        loginBtn.classList.remove('opacity-70');
+        btnText.textContent = 'Sign In';
+        if (countdownLabel) {
+            countdownLabel.textContent = 'You can try again now';
+        }
+    }
+}
+
+function startRateLimitCountdown(seconds) {
+    let remainingSeconds = parseInt(seconds, 10) || 60;
+    updateRateLimitUI(remainingSeconds);
+
+    if (rateLimitTimer) {
+        clearInterval(rateLimitTimer);
+    }
+
+    rateLimitTimer = setInterval(() => {
+        remainingSeconds -= 1;
+        updateRateLimitUI(remainingSeconds);
+
+        if (remainingSeconds <= 0) {
+            clearInterval(rateLimitTimer);
+            rateLimitTimer = null;
+        }
+    }, 1000);
+}
+
+document.getElementById('loginForm')?.addEventListener('submit', function(event) {
+    const btn = document.getElementById('loginBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    if (btn.dataset.rateLimited === 'true') {
+        event.preventDefault();
+        openRateLimitModal();
+        return;
+    }
 
     btn.disabled = true;
-    btn.classList.add("opacity-70");
-    btnText.textContent = "Signing In...";
-    btnSpinner.classList.remove("hidden");
+    btn.classList.add('opacity-70');
+    btnText.textContent = 'Signing In...';
+    btnSpinner.classList.remove('hidden');
 });
 
 // Forgot Password Modal Functions
@@ -296,7 +483,6 @@ function openForgotPasswordModal() {
     
     modal.classList.remove('hidden');
     
-    // Trigger animation after a small delay
     setTimeout(() => {
         modalContent.classList.remove('scale-95', 'opacity-0');
         modalContent.classList.add('scale-100', 'opacity-100');
@@ -312,29 +498,38 @@ function closeForgotPasswordModal() {
     
     setTimeout(() => {
         modal.classList.add('hidden');
-        // Reset form
         document.getElementById('forgotPasswordForm').reset();
     }, 200);
 }
 
-// Close modal when clicking outside
+document.getElementById('rateLimitModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRateLimitModal();
+    }
+});
+
 document.getElementById('forgotPasswordModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeForgotPasswordModal();
     }
 });
 
-// Close modal with ESC key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        const modal = document.getElementById('forgotPasswordModal');
-        if (!modal.classList.contains('hidden')) {
+        const rateLimitModal = document.getElementById('rateLimitModal');
+        const forgotModal = document.getElementById('forgotPasswordModal');
+        const successModal = document.getElementById('successModal');
+
+        if (rateLimitModal && !rateLimitModal.classList.contains('hidden')) {
+            closeRateLimitModal();
+        } else if (forgotModal && !forgotModal.classList.contains('hidden')) {
             closeForgotPasswordModal();
+        } else if (successModal && !successModal.classList.contains('hidden')) {
+            closeSuccessModal();
         }
     }
 });
 
-// Handle forgot password form submission
 const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 if (forgotPasswordForm) {
     forgotPasswordForm.addEventListener('submit', function(e) {
@@ -349,10 +544,8 @@ if (forgotPasswordForm) {
         btnText.textContent = 'Sending...';
         btnSpinner.classList.remove('hidden');
         
-        // Get form data
         const formData = new FormData(this);
         
-        // Submit form via fetch
         fetch(this.action, {
             method: 'POST',
             body: formData,
@@ -360,33 +553,25 @@ if (forgotPasswordForm) {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            // Close forgot password modal
+        .then(() => {
             closeForgotPasswordModal();
-            
-            // Show success modal
             setTimeout(() => {
                 openSuccessModal();
             }, 300);
             
-            // Reset button state
             btn.disabled = false;
             btn.classList.remove('opacity-70');
             btnText.textContent = 'Send Reset Link';
             btnSpinner.classList.add('hidden');
-            
-            // Reset form
             forgotPasswordForm.reset();
         })
         .catch(error => {
             console.error('Error:', error);
-            // Still show success modal even on error (for security)
             closeForgotPasswordModal();
             setTimeout(() => {
                 openSuccessModal();
             }, 300);
             
-            // Reset button state
             btn.disabled = false;
             btn.classList.remove('opacity-70');
             btnText.textContent = 'Send Reset Link';
@@ -395,7 +580,6 @@ if (forgotPasswordForm) {
     });
 }
 
-// Success Modal Functions
 function openSuccessModal() {
     const modal = document.getElementById('successModal');
     const modalContent = document.getElementById('successModalContent');
@@ -427,24 +611,16 @@ function closeSuccessModalAndRetry() {
     }, 300);
 }
 
-// Close success modal when clicking outside
 document.getElementById('successModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeSuccessModal();
     }
 });
 
-// Close success modal with ESC key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const successModal = document.getElementById('successModal');
-        if (!successModal.classList.contains('hidden')) {
-            closeSuccessModal();
-        }
-    }
-});
+{% if rate_limit_modal %}
+openRateLimitModal();
+startRateLimitCountdown({{ rate_limit_seconds|default:60 }});
+{% endif %}
 
 </script>
-{% endblock %}
-
 {% endblock %}

@@ -141,3 +141,103 @@ class TransactionLog(models.Model):
             description=description,
             metadata=metadata or {}
         )
+
+
+class PaymentEventLog(models.Model):
+    """Structured payment events for debugging and end-to-end tracing."""
+
+    PROVIDER_CHOICES = (
+        ('mongopay', 'MonGo Pay'),
+        ('paymongo', 'PayMongo'),
+    )
+
+    STATUS_CHOICES = (
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+    )
+
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    event_type = models.CharField(max_length=80)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='info')
+
+    request_id = models.CharField(max_length=64, blank=True, db_index=True)
+    correlation_id = models.CharField(max_length=120, blank=True, db_index=True)
+    external_event_id = models.CharField(max_length=120, blank=True)
+    payment_intent_id = models.CharField(max_length=120, blank=True)
+
+    reservation = models.ForeignKey(
+        Reservation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_events'
+    )
+    dorm = models.ForeignKey(
+        Dorm,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_events'
+    )
+    tenant = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_events'
+    )
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    message = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['provider', 'event_type', '-created_at']),
+            models.Index(fields=['reservation', '-created_at']),
+            models.Index(fields=['correlation_id', '-created_at']),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.provider}:{self.event_type}:{self.status} "
+            f"reservation={self.reservation_id or '-'} request_id={self.request_id or '-'}"
+        )
+
+    @classmethod
+    def log_event(
+        cls,
+        *,
+        provider,
+        event_type,
+        status='info',
+        request_id='',
+        correlation_id='',
+        external_event_id='',
+        payment_intent_id='',
+        reservation=None,
+        dorm=None,
+        tenant=None,
+        amount=None,
+        message='',
+        metadata=None,
+    ):
+        return cls.objects.create(
+            provider=provider,
+            event_type=event_type,
+            status=status,
+            request_id=request_id or '',
+            correlation_id=correlation_id or '',
+            external_event_id=external_event_id or '',
+            payment_intent_id=payment_intent_id or '',
+            reservation=reservation,
+            dorm=dorm,
+            tenant=tenant,
+            amount=amount,
+            message=message,
+            metadata=metadata or {},
+        )

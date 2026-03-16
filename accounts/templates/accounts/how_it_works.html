@@ -4,261 +4,417 @@
 {% block title %}How It Works - Smart Dorm Finder{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-                How It Works
-            </h1>
-            <p class="mt-5 max-w-xl mx-auto text-xl text-gray-500">
-                Your step-by-step guide to finding and booking your perfect dorm
-            </p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 how-shell">
+    <section class="relative mb-8 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl how-hero">
+        <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+            <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.08]"></div>
+            <div class="absolute inset-0 opacity-[0.07] how-hero-grid"></div>
         </div>
 
-        <!-- Step-by-step Guide -->
-        <div class="space-y-12">
-            <!-- Step 1: Browse Dorms -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex">
-                    <div class="md:flex-shrink-0 bg-blue-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">1</div>
-                            <div class="text-xl font-semibold">Browse</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Browse Available Dorms</h3>
-                        <p class="text-gray-600 mb-4">
-                            Start your journey by exploring our wide selection of dormitories. Use our advanced search and filter features to find dorms that match your preferences.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Filter by location, price range, and amenities</li>
-                            <li>View high-quality photos of each dormitory</li>
-                            <li>Check availability and room types</li>
-                            <li>Get personalized recommendations based on your preferences</li>
-                        </ul>
-                    </div>
+        <div class="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 xl:gap-10">
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                    <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Tenant Guide</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">How It Works</h1>
+                <p class="mt-3 text-cyan-100/90 text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed">
+                    Your end-to-end flow for finding, reserving, and securing the right dorm with confidence.
+                </p>
+
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <a href="{% url 'dormitory:dorm_list' %}" class="how-hero-cta inline-flex items-center px-5 py-2.5 font-semibold text-sm sm:text-base">
+                        Start Browsing Dorms
+                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </a>
+                    <a href="{% url 'accounts:dashboard' %}" class="how-hero-cta how-hero-cta--secondary inline-flex items-center px-5 py-2.5 font-semibold text-sm sm:text-base">
+                        Back to Dashboard
+                    </a>
                 </div>
             </div>
 
-            <!-- Step 2: View Details -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex md:flex-row-reverse">
-                    <div class="md:flex-shrink-0 bg-indigo-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">2</div>
-                            <div class="text-xl font-semibold">Explore</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">View Detailed Information</h3>
-                        <p class="text-gray-600 mb-4">
-                            Get comprehensive information about each dormitory to make an informed decision.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Browse through multiple photos and virtual tours</li>
-                            <li>Read detailed descriptions of amenities and facilities</li>
-                            <li>Check the exact location on interactive maps</li>
-                            <li>Read reviews and ratings from previous tenants</li>
-                            <li>View landlord profiles and verification status</li>
-                            <li>Compare different room types and their features</li>
-                        </ul>
-                    </div>
+            <div class="grid grid-cols-2 gap-3 w-full xl:w-auto xl:min-w-[300px]">
+                <div class="how-mini-stat">
+                    <p class="how-mini-stat__value">6</p>
+                    <p class="how-mini-stat__label">Simple Steps</p>
                 </div>
-            </div>
-
-            <!-- Step 3: Make Reservation -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex">
-                    <div class="md:flex-shrink-0 bg-purple-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">3</div>
-                            <div class="text-xl font-semibold">Reserve</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Make Your Reservation</h3>
-                        <p class="text-gray-600 mb-4">
-                            Found the perfect dorm? Secure your spot by making a reservation.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Select your preferred check-in and check-out dates</li>
-                            <li>Choose from available room types</li>
-                            <li>Review the total cost and payment terms</li>
-                            <li>Submit your reservation request instantly</li>
-                            <li>Receive confirmation or rejection notifications</li>
-                        </ul>
-                    </div>
+                <div class="how-mini-stat">
+                    <p class="how-mini-stat__value">24h</p>
+                    <p class="how-mini-stat__label">Payment Window</p>
                 </div>
-            </div>
-
-            <!-- Step 4: Payment Process -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex md:flex-row-reverse">
-                    <div class="md:flex-shrink-0 bg-green-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">4</div>
-                            <div class="text-xl font-semibold">Pay</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Complete Payment</h3>
-                        <p class="text-gray-600 mb-4">
-                            Once your reservation is approved by the landlord, complete the payment to confirm your booking.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Receive payment instructions and deadline</li>
-                            <li>Pay securely via GCash using the provided QR code</li>
-                            <li>Upload your payment proof for verification</li>
-                            <li>Get instant confirmation once payment is verified</li>
-                            <li>Access your booking details and receipt</li>
-                        </ul>
-                        <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400">
-                            <p class="text-sm text-yellow-700">
-                                <strong>Important:</strong> Complete your payment within 24 hours of reservation approval to avoid automatic cancellation.
-                            </p>
-                        </div>
-                    </div>
+                <div class="how-mini-stat">
+                    <p class="how-mini-stat__value">Live</p>
+                    <p class="how-mini-stat__label">Chat Support</p>
                 </div>
-            </div>
-
-            <!-- Step 5: Communication -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex">
-                    <div class="md:flex-shrink-0 bg-pink-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">5</div>
-                            <div class="text-xl font-semibold">Chat</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Communicate with Landlords</h3>
-                        <p class="text-gray-600 mb-4">
-                            Stay connected with your landlord through our built-in messaging system.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Send direct messages to landlords</li>
-                            <li>Ask questions about the dormitory or policies</li>
-                            <li>Share important documents or images</li>
-                            <li>Discuss move-in details and arrangements</li>
-                            <li>Get real-time notifications for new messages</li>
-                            <li>Maintain conversation history for reference</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 6: Leave Reviews -->
-            <div class="bg-white rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition duration-300">
-                <div class="md:flex md:flex-row-reverse">
-                    <div class="md:flex-shrink-0 bg-orange-600 flex items-center justify-center p-8">
-                        <div class="text-white text-center">
-                            <div class="text-6xl font-bold mb-2">6</div>
-                            <div class="text-xl font-semibold">Review</div>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Share Your Experience</h3>
-                        <p class="text-gray-600 mb-4">
-                            Help future tenants by sharing your honest feedback and experience.
-                        </p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-2">
-                            <li>Rate your overall experience (1-5 stars)</li>
-                            <li>Write detailed reviews about the dormitory</li>
-                            <li>Share feedback about cleanliness, facilities, and location</li>
-                            <li>Comment on the landlord's responsiveness</li>
-                            <li>Help maintain community transparency and trust</li>
-                            <li>Earn reputation points for helpful reviews</li>
-                        </ul>
-                    </div>
+                <div class="how-mini-stat">
+                    <p class="how-mini-stat__value">Verified</p>
+                    <p class="how-mini-stat__label">Landlords</p>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Additional Tips Section -->
-        <div class="mt-16 bg-white rounded-lg shadow-xl p-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">Helpful Tips</h2>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Book Early:</strong> Popular dorms fill up quickly, especially before the start of the semester.
-                    </p>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Read Reviews:</strong> Check what other tenants say about their experiences.
-                    </p>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Ask Questions:</strong> Don't hesitate to message landlords for clarifications.
-                    </p>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Verify Details:</strong> Look for verified landlords with complete documentation.
-                    </p>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Check Location:</strong> Consider proximity to your school and transportation.
-                    </p>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-gray-600">
-                        <strong class="text-gray-900">Pay on Time:</strong> Complete payment within 24 hours to secure your booking.
-                    </p>
-                </div>
+    <section class="how-surface rounded-2xl p-5 sm:p-6 mb-8 shadow-lg">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Complete Booking Journey</h2>
+                <p class="text-slate-600 mt-1">Follow each step to move from discovery to confirmed stay.</p>
+            </div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-[0.14em]">
+                Smart Dorm Finder Flow
             </div>
         </div>
+    </section>
 
-        <!-- Call to Action -->
-        <div class="mt-12 text-center">
-            <a href="{% url 'dormitory:dorm_list' %}" class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                Start Browsing Dorms
-                <svg class="ml-2 -mr-1 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <article class="how-step-card" style="--step-accent:#2563eb;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 1</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Browse Available Dorms</h3>
+                </div>
+                <span class="how-step-tag">Browse</span>
+            </div>
+            <p class="text-slate-600 mb-4">Start your journey by exploring dormitories that match your goals and lifestyle.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Filter by location, price range, and amenities</li>
+                <li>View high-quality photos of each dormitory</li>
+                <li>Check availability and room types</li>
+                <li>Get personalized recommendations based on your preferences</li>
+            </ul>
+        </article>
+
+        <article class="how-step-card" style="--step-accent:#0284c7;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 2</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">View Detailed Information</h3>
+                </div>
+                <span class="how-step-tag">Explore</span>
+            </div>
+            <p class="text-slate-600 mb-4">Review complete details to compare options and make an informed choice.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Browse through multiple photos and virtual tours</li>
+                <li>Read descriptions of amenities and facilities</li>
+                <li>Check exact location on interactive maps</li>
+                <li>Read tenant reviews and ratings</li>
+                <li>View landlord profiles and verification status</li>
+                <li>Compare room types and included features</li>
+            </ul>
+        </article>
+
+        <article class="how-step-card" style="--step-accent:#0891b2;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 3</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Make Your Reservation</h3>
+                </div>
+                <span class="how-step-tag">Reserve</span>
+            </div>
+            <p class="text-slate-600 mb-4">When you find the right dorm, send your reservation request in minutes.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Select your preferred check-in and check-out dates</li>
+                <li>Choose from available room types</li>
+                <li>Review total cost and payment terms</li>
+                <li>Submit your reservation request instantly</li>
+                <li>Receive confirmation or rejection notifications</li>
+            </ul>
+        </article>
+
+        <article class="how-step-card" style="--step-accent:#0f766e;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 4</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Complete Payment</h3>
+                </div>
+                <span class="how-step-tag">Pay</span>
+            </div>
+            <p class="text-slate-600 mb-4">After landlord approval, complete payment to finalize your booking.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Receive payment instructions and deadline</li>
+                <li>Pay securely via GCash using the provided QR code</li>
+                <li>Upload your payment proof for verification</li>
+                <li>Get confirmation once payment is verified</li>
+                <li>Access booking details and receipt</li>
+            </ul>
+            <div class="how-note mt-4">
+                <p><strong>Important:</strong> Complete payment within 24 hours of reservation approval to avoid automatic cancellation.</p>
+            </div>
+        </article>
+
+        <article class="how-step-card" style="--step-accent:#14b8a6;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 5</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Communicate with Landlords</h3>
+                </div>
+                <span class="how-step-tag">Chat</span>
+            </div>
+            <p class="text-slate-600 mb-4">Use built-in messaging to coordinate and stay updated in real time.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Send direct messages to landlords</li>
+                <li>Ask questions about the dormitory or policies</li>
+                <li>Share important documents or images</li>
+                <li>Discuss move-in details and arrangements</li>
+                <li>Get real-time notifications for new messages</li>
+                <li>Keep conversation history for reference</li>
+            </ul>
+        </article>
+
+        <article class="how-step-card" style="--step-accent:#0ea5e9;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="how-step-number">Step 6</span>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Share Your Experience</h3>
+                </div>
+                <span class="how-step-tag">Review</span>
+            </div>
+            <p class="text-slate-600 mb-4">Help future tenants by posting accurate and useful feedback.</p>
+            <ul class="how-step-list space-y-2">
+                <li>Rate your overall experience (1-5 stars)</li>
+                <li>Write detailed reviews about the dormitory</li>
+                <li>Share feedback about cleanliness, facilities, and location</li>
+                <li>Comment on landlord responsiveness</li>
+                <li>Support community transparency and trust</li>
+                <li>Earn reputation points for helpful reviews</li>
+            </ul>
+        </article>
+    </section>
+
+    <section class="mt-10 how-surface rounded-2xl p-6 sm:p-8 shadow-lg">
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 text-center">Helpful Tips</h2>
+        <p class="text-center text-slate-600 mt-2">Use these practical tips to avoid delays and secure the best dorm option.</p>
+
+        <div class="grid md:grid-cols-2 gap-4 mt-6">
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-            </a>
+                <p><strong>Book Early:</strong> Popular dorms fill quickly, especially before semester opening.</p>
+            </div>
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p><strong>Read Reviews:</strong> Learn from previous tenants before committing.</p>
+            </div>
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p><strong>Ask Questions:</strong> Message landlords to clarify house rules and inclusions.</p>
+            </div>
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p><strong>Verify Details:</strong> Prioritize verified landlords with complete documents.</p>
+            </div>
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p><strong>Check Location:</strong> Consider distance to school and transportation access.</p>
+            </div>
+            <div class="how-tip-item">
+                <svg class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p><strong>Pay on Time:</strong> Complete payment within 24 hours to secure your booking.</p>
+            </div>
         </div>
+    </section>
 
-        <!-- Back to Dashboard Link -->
-        <div class="mt-6 text-center">
-            <a href="{% url 'accounts:dashboard' %}" class="text-blue-600 hover:text-blue-800 font-medium">
-                ← Back to Dashboard
-            </a>
-        </div>
+    <div class="mt-8 flex justify-center">
+        <a href="{% url 'dormitory:dorm_list' %}" class="how-primary-btn inline-flex items-center px-8 py-3.5 font-semibold text-base">
+            Start Browsing Dorms
+            <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            </svg>
+        </a>
     </div>
 </div>
+
+<style>
+.how-shell {
+    background:
+        radial-gradient(560px 240px at 102% -35px, rgba(59, 130, 246, 0.14), transparent 60%),
+        radial-gradient(420px 200px at -8% 18%, rgba(14, 165, 233, 0.12), transparent 58%);
+}
+
+.how-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.how-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.how-hero-cta {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(12, 61, 107, 0.2);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.how-hero-cta:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.how-hero-cta--secondary {
+    background: rgba(8, 145, 178, 0.18);
+}
+
+.how-mini-stat {
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+    padding: 0.85rem 0.9rem;
+}
+
+.how-mini-stat__value {
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.how-mini-stat__label {
+    color: #bae6fd;
+    font-size: 0.72rem;
+    margin-top: 0.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.how-surface {
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.1);
+}
+
+.how-step-card {
+    --step-accent: #0891b2;
+    position: relative;
+    border-radius: 1rem;
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 1.5rem;
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.09);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.how-step-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 1rem 0 0 1rem;
+    background: var(--step-accent);
+}
+
+.how-step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 30px rgba(21, 101, 192, 0.15);
+    border-color: #93c5fd;
+}
+
+.how-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.how-step-tag {
+    border-radius: 999px;
+    border: 1px solid var(--step-accent);
+    color: var(--step-accent);
+    background: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.62rem;
+}
+
+.how-step-list li {
+    position: relative;
+    padding-left: 1.15rem;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.how-step-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.53rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--step-accent);
+}
+
+.how-note {
+    border-left: 4px solid #eab308;
+    background: #fffbeb;
+    color: #92400e;
+    border-radius: 0.45rem;
+    padding: 0.8rem 0.9rem;
+    font-size: 0.88rem;
+}
+
+.how-tip-item {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    border: 1px solid #dbeafe;
+    border-radius: 0.8rem;
+    background: #ffffff;
+    padding: 0.9rem 1rem;
+    color: #475569;
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.06);
+}
+
+.how-tip-item strong {
+    color: #0f172a;
+}
+
+.how-primary-btn {
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 22px rgba(21, 101, 192, 0.24);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.how-primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(21, 101, 192, 0.3);
+    color: #ffffff;
+}
+</style>
 {% endblock %}

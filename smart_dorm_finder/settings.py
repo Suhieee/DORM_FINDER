@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+import logging
+import importlib
 from django.core.exceptions import ImproperlyConfigured
 
 # Load environment variables from .env file (optional)
@@ -87,6 +89,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'  # Redirect to login page after logout
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'smart_dorm_finder.middleware.RequestIDMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -328,9 +331,14 @@ GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash')  # Stable free
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'request_id': {
+            '()': 'smart_dorm_finder.observability.RequestIDLogFilter',
+        },
+    },
     'formatters': {
         'verbose': {
-            'format': '[{levelname}] {asctime} {module} {message}',
+            'format': '[{levelname}] {asctime} request_id={request_id} {module} {message}',
             'style': '{',
         },
     },
@@ -338,6 +346,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['request_id'],
         },
     },
     'root': {
@@ -357,3 +366,31 @@ LOGGING = {
         },
     },
 }
+
+# Sentry observability (optional)
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
+SENTRY_ENVIRONMENT = os.environ.get('SENTRY_ENVIRONMENT', 'development' if DEBUG else 'production').strip()
+SENTRY_TRACES_SAMPLE_RATE = float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.0'))
+
+if SENTRY_DSN:
+    try:
+        sentry_sdk = importlib.import_module('sentry_sdk')
+        django_integration_mod = importlib.import_module('sentry_sdk.integrations.django')
+        logging_integration_mod = importlib.import_module('sentry_sdk.integrations.logging')
+        django_integration = django_integration_mod.DjangoIntegration
+        logging_integration = logging_integration_mod.LoggingIntegration
+
+        sentry_logging = logging_integration(
+            level=logging.INFO,
+            event_level=logging.ERROR,
+        )
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[django_integration(), sentry_logging],
+            environment=SENTRY_ENVIRONMENT,
+            traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+            send_default_pii=False,
+        )
+    except ImportError:
+        print('⚠️ SENTRY_DSN is set but sentry-sdk is not installed.')

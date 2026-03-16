@@ -15,10 +15,9 @@
     </button>
 
     <!-- Floating Messages Panel -->
-    <div id="floating-messages-panel" class="floating-messag
-    es-panel hidden">
+    <div id="floating-messages-panel" class="floating-messages-panel hidden">
         <!-- Conversations List View -->
-        <div id="conversations-view" class="conversations-view">
+        <div id="conversations-view" class="floating-conversations-view">
             <div class="floating-messages-header">
                 <div class="flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,7 +67,7 @@
         </div>
 
         <!-- Chat View -->
-        <div id="chat-view" class="chat-view hidden">
+        <div id="chat-view" class="floating-chat-view hidden">
             <!-- Chat Header -->
             <div class="floating-messages-header">
                 <button id="back-to-conversations" class="text-white hover:text-gray-200 transition mr-2">
@@ -89,14 +88,14 @@
             </div>
 
             <!-- Messages Container -->
-            <div id="chat-messages-container" class="chat-messages-container">
+            <div id="chat-messages-container" class="floating-chat-messages-container">
                 <div class="flex items-center justify-center h-full text-gray-400">
                     <p class="text-sm">No messages yet. Start the conversation!</p>
                 </div>
             </div>
 
             <!-- Message Input -->
-            <div class="chat-input-container">
+            <div class="floating-chat-input-container">
                 <form id="send-message-form" class="flex items-end gap-2">
                     {% csrf_token %}
                     <input type="hidden" id="chat-match-id" name="match_id">
@@ -283,18 +282,18 @@
 }
 
 /* Chat View Styles */
-.conversations-view, .chat-view {
+.floating-conversations-view, .floating-chat-view {
     display: flex;
     flex-direction: column;
     height: 100%;
     max-height: 100%;
 }
 
-.conversations-view.hidden, .chat-view.hidden {
+.floating-conversations-view.hidden, .floating-chat-view.hidden {
     display: none !important;
 }
 
-.chat-messages-container {
+.floating-chat-messages-container {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -304,36 +303,36 @@
     -webkit-overflow-scrolling: touch;
 }
 
-.chat-messages-container::-webkit-scrollbar {
+.floating-chat-messages-container::-webkit-scrollbar {
     width: 6px;
 }
 
-.chat-messages-container::-webkit-scrollbar-track {
+.floating-chat-messages-container::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.chat-messages-container::-webkit-scrollbar-thumb {
+.floating-chat-messages-container::-webkit-scrollbar-thumb {
     background: #cbd5e0;
     border-radius: 10px;
 }
 
-.chat-messages-container::-webkit-scrollbar-thumb:hover {
+.floating-chat-messages-container::-webkit-scrollbar-thumb:hover {
     background: #a0aec0;
 }
 
 @media (max-width: 640px) {
-    .chat-messages-container {
+    .floating-chat-messages-container {
         padding: 16px;
     }
 }
 
 @media (max-width: 480px) {
-    .chat-messages-container {
+    .floating-chat-messages-container {
         padding: 12px;
     }
 }
 
-.chat-input-container {
+.floating-chat-input-container {
     position: relative;
     padding: 16px 20px;
     background: white;
@@ -379,21 +378,21 @@
     }
 }
 
-.message-bubble {
+.floating-message-bubble {
     max-width: 80%;
     margin-bottom: 16px;
     animation: slideInMessage 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @media (max-width: 640px) {
-    .message-bubble {
+    .floating-message-bubble {
         max-width: 85%;
         margin-bottom: 12px;
     }
 }
 
 @media (max-width: 480px) {
-    .message-bubble {
+    .floating-message-bubble {
         max-width: 90%;
         margin-bottom: 10px;
     }
@@ -410,26 +409,26 @@
     }
 }
 
-.message-bubble.sent {
+.floating-message-bubble.sent {
     margin-left: auto;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
 }
 
-.message-bubble.sent .message-content {
+.floating-message-bubble.sent .message-content {
     background: #2563eb;
     color: white;
     border-radius: 20px 20px 4px 20px;
 }
 
-.message-bubble.received {
+.floating-message-bubble.received {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
 
-.message-bubble.received .message-content {
+.floating-message-bubble.received .message-content {
     background: white;
     color: #2d3748;
     border-radius: 20px 20px 20px 4px;
@@ -613,7 +612,7 @@
         padding: 14px 16px;
     }
     
-    .chat-input-container {
+    .floating-chat-input-container {
         padding: 12px 16px;
     }
 }
@@ -637,7 +636,7 @@
         right: 1rem;
     }
     
-    .chat-messages-container {
+    .floating-chat-messages-container {
         padding: 16px;
     }
 }
@@ -670,7 +669,7 @@
         height: 44px;
     }
     
-    .chat-messages-container {
+    .floating-chat-messages-container {
         padding: 12px;
     }
     
@@ -678,7 +677,7 @@
         padding: 12px 14px;
     }
     
-    .chat-input-container {
+    .floating-chat-input-container {
         padding: 10px 12px;
     }
 }
@@ -754,15 +753,53 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPartnerName = '';
     let messageRefreshInterval = null;
 
-    // Handle window resize to hide backdrop on larger screens
-    window.addEventListener('resize', function() {
-        if (window.innerWidth >= 768 && backdrop && !backdrop.classList.contains('hidden')) {
+    function showMobileBackdrop() {
+        if (!backdrop) {
+            return;
+        }
+
+        if (window.innerWidth < 768) {
+            backdrop.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+            });
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function hideMobileBackdrop() {
+        if (backdrop) {
             backdrop.classList.remove('opacity-100');
             backdrop.classList.add('opacity-0');
             setTimeout(() => {
-                backdrop.classList.add('hidden');
+                if (!messagesPanel.classList.contains('show')) {
+                    backdrop.classList.add('hidden');
+                }
             }, 300);
-            document.body.style.overflow = '';
+        }
+
+        document.body.style.overflow = '';
+    }
+
+    function openMessagesPanel() {
+        if (!messagesPanel) {
+            return;
+        }
+
+        messagesPanel.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            messagesPanel.classList.add('show');
+        });
+        showMobileBackdrop();
+    }
+
+    // Handle window resize to hide backdrop on larger screens
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768 && backdrop && !backdrop.classList.contains('hidden')) {
+            hideMobileBackdrop();
         }
     });
 
@@ -771,20 +808,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleBtn.addEventListener('click', function() {
             const isHidden = messagesPanel.classList.contains('hidden');
             if (isHidden) {
-                // Open panel
-                messagesPanel.classList.remove('hidden');
-                messagesPanel.classList.add('show');
-                
-                // Show backdrop on mobile
-                if (window.innerWidth < 768 && backdrop) {
-                    backdrop.classList.remove('hidden');
-                    setTimeout(() => {
-                        backdrop.classList.remove('opacity-0');
-                        backdrop.classList.add('opacity-100');
-                    }, 10);
-                    document.body.style.overflow = 'hidden';
-                }
-                
+                openMessagesPanel();
                 showConversationsView();
                 loadConversations();
             } else {
@@ -795,20 +819,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Close floating messages
     function closeMessagesPanel() {
-        messagesPanel.classList.remove('show');
-        messagesPanel.classList.add('hidden');
-        
-        // Hide backdrop
-        if (backdrop) {
-            backdrop.classList.remove('opacity-100');
-            backdrop.classList.add('opacity-0');
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+        if (!messagesPanel || messagesPanel.classList.contains('hidden')) {
+            return;
         }
-        
-        // Restore body scroll
-        document.body.style.overflow = '';
+
+        messagesPanel.classList.remove('show');
+        setTimeout(() => {
+            if (!messagesPanel.classList.contains('show')) {
+                messagesPanel.classList.add('hidden');
+            }
+        }, 300);
+
+        hideMobileBackdrop();
         stopMessageRefresh();
     }
 
@@ -913,7 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make openFloatingChat available globally for match cards
     window.openFloatingChat = function(matchId, partnerName, partnerImage) {
-        messagesPanel.classList.remove('hidden');
+        openMessagesPanel();
         showChatView(matchId, partnerName, partnerImage);
     };
 
@@ -1087,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? 'bg-blue-600 text-white rounded-l-2xl rounded-tr-2xl' 
             : 'bg-white text-gray-800 rounded-r-2xl rounded-tl-2xl border border-gray-200';
         
-        let messageHTML = `<div class="message-bubble inline-block max-w-[75%] px-4 py-3 shadow-md ${bubbleClass}">`;
+        let messageHTML = `<div class="floating-message-bubble inline-block max-w-[75%] px-4 py-3 shadow-md ${bubbleClass}">`;
         
         if (message.image_url) {
             messageHTML += `<img src="${message.image_url}" class="rounded-lg mb-2 max-w-full h-auto" alt="Image" style="max-height: 200px;">`;

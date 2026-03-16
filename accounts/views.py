@@ -40,7 +40,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q, DecimalField
 import logging
 from django_ratelimit.decorators import ratelimit
-from django_ratelimit.exceptions import Ratelimited
 
 
 class RegisterChoiceView(TemplateView):
@@ -303,12 +302,13 @@ class RegisterView(CreateView):
         return super().form_invalid(form)
 
 # ✅ Login View (CBV)
-@method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True), name='post')
+# Keep this non-blocking so request.limited can trigger modal rendering in post().
 @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=False), name='post')
 class LoginView(FormView):
     form_class = AuthenticationForm
     template_name = "accounts/login.html"
     success_url = reverse_lazy("accounts:dashboard")
+    rate_limit_seconds = 60
 
     def get_success_url(self):
         """Redirect to next parameter if provided, otherwise to dashboard."""
@@ -320,10 +320,16 @@ class LoginView(FormView):
     def post(self, request, *args, **kwargs):
         """Handle POST requests with rate limit check."""
         if getattr(request, 'limited', False):
-            messages.error(request, "Too many login attempts. Please wait a minute before trying again.")
-            return render(request, '429.html', {
-                'error_message': 'Too many login attempts. Please wait before trying again.'
-            }, status=429)
+            form = self.get_form()
+            context = self.get_context_data(
+                form=form,
+                rate_limit_modal=True,
+                rate_limit_seconds=self.rate_limit_seconds,
+                rate_limit_message='Too many login attempts. Please wait before trying again.'
+            )
+            response = self.render_to_response(context, status=429)
+            response['Retry-After'] = str(self.rate_limit_seconds)
+            return response
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -1498,6 +1504,12 @@ class ReportUserView(LoginRequiredMixin, CreateView):
         report = form.save(commit=False)
         report.reporter = self.request.user
         report.reported_user = reported_user
+
+        # Keep image uploads reliable for both regular and AJAX modal submissions.
+        uploaded_image = self.request.FILES.get('evidence_image')
+        if uploaded_image and not report.evidence_image:
+            report.evidence_image = uploaded_image
+
         report.save()
         # Notify admins about the report
         admins = CustomUser.objects.filter(user_type='admin')

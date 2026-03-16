@@ -33,22 +33,12 @@
     {% endfor %}
 </div>
 {% endif %}
-
-<!-- Quick Stats Bar -->
-<div class="bg-gradient-to-r from-blue-600 to-blue-700 py-4 px-4">
-    <div class="max-w-3xl mx-auto grid grid-cols-3 gap-4 text-center text-white">
-        <div><div class="text-xl font-bold">{{ page_obj.paginator.count|default:"0" }}</div><div class="text-xs opacity-80">Total Dorms</div></div>
-        <div><div class="text-xl font-bold">{{ amenities.count|default:"0" }}</div><div class="text-xs opacity-80">Amenities</div></div>
-        <div><div class="text-xl font-bold">100%</div><div class="text-xs opacity-80">Verified</div></div>
-    </div>
-</div>
-
 <!-- Search Section -->
-<div class="py-10 px-4">
-    <div class="max-w-3xl mx-auto">
+<div class="public-browse-search py-10 px-4">
+    <div class="max-w-6xl mx-auto">
         <div class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold text-blue-900">Find Your Dormitory</h1>
-            <p class="text-blue-500 mt-2">Search for the perfect dorm</p>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-blue-900 tracking-tight">Find Your Next Dorm in Minutes</h1>
+            <p class="text-blue-600/80 mt-2">Smart filters, verified listings, and fast comparisons.</p>
         </div>
 
         <form method="get" id="filterForm">
@@ -336,7 +326,7 @@ function clearPaymentTerms() {
 </script>
 
 <!-- Main Content -->
-<div class="w-full">
+<div class="w-full public-browse-results">
     <!-- Filter Section (handled by search section above) -->
     <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden" style="display:none">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -587,11 +577,11 @@ function clearPaymentTerms() {
     </div>
 
     <!-- Dorms Grid -->
-    <div id="dormsGrid" class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-8">
+    <div id="dormsGrid" class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
         {% for dorm in dorms %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
+        <div class="browse-dorm-card bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
             <!-- Dorm Image with Slider -->
-            <div class="relative h-48 bg-gray-200">
+            <div class="browse-dorm-media relative h-48 bg-gray-200">
                 {% if dorm.images.all %}
                 <div id="carousel-{{ dorm.id }}" class="h-48" data-carousel="slide">
                     <div class="h-48 rounded-t-lg">
@@ -633,9 +623,9 @@ function clearPaymentTerms() {
                 </div>
                 {% endif %}
 
-                <!-- Accommodation Type Badge -->
-              <div class="absolute top-3 left-5 right-5 z-50">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-600 text-white{% else %}bg-green-600 text-white{% endif %}">
+                                <!-- Accommodation Type Badge -->
+                            <div class="absolute top-3 left-5 right-5 z-30">
+                    <span class="browse-accommodation-badge px-2.5 py-1 text-xs font-semibold rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-sky-600 text-white{% else %}bg-green-600 text-white{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
                 </div>
@@ -668,7 +658,7 @@ function clearPaymentTerms() {
                     {% endif %}
                 </div>
 
-                <p class="text-sm text-gray-600 mb-3">{{ dorm.address }}</p>
+                <p class="text-sm text-slate-600 mb-3 line-clamp-2" title="{{ dorm.address }}">{{ dorm.address|truncatechars:58 }}</p>
 
                 <div class="flex items-center mb-3">
                     {% for i in "12345" %}
@@ -689,7 +679,7 @@ function clearPaymentTerms() {
                 </div>
 
                 <div class="flex justify-between items-center mb-4">
-                    <p class="text-base font-bold text-blue-600">₱{{ dorm.price }}/month</p>
+                    <p class="browse-price text-base font-bold text-blue-600">₱{{ dorm.price }}/month</p>
                     <div class="flex items-center text-sm text-gray-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -719,8 +709,8 @@ function clearPaymentTerms() {
 
                 <!-- Action Buttons -->
                 <div class="flex justify-end">
-                    <a href="{% url 'dormitory:public_dorm_detail' dorm.pk %}" 
-                       class="inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
+                          <a href="{% url 'dormitory:public_dorm_detail' dorm.pk %}" 
+                              class="browse-card-action inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
                 </div>
             </div>
         </div>
@@ -803,7 +793,7 @@ function setViewMode(mode) {
         gridView.className = 'p-2 rounded-lg bg-blue-100 text-blue-600';
         listView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
         mapView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
-        dormsGrid.className = 'w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-8';
+        dormsGrid.className = 'w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8';
         mapContainer.classList.add('hidden');
     } else if (mode === 'list') {
         gridView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
@@ -906,7 +896,7 @@ function initializeMap() {
                     </div>
                     <div class="mt-2">
                         <button onclick="showRouteFromDormToSchools(${dorm.latitude}, ${dorm.longitude}, '${dorm.name.replace(/'/g, "\\'")}')" 
-                                class="w-full bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors">
+                            class="w-full bg-blue-700 text-white px-3 py-1 rounded text-sm hover:bg-blue-800 transition-colors">
                             Route to Schools
                         </button>
                     </div>
@@ -1674,6 +1664,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
 }
 
 .line-clamp-2 {
@@ -1681,12 +1672,95 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 /* Message Animation */
 #message-container > div {
     opacity: 1;
     transition: opacity 0.3s ease-in-out;
+}
+
+.public-browse-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    margin: 0 1rem;
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.public-browse-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.65) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.08;
+    pointer-events: none;
+}
+
+.public-browse-search {
+    background: radial-gradient(420px 160px at 0% 0%, rgba(59, 130, 246, 0.10), transparent 60%);
+}
+
+.public-browse-search input[type='text'] {
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.10);
+}
+
+.browse-dorm-card {
+    position: relative;
+    border: 1px solid rgba(8, 145, 178, 0.18);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(247, 252, 255, 0.99) 100%);
+}
+
+.browse-dorm-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    z-index: 10;
+}
+
+.browse-dorm-media {
+    background: radial-gradient(circle at 14% 20%, rgba(186, 230, 253, 0.8), rgba(224, 242, 254, 0.62) 45%, rgba(239, 246, 255, 0.82));
+}
+
+.browse-accommodation-badge {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.browse-price {
+    color: #0c4a6e;
+    font-weight: 800;
+}
+
+.browse-card-action {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 0.38rem 1rem;
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 18px rgba(21, 101, 192, 0.26);
+}
+
+.browse-card-action:hover {
+    background: linear-gradient(135deg, #0a2f52 0%, #1253a4 55%, #0b7f9b 100%);
+    box-shadow: 0 12px 22px rgba(12, 61, 107, 0.34);
+}
+
+#pillRow {
+    position: relative;
+    z-index: 40;
+}
+
+#pillRow .pill-panel {
+    z-index: 40;
 }
 </style>
 

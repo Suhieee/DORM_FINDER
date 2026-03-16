@@ -23,20 +23,36 @@
 </div>
 {% endif %}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 admin-dashboard-shell">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div class="relative mb-8 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl admin-hero">
+        <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+            <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+            <div class="absolute inset-0 opacity-[0.07] admin-hero-grid"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p class="mt-2 text-sm text-gray-600">Manage your dormitory system from one place</p>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                    <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Admin Control Center</span>
+                </div>
+                <h1 class="text-3xl font-bold text-white">Admin Dashboard</h1>
+                <p class="mt-2 text-cyan-100/85 text-sm md:text-base">Manage your dormitory system from one place</p>
             </div>
-            <div class="mt-4 sm:mt-0">
-                <a href="{% url 'accounts:create_admin' %}" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm hover:shadow-md transition-all duration-200">
+            <div class="mt-2 sm:mt-0 flex flex-wrap items-center gap-3">
+                <a href="{% url 'accounts:create_admin' %}" class="admin-hero-cta inline-flex items-center px-6 py-3 font-medium shadow-sm hover:shadow-md transition-all duration-200">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                     </svg>
                     Create New Admin
+                </a>
+                <a href="{% url 'dormitory:payment_observability_dashboard' %}" class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 bg-white/10 text-white font-medium backdrop-blur-sm shadow-sm hover:bg-white/20 hover:shadow-md transition-all duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 13l3-3 3 2 4-5"></path>
+                    </svg>
+                    Payment Observability
                 </a>
             </div>
         </div>
@@ -47,7 +63,7 @@
     <h2 class="text-xl font-semibold text-gray-900 mb-6">System Overview</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8" id="stats-cards">
         <!-- Total Users -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+        <div class="admin-metric-card admin-metric-card--users p-6 hover:shadow-lg transition-shadow duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Users</p>
@@ -64,7 +80,7 @@
         </div>
 
         <!-- Total Landlords -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+        <div class="admin-metric-card admin-metric-card--landlords p-6 hover:shadow-lg transition-shadow duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Landlords</p>
@@ -81,7 +97,7 @@
         </div>
 
         <!-- Total Reviews -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+        <div class="admin-metric-card admin-metric-card--reviews p-6 hover:shadow-lg transition-shadow duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Reviews</p>
@@ -98,7 +114,7 @@
         </div>
 
         <!-- Total Dorms -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+        <div class="admin-metric-card admin-metric-card--dorms p-6 hover:shadow-lg transition-shadow duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Dorms</p>
@@ -115,7 +131,7 @@
         </div>
 
         <!-- Pending Reports -->
-        <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+        <div class="admin-metric-card admin-metric-card--reports p-6 hover:shadow-lg transition-shadow duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Pending Reports</p>
@@ -133,9 +149,9 @@
     </div>
 
     <!-- Tabs Section -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-8">
+    <div class="admin-surface rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-8">
         <!-- Tab Navigation -->
-        <div class="border-b border-gray-200 bg-gray-50 overflow-x-auto">
+        <div class="border-b border-sky-100/80 admin-tabs-nav overflow-x-auto">
             <nav class="flex space-x-1 sm:space-x-2 px-4 sm:px-6 min-w-max sm:min-w-0">
                 <button onclick="switchDashboardTab('analytics')" id="tab-analytics" class="tab-button px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-blue-600 border-b-2 border-blue-600 hover:text-blue-700 hover:border-blue-700 transition-colors whitespace-nowrap">
                     <div class="flex items-center gap-1 sm:gap-2">
@@ -161,17 +177,17 @@
             <!-- Analytics Tab Content -->
             <div id="content-analytics" class="tab-content">
                 <!-- Analytics Charts -->
-                <div class="bg-white border border-gray-200 rounded-xl p-8 mb-8">
+                <div class="admin-card rounded-xl p-8 mb-8">
                     <h3 class="text-lg font-semibold mb-6 text-gray-900">User & Dorm Registrations</h3>
                     <canvas id="dashboardChart" height="100"></canvas>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white border border-gray-200 rounded-xl p-8">
+                    <div class="admin-card rounded-xl p-8">
                         <h3 class="text-lg font-semibold mb-6 text-gray-900">Dorm Approval Rates</h3>
                         <canvas id="dormApprovalBarChart" height="120"></canvas>
                     </div>
-                    <div class="bg-white border border-gray-200 rounded-xl p-8">
+                    <div class="admin-card rounded-xl p-8">
                         <h3 class="text-lg font-semibold mb-6 text-gray-900 text-center">Active vs. Inactive Users</h3>
                         <div class="flex justify-center">
                             <canvas id="userStatusPieChart" height="120" style="max-width:300px;"></canvas>
@@ -185,21 +201,21 @@
                 <!-- Pending Dorm Listings Section -->
                 <div class="mb-6">
                     <!-- Header Section -->
-                    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-black text-center py-4 rounded-2xl mb-8 shadow-lg">
+                    <div class="admin-pending-hero text-center py-4 rounded-2xl mb-8 shadow-lg">
                         <div class="flex items-center justify-center space-x-3">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <h2 class="text-2xl font-bold text-blue-500 tracking-tight">Pending Dorm Listings</h2>
+                            <h2 class="text-2xl font-bold text-white tracking-tight">Pending Dorm Listings</h2>
                         </div>
-                        <p class="text-blue-500 mt-2 text-sm">Awaiting administrator review and approval</p>
+                        <p class="text-cyan-100/90 mt-2 text-sm">Awaiting administrator review and approval</p>
                     </div>
                 
                     <!-- Dorm Listings Grid -->
                     {% if pending_dorms %}
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {% for dorm in pending_dorms %}
-                        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group hover:border-blue-200">
+                        <div class="admin-card rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group hover:border-blue-200">
                             <!-- Content Section -->
                             <div class="flex-grow">
                                 <!-- Header with name and status -->
@@ -248,8 +264,8 @@
                             
                             <!-- Action Button -->
                             <div class="mt-6 pt-4 border-t border-gray-100">
-                                <a href="{% url 'accounts:review_dorm' dorm.id %}" 
-                                   class="flex items-center justify-center w-full bg-blue-700 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform group-hover:scale-[1.02] shadow-sm hover:shadow-md">
+                                          <a href="{% url 'accounts:review_dorm' dorm.id %}" 
+                                              class="admin-action-btn flex items-center justify-center w-full font-medium py-3 px-4 rounded-xl transition-all duration-200 transform group-hover:scale-[1.02] shadow-sm hover:shadow-md">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -492,5 +508,95 @@
         switchDashboardTab('analytics');
     });
 </script>
+
+<style>
+.admin-dashboard-shell {
+    background:
+        radial-gradient(520px 220px at 102% -40px, rgba(59, 130, 246, 0.12), transparent 60%),
+        radial-gradient(420px 180px at -6% 18%, rgba(96, 165, 250, 0.1), transparent 58%);
+}
+
+.admin-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.admin-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.admin-hero-cta {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
+.admin-hero-cta:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.admin-metric-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.1);
+}
+
+.admin-metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--metric-accent, #0ea5e9);
+}
+
+.admin-metric-card--users { --metric-accent: #2563eb; }
+.admin-metric-card--landlords { --metric-accent: #16a34a; }
+.admin-metric-card--reviews { --metric-accent: #eab308; }
+.admin-metric-card--dorms { --metric-accent: #0891b2; }
+.admin-metric-card--reports { --metric-accent: #ef4444; }
+
+.admin-surface {
+    border-color: #dbeafe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.admin-tabs-nav {
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.72) 0%, rgba(255, 255, 255, 0.92) 100%);
+}
+
+.admin-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #dbeafe;
+}
+
+.admin-pending-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.5);
+}
+
+.admin-action-btn {
+    border-radius: 999px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 18px rgba(21, 101, 192, 0.25);
+}
+
+.admin-action-btn:hover {
+    background: linear-gradient(135deg, #0a2f52 0%, #1253a4 55%, #0b7f9b 100%);
+    color: #ffffff;
+}
+</style>
 
 {% endblock %}

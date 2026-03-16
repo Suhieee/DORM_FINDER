@@ -2,7 +2,7 @@
 {% block title %}Manage Users{% endblock %}
 {% load static %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 admin-users-shell">
     <!-- Toast Notification -->
 <div id="toast" class="fixed top-6 right-6 z-50 hidden px-6 py-4 rounded-lg shadow-lg text-white text-lg font-semibold transition-opacity duration-300"></div>
 
@@ -27,13 +27,24 @@
 {% endif %}
 
     <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 text-center">User Management</h1>
-        <p class="text-gray-600 mt-2 text-center">Manage all users in the system</p>
+    <div class="relative mb-8 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl admin-users-hero">
+        <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+            <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+            <div class="absolute inset-0 opacity-[0.07] admin-users-hero-grid"></div>
+        </div>
+        <div class="relative z-10 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Admin Controls</span>
+            </div>
+            <h1 class="text-3xl font-bold text-white">User Management</h1>
+            <p class="text-cyan-100/85 mt-2">Manage all users in the system</p>
+        </div>
     </div>
 
     <!-- Search and Filter -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+    <div class="admin-filters flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 p-4 rounded-xl border border-sky-100">
         <div class="flex gap-2 flex-wrap">
             <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700" data-filter="all">All Users</button>
             <button class="filter-tab px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-gray-100 text-purple-700 hover:bg-purple-100" data-filter="admin">Admins</button>
@@ -49,7 +60,7 @@
     </div>
 
     <!-- Users Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="admin-surface rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
@@ -148,7 +159,7 @@
                                     </button>
 
                                     <!-- Dropdown menu -->
-                                    <div x-show="open" 
+                                    <div x-show="open " 
                                          @click.away="open = false" 
                                          x-transition:enter="transition ease-out duration-100"
                                          x-transition:enter-start="transform opacity-0 scale-95"
@@ -156,7 +167,7 @@
                                          x-transition:leave="transition ease-in duration-75"
                                          x-transition:leave-start="transform opacity-100 scale-100"
                                          x-transition:leave-end="transform opacity-0 scale-95"
-                                         class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                         class="absolute right-0 z-50 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
                                         
                                         <!-- View Profile -->
                                         <a href="{% url 'accounts:view_user_profile' user.id %}" 
@@ -475,4 +486,32 @@ document.querySelectorAll('.role-change-form').forEach(form => {
     });
 });
 </script>
+
+<style>
+.admin-users-shell {
+    background:
+        radial-gradient(520px 220px at 102% -40px, rgba(59, 130, 246, 0.12), transparent 60%),
+        radial-gradient(420px 180px at -6% 18%, rgba(96, 165, 250, 0.1), transparent 58%);
+}
+
+.admin-users-hero {
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    border: 1px solid rgba(147, 197, 253, 0.55);
+}
+
+.admin-users-hero-grid {
+    background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.admin-filters {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.admin-surface {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #dbeafe;
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.1);
+}
+</style>
 {% endblock %}

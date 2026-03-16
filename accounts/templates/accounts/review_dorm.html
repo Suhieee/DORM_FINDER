@@ -3,16 +3,25 @@
 {% block title %}Review Dorm - Admin{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 admin-review-shell">
     <!-- Header Section -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
+    <div class="relative mb-8 rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl admin-review-hero">
+        <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+            <div class="absolute -bottom-24 -left-12 w-[24rem] h-[24rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+            <div class="absolute inset-0 opacity-[0.07] admin-review-hero-grid"></div>
+        </div>
+        <div class="relative z-10 flex items-center justify-between mb-1">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Dormitory Review</h1>
-                <p class="text-gray-600 mt-2">Review and approve dormitory listings</p>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                    <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Admin Review</span>
+                </div>
+                <h1 class="text-3xl font-bold text-white">Dormitory Review</h1>
+                <p class="text-cyan-100/85 mt-2">Review and approve dormitory listings</p>
             </div>
             <a href="{% url 'accounts:dashboard' %}" 
-               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+               class="admin-review-cta inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -26,7 +35,7 @@
         <!-- Left Column - Images & Details -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Image Gallery -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="admin-review-card rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {% if dorm.images.all %}
                 <div class="relative">
                     <!-- Carousel Container -->
@@ -109,7 +118,7 @@
             </div>
 
             <!-- Description Section -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-review-card rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -122,7 +131,7 @@
             </div>
 
             <!-- Amenities Section -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-review-card rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -154,7 +163,7 @@
         <!-- Right Column - Business Permit & Approval Form -->
         <div class="space-y-6">
             <!-- Business Permit Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="admin-review-card rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -189,7 +198,7 @@
             </div>
 
             <!-- Approval Form Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div class="admin-review-card rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Review Action</h2>
                 
                 <form method="POST" class="space-y-4">
@@ -222,7 +231,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" 
-                            class="flex items-center justify-center w-full bg-blue-700 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform group-hover:scale-[1.02] shadow-sm hover:shadow-md">
+                            class="admin-action-btn flex items-center justify-center w-full text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform group-hover:scale-[1.02] shadow-sm hover:shadow-md">
                         Submit Review
                     </button>
                 </form>
@@ -330,6 +339,51 @@
 </script>
 
 <style>
+    .admin-review-shell {
+        background:
+            radial-gradient(520px 220px at 102% -40px, rgba(59, 130, 246, 0.12), transparent 60%),
+            radial-gradient(420px 180px at -6% 18%, rgba(96, 165, 250, 0.1), transparent 58%);
+    }
+
+    .admin-review-hero {
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+        border: 1px solid rgba(147, 197, 253, 0.55);
+    }
+
+    .admin-review-hero-grid {
+        background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+        background-size: 28px 28px;
+    }
+
+    .admin-review-cta {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        backdrop-filter: blur(4px);
+    }
+
+    .admin-review-cta:hover {
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+    }
+
+    .admin-review-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-color: #dbeafe;
+    }
+
+    .admin-action-btn {
+        border-radius: 999px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 8px 18px rgba(21, 101, 192, 0.25);
+    }
+
+    .admin-action-btn:hover {
+        background: linear-gradient(135deg, #0a2f52 0%, #1253a4 55%, #0b7f9b 100%);
+    }
+
     [data-carousel-item] {
         transition: opacity 0.5s ease-in-out;
     }

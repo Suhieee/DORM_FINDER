@@ -4,9 +4,12 @@ from django.views.static import serve
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/live/', views.health_live, name='health_live'),
+    path('health/ready/', views.health_ready, name='health_ready'),
     path('accounts/', include('accounts.urls')),
     path('dormitory/', include('dormitory.urls')),
     path('', RedirectView.as_view(url='/dormitory/', permanent=False), name='home'),

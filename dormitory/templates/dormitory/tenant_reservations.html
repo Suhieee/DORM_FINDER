@@ -635,11 +635,15 @@
                             {{ selected_reservation.get_status_display }}
                         </div>
 
-                        <!-- Cancel Button - Only show for pending_payment status (not confirmed) -->
-                        {% if selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation %}
+                        <!-- Cancel button for cancellable reservation states -->
+                        {% if selected_reservation.status == 'pending' or selected_reservation.status == 'pending_payment' or selected_reservation.status == 'confirmed' %}
                         <button type="button" onclick="openCancelModal()"
                                 class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                            {% if selected_reservation.has_paid_reservation %}
+                            Cancel & Request Refund
+                            {% else %}
                             Cancel Reservation
+                            {% endif %}
                         </button>
                         {% endif %}
                     </div>
@@ -1028,14 +1032,20 @@
 </div>
 
 <!-- Cancellation Modal (outside main container for full page centering) -->
-{% if selected_reservation and selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation %}
+{% if selected_reservation and selected_reservation.status != 'occupied' and selected_reservation.status != 'completed' and selected_reservation.status != 'declined' and selected_reservation.status != 'cancelled' %}
 <div id="cancelModal" class="fixed inset-0 bg-gray-600/50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
     <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Cancel Reservation</h3>
-            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            <form method="post" action="{% url 'dormitory:cancel_reservation_with_refund' selected_reservation.id %}">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="cancel">
+                <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <p class="font-semibold">Refund policy</p>
+                    <p>7+ days before move-in: 100% refund</p>
+                    <p>3-6 days before move-in: 50% refund</p>
+                    <p>Less than 3 days before move-in: no refund</p>
+                    <p>Maximum of 3 automatic refunds per tenant per month.</p>
+                </div>
                 <div class="mb-4">
                     <label for="cancellation_reason_select" class="block text-sm font-medium text-gray-700 mb-2">
                         Select cancellation reason <span class="text-red-500">*</span>

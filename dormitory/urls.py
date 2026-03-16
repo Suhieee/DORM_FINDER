@@ -14,7 +14,7 @@ from .payment_views import (
     payment_booking_intent, payment_gateway_checkout, payment_webhook,
     payment_success, payment_failure, cancel_reservation_with_refund,
     paymongo_gcash_checkout, paymongo_success, paymongo_failure, paymongo_webhook,
-    paymongo_checkout, checkout_success
+    paymongo_checkout, checkout_success, payment_observability_dashboard
 )
 from . import views
 from . import chatbot_views
@@ -94,6 +94,7 @@ urlpatterns = [
     # PayMongo Checkout Sessions URLs (RECOMMENDED - Full UI)
     path('payment/checkout-session/<int:reservation_id>/', paymongo_checkout, name='paymongo_checkout'),
     path('payment/checkout-success/<int:reservation_id>/', checkout_success, name='checkout_success'),
+    path('payment/observability/', payment_observability_dashboard, name='payment_observability_dashboard'),
     
     # Chatbot AI Assistant URLs
     path('chatbot/message/', chatbot_views.chatbot_message, name='chatbot_message'),

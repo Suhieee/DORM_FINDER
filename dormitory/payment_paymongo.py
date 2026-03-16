@@ -316,6 +316,91 @@ class PayMongoService:
                 'success': False,
                 'error': str(e)
             }
+
+    def initiate_refund(self, payment_id, amount, reason='requested_by_customer'):
+        """
+        Initiate a refund for a PayMongo payment.
+
+        Args:
+            payment_id: PayMongo payment id (pay_*)
+            amount: Amount in PHP to refund
+            reason: Refund reason, or a free-form text note
+
+        Returns:
+            dict: Refund result
+        """
+        if not self.secret_key:
+            return {
+                'success': False,
+                'error': 'Payment gateway not configured'
+            }
+
+        try:
+            amount_in_centavos = int(Decimal(str(amount)) * 100)
+
+            # PayMongo supports strict reason values; keep a free-form note separately.
+            allowed_reasons = {'requested_by_customer', 'duplicate', 'fraudulent'}
+            normalized_reason = reason if reason in allowed_reasons else 'requested_by_customer'
+            note = (reason or '').strip()[:255]
+
+            refund_data = {
+                "data": {
+                    "attributes": {
+                        "amount": amount_in_centavos,
+                        "payment_id": payment_id,
+                        "reason": normalized_reason,
+                        "notes": note or "Reservation cancellation refund"
+                    }
+                }
+            }
+
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': self._get_auth_header(),
+            }
+
+            logger.info(f"Creating PayMongo refund for payment {payment_id}, amount: PHP {amount}")
+
+            response = requests.post(
+                f"{self.BASE_URL}/refunds",
+                json=refund_data,
+                headers=headers,
+                timeout=30
+            )
+
+            if not response.ok:
+                error_text = response.text
+                logger.error(f"PayMongo refund error response: {error_text}")
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('errors', [{}])[0].get('detail', error_text)
+                except Exception:
+                    error_detail = error_text
+                return {
+                    'success': False,
+                    'error': 'Refund creation failed',
+                    'details': error_detail
+                }
+
+            result = response.json()
+            refund_id = result['data']['id']
+            status = result['data']['attributes'].get('status', 'pending')
+
+            logger.info(f"PayMongo refund created: {refund_id}, status: {status}")
+
+            return {
+                'success': True,
+                'refund_id': refund_id,
+                'status': status,
+                'data': result
+            }
+
+        except Exception as e:
+            logger.exception(f"Error creating PayMongo refund: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
     
     def verify_webhook_signature(self, request_body, signature):
         """
@@ -515,9 +600,11 @@ class PayMongoService:
             # PayMongo Checkout Sessions include a 'payments' array when payment is made
             payments = result['data']['attributes'].get('payments', [])
             
+            payment_id = ''
             if payments and len(payments) > 0:
                 # Get status from the first (most recent) payment
                 payment_status = payments[0]['attributes']['status']
+                payment_id = payments[0].get('id', '')
                 logger.info(f"Payment found in payments array with status: {payment_status}")
             else:
                 # Fallback: check payment_intent if no payments array yet
@@ -533,6 +620,7 @@ class PayMongoService:
             return {
                 'success': True,
                 'status': payment_status,
+                'payment_id': payment_id,
                 'data': result
             }
             
