@@ -72,7 +72,7 @@
 
 <div class="h-[calc(100vh-4rem)] bg-gray-50 overflow-hidden p-4">
     <!-- Mobile Reservations Toggle Button -->
-    <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all">
+    <button id="mobile-reservations-toggle" class="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all dormlist-theme-button">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
         </svg>
@@ -83,9 +83,8 @@
         <div class="absolute inset-0 bg-black/50" onclick="hideMobileReservations()" style="pointer-events: auto; top: 4rem;"></div>
         <div class="absolute left-0 w-80 bg-white shadow-xl transform transition-transform duration-300 -translate-x-full" style="pointer-events: auto; top: 4rem; bottom: 0; height: calc(100vh - 4rem);">
             <!-- Mobile Header -->
-            <div class="sticky top-0 p-4 bg-blue-600 z-10">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-bold text-white">Reservations</h2>
+            <div class="sticky top-0 p-4 bg-blue-600 z-10 dormlist-theme-header">
+                <div class="flex items-center justify-between gap-3">
                     <button id="close-mobile-sidebar" class="text-white p-2 hover:bg-white/20 rounded-lg transition-colors" style="pointer-events: auto;">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -195,8 +194,8 @@
         <!-- Left Sidebar - Reservations List (Desktop) -->
         <div id="reservations-sidebar" class="hidden md:flex flex-col w-80 bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Desktop Header -->
-            <div class="p-4 bg-blue-600">
-                <h2 class="text-lg font-bold text-white">Reservations</h2>
+            <div class="p-4 bg-blue-600 dormlist-theme-header">
+                <h2 class="text-lg font-bold text-white mt-1">Reservations</h2>
             </div>
             
             <!-- Search Bar -->
@@ -299,7 +298,7 @@
             {% if selected_reservation %}
                 <!-- Chat Header -->
  <!-- Chat Header -->
-<div class="p-4 bg-blue-600 text-white flex items-center justify-between flex-shrink-0">
+<div class="p-4 bg-blue-600 text-white flex items-center justify-between flex-shrink-0 main-chat-header dormlist-theme-header">
     <!-- LEFT SIDE: User Info -->
     <div class="flex items-center space-x-3">
         <!-- Mobile burger menu -->
@@ -336,7 +335,7 @@
             {% if selected_reservation.status == 'pending' %}
             <!-- Confirm/Decline for PENDING reservations -->
             <button type="button" onclick="openConfirmModal()" 
-                    class="bg-white text-blue-600 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm hover:shadow-md">
+                    class="landlord-chip-btn">
                 Confirm Reservation
             </button>
             
@@ -345,7 +344,7 @@
                 <input type="hidden" name="action" value="decline">
                 <input type="hidden" id="decline_reason_input" name="decline_reason">
                 <button type="button" onclick="openDeclineModal()" 
-                        class="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-red-700 transition-colors shadow-sm hover:shadow-md">
+                        class="landlord-chip-btn landlord-chip-btn--danger">
                     Decline
                 </button>
             </form>
@@ -355,7 +354,7 @@
             {% if selected_reservation.room %}
             <!-- Make Room Available (for bed space reservations) -->
             <button type="button" onclick="openMakeRoomAvailableModal()" 
-                    class="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-yellow-600 transition-colors shadow-sm hover:shadow-md">
+                    class="landlord-chip-btn landlord-chip-btn--warn">
                 Make Room Available
             </button>
             {% endif %}
@@ -363,7 +362,7 @@
             {% if selected_reservation.dorm.accommodation_type == 'whole_unit' %}
             <!-- Make Dorm Available (for whole unit reservations) -->
             <button type="button" onclick="openMakeDormAvailableModal()" 
-                    class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
+                    class="landlord-chip-btn landlord-chip-btn--success">
                 Make Dorm Available
             </button>
             {% endif %}
@@ -371,16 +370,16 @@
             {% elif selected_reservation.status == 'occupied' %}
             <!-- Mark as Moved Out button for OCCUPIED reservations -->
             <button type="button" onclick="openMoveOutModal()"
-                    class="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
+                    class="landlord-chip-btn landlord-chip-btn--success">
                 Mark as Moved Out
             </button>
             {% endif %}
         </div>
 
         <!-- Details Toggle Button -->
-        <div class="border-l border-black/30 pl-4">
-            <button id="toggle-details-btn" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="black" viewBox="0 0 24 24">
+        <div class="border-l border-white/25 pl-4">
+            <button id="toggle-details-btn" class="p-2 rounded-lg transition-colors landlord-icon-btn">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </button>
@@ -687,7 +686,7 @@
                                 </button>
                             </div>
 
-                            <button type="submit" class="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base">
+                            <button type="submit" class="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base dormlist-theme-button">
                                 <span class="hidden sm:inline">Send</span>
                                 <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -722,7 +721,7 @@
                         <button 
                             id="mobile-show-reservations" 
                             onclick="showMobileReservations(); return false;"
-                            class="md:hidden bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                            class="md:hidden bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors cursor-pointer dormlist-theme-button"
                             style="position: relative; z-index: 100; pointer-events: auto;">
                             Show Reservations
                         </button>
@@ -734,7 +733,7 @@
         <!-- Right Sidebar - Dorm Details -->
         {% if selected_reservation %}
         <div id="details-panel" class="w-80 bg-white border-l shadow-lg transform transition-transform duration-300 ease-in-out fixed right-0 overflow-y-auto rounded-2xl" style="top: 4rem; height: calc(100vh - 4rem); z-index: 100;">
-            <div class=" top-0 bg-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl" style="z-index: 101;">
+            <div class=" top-0 bg-blue-600 p-4 border-b flex justify-between items-center rounded-t-2xl dormlist-theme-header" style="z-index: 101;">
                 <h3 class="font-bold text-lg text-white">Dorm Details</h3>
                 <button id="close-details" class="p-2 hover:bg-white/20 rounded-lg transition-colors text-white" style="pointer-events: auto;">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2035,8 +2034,12 @@
         
         // Handle form submissions with AJAX (copied from old code)
         function showToast(message, type = 'success') {
-            // You can add toast functionality here if needed
-            alert(message); // Simple alert for now
+            if (typeof window.showSystemToast === 'function') {
+                window.showSystemToast(message, type, { timeout: 3200 });
+                return;
+            }
+
+            alert(message);
         }
 
         function handleFormSubmit(formId) {
@@ -2188,6 +2191,168 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+    :root {
+        --dormlist-gradient: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+        --dormlist-accent: #1565c0;
+        --dormlist-soft: #e0f2fe;
+    }
+
+    .dormlist-theme-header {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background: var(--dormlist-gradient) !important;
+        color: #fff !important;
+        border: 1px solid rgba(147, 197, 253, 0.45);
+    }
+
+    .dormlist-theme-header::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.95) 1px, transparent 1px);
+        background-size: 28px 28px;
+        opacity: 0.07;
+        pointer-events: none;
+    }
+
+    .dormlist-theme-header::after {
+        content: "";
+        position: absolute;
+        inset: -5rem -4rem auto auto;
+        width: 14rem;
+        height: 14rem;
+        border-radius: 9999px;
+        background: radial-gradient(circle, rgba(125, 211, 252, 0.32) 0%, rgba(125, 211, 252, 0.02) 68%);
+        pointer-events: none;
+    }
+
+    .dormlist-theme-header > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .dormlist-theme-button {
+        background: var(--dormlist-gradient) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 10px 22px rgba(12, 61, 107, 0.24);
+    }
+
+    .dormlist-theme-button:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+    }
+
+    .dormlist-theme-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.24rem 0.72rem;
+        border-radius: 9999px;
+        font-size: 0.66rem;
+        letter-spacing: 0.14em;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #cffafe;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        backdrop-filter: blur(3px);
+    }
+
+    .dormlist-theme-pill--compact {
+        font-size: 0.58rem;
+        padding: 0.2rem 0.6rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .landlord-chip-btn {
+        border-radius: 9999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        padding: 0.38rem 0.95rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.2;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 8px 20px rgba(7, 32, 67, 0.22);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .landlord-chip-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 12px 24px rgba(7, 32, 67, 0.28);
+        transform: translateY(-1px);
+    }
+
+    .landlord-chip-btn--danger {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(254, 202, 202, 0.55);
+    }
+
+    .landlord-chip-btn--danger:hover {
+        background: rgba(239, 68, 68, 0.3);
+    }
+
+    .landlord-chip-btn--warn {
+        background: rgba(245, 158, 11, 0.22);
+        border-color: rgba(254, 240, 138, 0.55);
+    }
+
+    .landlord-chip-btn--warn:hover {
+        background: rgba(245, 158, 11, 0.3);
+    }
+
+    .landlord-chip-btn--success {
+        background: rgba(16, 185, 129, 0.2);
+        border-color: rgba(167, 243, 208, 0.52);
+    }
+
+    .landlord-chip-btn--success:hover {
+        background: rgba(16, 185, 129, 0.28);
+    }
+
+    .landlord-icon-btn {
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(4px);
+    }
+
+    .landlord-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    #reservation-search:focus,
+    #reservation-search-mobile:focus {
+        border-color: var(--dormlist-accent) !important;
+        box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.24) !important;
+    }
+
+    .reservation-item:hover,
+    .reservation-item-mobile:hover {
+        background-color: var(--dormlist-soft) !important;
+    }
+
+    .reservation-item.bg-blue-50,
+    .reservation-item-mobile.bg-blue-50 {
+        background-color: var(--dormlist-soft) !important;
+        border-left-color: var(--dormlist-accent) !important;
+    }
+
+    .reservation-item .bg-blue-600.rounded-full,
+    .reservation-item-mobile .bg-blue-600.rounded-full {
+        background: var(--dormlist-accent) !important;
+    }
+
+    #chat-form button[type="submit"] {
+        background: var(--dormlist-gradient) !important;
+    }
+
+    #chat-form button[type="submit"]:hover {
+        filter: brightness(1.06);
+    }
+
     /* RESPONSIVE STYLES */
     
     /* Mobile sidebars */
@@ -2231,7 +2396,6 @@ document.addEventListener('DOMContentLoaded', function() {
         #close-details {
             pointer-events: auto !important;
             z-index: 102 !important;
-        }
         }
         
         #mobile-show-reservations {

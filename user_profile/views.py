@@ -372,7 +372,7 @@ class EditPreferencesView(LoginRequiredMixin, View):
         # Get or create preferences
         preferences, created = TenantPreferences.objects.get_or_create(user=request.user)
         
-        step = request.GET.get('step', '1')
+        step = request.POST.get('step') or request.GET.get('step', '1')
         
         if step == '2':
             # Step 2: Save roommate preferences

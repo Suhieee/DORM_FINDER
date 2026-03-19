@@ -4,75 +4,64 @@
 {% block title %}Set Up Your Preferences - Step {{ step }} of 2{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+<div class="min-h-screen preference-page py-12">
     <div class="max-w-4xl mx-auto px-4">
-        
+        <section class="pref-hero relative overflow-hidden rounded-3xl px-6 py-8 sm:px-8 sm:py-9 mb-8">
+            <div class="pointer-events-none absolute inset-0">
+                <div class="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-white opacity-[0.06]"></div>
+                <div class="absolute -bottom-20 -left-12 w-80 h-80 rounded-full bg-cyan-300 opacity-[0.09]"></div>
+                <div class="absolute inset-0 opacity-[0.08]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 30px 30px;"></div>
+            </div>
 
-        
-        <!-- Progress Indicator -->
-        <div class="mb-8">
-            <div class="flex items-center justify-center space-x-4">
-                <div class="flex items-center {% if step == 1 %}text-blue-600{% else %}text-green-600{% endif %}">
-                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 {% if step == 1 %}border-blue-600 bg-blue-100{% else %}border-green-600 bg-green-100{% endif %}">
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full mb-3">
+                        <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Smart Preference Setup</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                         {% if step == 1 %}
-                        <span class="text-lg font-bold">1</span>
+                        Dorm Preferences
                         {% else %}
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
+                        Roommate Preferences
                         {% endif %}
-                    </div>
-                    <span class="ml-2 font-semibold">Dorm Preferences</span>
+                    </h1>
+                    <p class="mt-2 text-cyan-100/90 text-sm sm:text-base max-w-2xl">
+                        {% if step == 1 %}
+                        Set your target location, budget, and room priorities for stronger recommendation quality.
+                        {% else %}
+                        Fine-tune compatibility details so roommate matching feels more accurate and personal.
+                        {% endif %}
+                    </p>
                 </div>
-                <div class="w-24 h-1 {% if step == 2 %}bg-green-600{% else %}bg-gray-300{% endif %}"></div>
-                <div class="flex items-center {% if step == 2 %}text-purple-600{% else %}text-gray-400{% endif %}">
-                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-2 {% if step == 2 %}border-purple-600 bg-purple-100{% else %}border-gray-300{% endif %}">
-                        <span class="text-lg font-bold">2</span>
-                    </div>
-                    <span class="ml-2 font-semibold">Roommate Preferences</span>
+
+                <div class="pref-hero-panel">
+                    <p class="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-cyan-200">Setup Progress</p>
+                    <p class="mt-1 text-lg font-extrabold text-white">Step {{ step }} / 2</p>
+                    <p class="text-cyan-100 text-sm">Complete both steps for full smart matching.</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">
-                {% if step == 1 %}
-                Set Up Your Dorm Preferences
-                {% else %}
-                Set Up Your Roommate Preferences
-                {% endif %}
-            </h1>
-            <p class="text-lg text-gray-600">
-                {% if step == 1 %}
-                Help us find the perfect dorm for you with smart recommendations
-                {% else %}
-                Tell us about your ideal roommate to get better matches
-                {% endif %}
-            </p>
-
-        </div>
-
+        </section>
         <!-- Messages -->
         {% if messages %}
-        <div class="mb-6">
+        <div class="pref-toast-wrap" aria-live="polite" aria-atomic="true">
             {% for message in messages %}
-            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            <div class="pref-toast {% if message.tags == 'error' %}pref-toast--error{% else %}pref-toast--success{% endif %}" role="alert">
                 {{ message }}
             </div>
             {% endfor %}
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div class="pref-form-shell p-8">
             <!-- Info Banner -->
-            <div class="mb-8 bg-{% if step == 1 %}blue{% else %}purple{% endif %}-50 border-l-4 border-{% if step == 1 %}blue{% else %}purple{% endif %}-500 p-4 rounded-r-lg">
+            <div class="mb-8 pref-info-banner p-4 rounded-r-lg">
                 <div class="flex">
-                    <svg class="w-6 h-6 text-{% if step == 1 %}blue{% else %}purple{% endif %}-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <div class="ml-3">
-                        <p class="text-sm text-{% if step == 1 %}blue{% else %}purple{% endif %}-700">
+                        <p class="text-sm text-slate-700">
                             {% if step == 1 %}
                             These preferences help our smart system recommend dorms that match your needs. You can always edit them later from your profile.
                             {% else %}
@@ -299,29 +288,29 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-4 pt-6">
                     {% if step == 1 %}
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <button type="submit" class="pref-btn-primary flex-1 py-4 px-6 rounded-xl flex items-center justify-center gap-2">
                             <span>Next: Roommate Preferences</span>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                             </svg>
                         </button>
-                        <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                        <a href="{% url 'accounts:dashboard' %}" class="pref-btn-ghost px-6 py-4 rounded-xl">
                             Skip for Now
                         </a>
                     {% else %}
-                    <a href="{% url 'user_profile:setup_preferences' %}?step=1" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2">
+                    <a href="{% url 'user_profile:setup_preferences' %}?step=1" class="pref-btn-ghost px-6 py-4 rounded-xl flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
                         </svg>
                         <span>Back</span>
                     </a>
-                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <button type="submit" class="pref-btn-primary flex-1 py-4 px-6 rounded-xl flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <span>Finish Setup</span>
                     </button>
-                    <a href="{% url 'accounts:dashboard' %}" class="px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                    <a href="{% url 'accounts:dashboard' %}" class="pref-btn-ghost px-6 py-4 rounded-xl">
                         Skip
                     </a>
                     {% endif %}
@@ -330,9 +319,9 @@
         </div>
 
         <!-- Why Preferences Matter -->
-        <div class="mt-8 bg-gradient-to-r from-{% if step == 1 %}blue{% else %}purple{% endif %}-50 to-purple-50 rounded-xl p-6 border border-{% if step == 1 %}blue{% else %}purple{% endif %}-200">
+        <div class="mt-8 pref-why-card rounded-xl p-6">
             <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-{% if step == 1 %}blue{% else %}purple{% endif %}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                 </svg>
                 {% if step == 1 %}Why set dorm preferences?{% else %}Why set roommate preferences?{% endif %}
@@ -381,4 +370,178 @@
         </div>
     </div>
 </div>
+
+<style>
+    .preference-page {
+        background:
+            radial-gradient(circle at 8% 6%, rgba(186, 230, 253, 0.45), transparent 28%),
+            radial-gradient(circle at 92% 5%, rgba(125, 211, 252, 0.33), transparent 24%),
+            linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
+    }
+
+    .pref-hero {
+        border: 1px solid rgba(147, 197, 253, 0.55);
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+        box-shadow: 0 16px 30px rgba(12, 61, 107, 0.25);
+    }
+
+    .pref-hero-panel {
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 1rem;
+        padding: 0.8rem 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .preference-progress-wrap {
+        border: 1px solid #dbeafe;
+        border-radius: 1rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 8px 18px rgba(30, 64, 175, 0.08);
+    }
+
+    .pref-toast-wrap {
+        position: fixed;
+        top: 5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 70;
+        width: min(92vw, 42rem);
+        display: grid;
+        gap: 0.6rem;
+        pointer-events: none;
+    }
+
+    .pref-toast {
+        pointer-events: auto;
+        border-radius: 0.85rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid;
+        font-weight: 600;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(4px);
+    }
+
+    .pref-toast--success {
+        background: rgba(236, 253, 245, 0.95);
+        border-color: #86efac;
+        color: #166534;
+    }
+
+    .pref-toast--error {
+        background: rgba(254, 242, 242, 0.96);
+        border-color: #fca5a5;
+        color: #b91c1c;
+    }
+
+    .pref-form-shell {
+        border: 1px solid #dbeafe;
+        border-radius: 1.25rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 16px 28px rgba(30, 64, 175, 0.1);
+    }
+
+    .pref-info-banner {
+        border: 1px solid #bfdbfe;
+        border-left: 4px solid #0891b2;
+        background: linear-gradient(180deg, #eff6ff 0%, #ecfeff 100%);
+    }
+
+    .pref-why-card {
+        border: 1px solid #bae6fd;
+        background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
+        box-shadow: 0 8px 18px rgba(14, 116, 144, 0.12);
+    }
+
+    .pref-btn-primary {
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-weight: 700;
+        box-shadow: 0 12px 22px rgba(12, 61, 107, 0.24);
+        transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pref-btn-primary:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+        box-shadow: 0 16px 28px rgba(12, 61, 107, 0.3);
+    }
+
+    .pref-btn-ghost {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 600;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .pref-btn-ghost:hover {
+        border-color: #94a3b8;
+        background: #f1f5f9;
+    }
+
+    .preference-page input[type="text"],
+    .preference-page input[type="number"],
+    .preference-page textarea,
+    .preference-page select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 0.68rem 0.85rem;
+        background: #ffffff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .preference-page input[type="text"]:focus,
+    .preference-page input[type="number"]:focus,
+    .preference-page textarea:focus,
+    .preference-page select:focus {
+        outline: none;
+        border-color: #1565c0;
+        box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.16);
+    }
+
+    .preference-page input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        accent-color: #0891b2;
+    }
+
+    .preference-page .border-b {
+        border-color: #e2e8f0;
+    }
+
+    .preference-page .text-purple-600,
+    .preference-page .text-purple-700,
+    .preference-page .text-purple-500 {
+        color: #0891b2 !important;
+    }
+
+    .preference-page .bg-purple-100,
+    .preference-page .bg-purple-50 {
+        background-color: #ecfeff !important;
+    }
+
+    .preference-page .border-purple-600,
+    .preference-page .border-purple-300,
+    .preference-page .border-purple-200 {
+        border-color: #67e8f9 !important;
+    }
+
+    .preference-page .hover\:bg-purple-50:hover {
+        background-color: #ecfeff !important;
+    }
+
+    .preference-page .bg-purple-600,
+    .preference-page .bg-purple-700 {
+        background-color: #1565c0 !important;
+    }
+
+    .preference-page .hover\:bg-purple-600:hover,
+    .preference-page .hover\:bg-purple-700:hover {
+        background-color: #0c4a6e !important;
+    }
+</style>
 {% endblock %}

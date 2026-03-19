@@ -2,11 +2,50 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-4xl mx-auto">
+<div class="px-4 sm:px-6 py-8 min-h-screen bg-slate-50">
+    <div class="max-w-6xl mx-auto">
+        <section class="reserve-hero relative overflow-hidden rounded-3xl px-6 py-8 sm:px-9 sm:py-10 mb-7 shadow-xl">
+            <div class="pointer-events-none absolute inset-0">
+                <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-[0.05]"></div>
+                <div class="absolute -bottom-24 -left-12 w-[28rem] h-[28rem] rounded-full bg-cyan-400 opacity-[0.07]"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white opacity-[0.03]"></div>
+                <div class="absolute inset-0 opacity-[0.07]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 30px 30px;"></div>
+                <div class="absolute top-0 right-0 h-full w-1/3 opacity-[0.04]" style="background: repeating-linear-gradient(45deg, #fff, #fff 1px, transparent 1px, transparent 18px);"></div>
+            </div>
+
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div class="min-w-0">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Reserve Request</span>
+                    </div>
+
+                    <h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Reserve {{ dorm.name }}</h1>
+                    <p class="mt-2 text-cyan-100/85 text-sm sm:text-base max-w-2xl">
+                        Secure your preferred slot, send your intro to the landlord, and complete payment within the required timeline.
+                    </p>
+
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="reserve-hero-chip">PHP {{ dorm.price }}/month</span>
+                        <span class="reserve-hero-chip">{{ dorm.address|truncatechars:46 }}</span>
+                        <span class="reserve-hero-chip">{% if has_completed_visit %}Visit Completed{% else %}Visit Optional{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="reserve-hero-panel w-full lg:w-auto lg:min-w-[270px]">
+                    <p class="text-[0.68rem] uppercase tracking-[0.16em] text-cyan-100 font-bold">Booking Flow</p>
+                    <ol class="mt-2 space-y-2 text-sm text-cyan-50/95">
+                        <li>1. Submit your reservation form</li>
+                        <li>2. Wait for landlord review</li>
+                        <li>3. Upload payment proof within 48 hours</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
         <!-- Reservation Status (if exists) -->
         {% if reservation %}
-        <div class="mb-6 bg-white rounded-lg shadow-lg p-6">
+        <div class="mb-6 reserve-status-card p-6">
             <h3 class="text-xl font-semibold mb-4">Reservation Status</h3>
             <div class="flex items-center justify-between">
                 <div>
@@ -28,16 +67,21 @@
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div class="p-6 bg-gray-50 border-b">
-                <h1 class="text-2xl font-bold text-gray-800">Reserve {{ dorm.name }}</h1>
-                <p class="text-gray-600">Please fill out the form below to start your reservation.</p>
+        <div class="reserve-main-card overflow-hidden">
+            <div class="p-6 sm:p-7 bg-white border-b border-sky-100">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Reservation Form</h2>
+                        <p class="text-slate-600">Fill in your details below to continue your booking process.</p>
+                    </div>
+                    <span class="reserve-step-chip">Step 1 of 2</span>
+                </div>
             </div>
 
-            <div class="p-6">
+            <div class="p-6 sm:p-7 bg-gradient-to-b from-white to-sky-50/35">
                 <!-- Visit Information Banner (if applicable) -->
                 {% if has_completed_visit %}
-                <div class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+                <div class="mb-6 reserve-notice reserve-notice--success">
                     <div class="flex items-start">
                         <svg class="w-6 h-6 text-green-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
@@ -53,7 +97,7 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div class="mb-6 reserve-notice reserve-notice--info">
                     <div class="flex items-start">
                         <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
@@ -72,14 +116,14 @@
                 {% endif %}
 
                 <!-- Payment Deadline Notice -->
-                <div class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div class="mb-6 reserve-notice reserve-notice--warning">
                     <div class="flex items-start">
-                        <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-6 h-6 text-amber-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                         </svg>
                         <div>
-                            <h4 class="font-semibold text-blue-900 mb-1">⏰ Important: 48-Hour Payment Window</h4>
-                            <p class="text-sm text-blue-800">
+                            <h4 class="font-semibold text-amber-900 mb-1">⏰ Important: 48-Hour Payment Window</h4>
+                            <p class="text-sm text-amber-800">
                                 After submitting this reservation, you'll have <strong>48 hours</strong> to upload your payment proof. 
                                 If payment is not received within this timeframe, your reservation will be <strong>automatically cancelled</strong>.
                             </p>
@@ -87,24 +131,36 @@
                     </div>
                 </div>
 
-                <form method="post" class="space-y-6">
+                <form method="post" class="space-y-6 reservation-form-shell">
                     {% csrf_token %}
 
                     <!-- Dorm Information -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold mb-2">Dorm Details</h3>
+                    <div class="reserve-surface-card reserve-surface-card--highlight rounded-2xl p-5">
+                        <div class="flex items-center justify-between mb-3 gap-2">
+                            <h3 class="text-lg font-semibold text-slate-800">Dorm Details</h3>
+                            <span class="reserve-inline-chip">Listing Snapshot</span>
+                        </div>
+
                         <div class="grid md:grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-gray-600">{{ dorm.address }}</p>
-                                <p class="text-gray-600">₱{{ dorm.price }}/month</p>
+                            <div class="reserve-info-tile">
+                                <p class="reserve-info-label">Address</p>
+                                <p class="reserve-info-value">{{ dorm.address }}</p>
+
+                                <p class="reserve-info-label mt-3">Monthly Rate</p>
+                                <p class="reserve-info-value">₱{{ dorm.price }}/month</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Landlord: {{ dorm.landlord.get_full_name }}
-                                  {% if dorm.landlord.userprofile.is_verified %}
-                                    <span class="ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full align-middle font-semibold">Verified</span>
-                                  {% endif %}
+
+                            <div class="reserve-info-tile">
+                                <p class="reserve-info-label">Landlord</p>
+                                <p class="reserve-info-value">
+                                    {{ dorm.landlord.get_full_name }}
+                                    {% if dorm.landlord.userprofile.is_verified %}
+                                        <span class="ml-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs rounded-full align-middle font-semibold">Verified</span>
+                                    {% endif %}
                                 </p>
-                                <p class="text-gray-600">Contact: {{ dorm.landlord.contact_number }}</p>
+
+                                <p class="reserve-info-label mt-3">Contact</p>
+                                <p class="reserve-info-value">{{ dorm.landlord.contact_number }}</p>
                             </div>
                         </div>
                     </div>
@@ -120,31 +176,37 @@
                     {% endif %}
 
                     <!-- Initial Message -->
-                    <div>
-                        <label for="initial_message" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="reserve-field-card">
+                        <label for="initial_message" class="reserve-field-label">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
+                            </svg>
                             Message to Landlord
                         </label>
                         <textarea name="initial_message" id="initial_message" rows="4"
-                                class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="reserve-input reserve-input--soft w-full border rounded-xl px-4 py-3 focus:outline-none"
                                 placeholder="Introduce yourself and ask any questions you have about the dorm..."
                                 required>Hi! I'm interested in your dorm. I would like to inquire about availability and possibly make a reservation.</textarea>
-                        <p class="mt-1 text-sm text-gray-500">
+                        <p class="mt-2 text-sm text-slate-500">
                             This message will start your conversation with the landlord.
                         </p>
                     </div>
 
                     <!-- Additional Notes -->
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="reserve-field-card">
+                        <label for="notes" class="reserve-field-label">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
                             Additional Notes (Optional)
                         </label>
                         <textarea name="notes" id="notes" rows="3"
-                                class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="reserve-input reserve-input--soft w-full border rounded-xl px-4 py-3 focus:outline-none"
                                 placeholder="Any additional information you'd like to share..."></textarea>
                     </div>
 
                     <!-- Terms and Conditions -->
-                    <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="reserve-surface-card rounded-2xl p-4 sm:p-5">
                         <div class="flex items-start">
                             <div class="flex items-center h-5">
                                 <input id="terms" name="terms" type="checkbox" required
@@ -161,7 +223,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex justify-end">
-                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        <button type="submit" class="reserve-submit-btn px-6 py-2.5 rounded-xl font-semibold">
                             Submit Reservation
                         </button>
                     </div>
@@ -171,12 +233,12 @@
 
         <!-- Chat Section -->
         {% if reservation and reservation.id %}
-        <div class="mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="mt-8 reserve-main-card overflow-hidden">
             <div class="p-6">
                 <h3 class="text-xl font-semibold mb-4">Chat with {% if request.user == reservation.tenant %}Landlord{% else %}tenant{% endif %}</h3>
                 
                 <!-- Messages Container -->
-                <div id="messages-container" class="h-96 overflow-y-auto border rounded-lg mb-4 p-4">
+            <div id="messages-container" class="reserve-chat-scroll h-96 overflow-y-auto border rounded-xl mb-4 p-4">
                     {% for message in messages %}
                     <div class="mb-4 {% if message.sender == request.user %}ml-auto{% endif %}">
                         <div class="bg-blue-100 ml-12 rounded-lg p-3">
@@ -197,9 +259,9 @@
                     {% csrf_token %}
                     <div class="flex space-x-2">
                         <input type="text" name="content" id="message-input" 
-                               class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               class="reserve-input flex-1 border rounded-xl px-4 py-2.5 focus:outline-none" 
                                placeholder="Type your message...">
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button type="submit" class="reserve-submit-btn px-4 py-2.5 rounded-xl font-semibold">
                             Send
                         </button>
                     </div>
@@ -209,7 +271,7 @@
         {% endif %}
 
         <!-- Additional Information -->
-        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+        <div class="mt-8 reserve-main-card p-6 sm:p-7">
             <h3 class="text-xl font-semibold mb-4">Important Information</h3>
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
@@ -236,38 +298,219 @@
 </div>
 
 <style>
-    /* Custom form styling */
-    form p {
-        margin-bottom: 1rem;
+    .reserve-hero {
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+        border: 1px solid rgba(147, 197, 253, 0.55);
     }
-    form label {
-        display: block;
+
+    .reserve-hero-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.14);
+        color: #e0f2fe;
+        border-radius: 999px;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1;
+        backdrop-filter: blur(2px);
+    }
+
+    .reserve-hero-panel {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        padding: 0.9rem 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .reserve-status-card,
+    .reserve-main-card {
+        border-radius: 1.5rem;
+        border: 1px solid #dbeafe;
+        background: #ffffff;
+        box-shadow: 0 16px 28px rgba(30, 64, 175, 0.1);
+    }
+
+    .reserve-step-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #bfdbfe;
+        background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+        color: #0f4f8a;
+        padding: 0.34rem 0.9rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .reserve-notice {
+        border-radius: 1rem;
+        border: 1px solid;
+        padding: 1rem;
+    }
+
+    .reserve-notice--success {
+        border-color: #bbf7d0;
+        background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
+    }
+
+    .reserve-notice--info {
+        border-color: #bfdbfe;
+        background: linear-gradient(180deg, #eff6ff 0%, #ecfeff 100%);
+    }
+
+    .reserve-notice--warning {
+        border-color: #fde68a;
+        background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .reserve-surface-card {
+        border: 1px solid #dbeafe;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .reserve-surface-card--highlight {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .reserve-surface-card--highlight::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    }
+
+    .reserve-inline-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #bfdbfe;
+        background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
+        color: #0f4f8a;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .reserve-info-tile {
+        border: 1px solid #dbeafe;
+        background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+        border-radius: 0.95rem;
+        padding: 0.9rem 1rem;
+    }
+
+    .reserve-info-label {
+        color: #0f4f8a;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 800;
+    }
+
+    .reserve-info-value {
+        color: #334155;
+        font-size: 1rem;
+        line-height: 1.45;
         font-weight: 500;
-        color: #374151;
+    }
+
+    .reserve-field-card {
+        border: 1px solid #dbeafe;
+        background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
+    .reserve-field-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.95rem;
+        color: #0f4f8a;
+        font-weight: 700;
+        margin-bottom: 0.55rem;
+    }
+
+    .reserve-field-label svg {
+        color: #1565c0;
+    }
+
+    .reservation-form-shell label {
+        display: block;
+        font-weight: 600;
+        color: #334155;
         margin-bottom: 0.5rem;
     }
-    form input, form textarea, form select {
+
+    .reserve-input,
+    .reservation-form-shell select,
+    .reservation-form-shell input[type="text"],
+    .reservation-form-shell input[type="email"],
+    .reservation-form-shell input[type="number"] {
         width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #D1D5DB;
-        border-radius: 0.375rem;
-        background-color: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.75rem;
+        background-color: #ffffff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    form input:focus, form textarea:focus, form select:focus {
-        outline: 2px solid #2563EB;
-        outline-offset: -2px;
+
+    .reserve-input--soft {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     }
-    #messages-container {
+
+    .reserve-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .reserve-input:focus,
+    .reservation-form-shell select:focus,
+    .reservation-form-shell input[type="text"]:focus,
+    .reservation-form-shell input[type="email"]:focus,
+    .reservation-form-shell input[type="number"]:focus {
+        border-color: #1565c0;
+        box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.16);
+        outline: none;
+    }
+
+    .reserve-submit-btn {
+        background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 12px 24px rgba(12, 61, 107, 0.24);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .reserve-submit-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.04);
+        box-shadow: 0 16px 30px rgba(12, 61, 107, 0.3);
+    }
+
+    .reserve-chat-scroll {
         scrollbar-width: thin;
         scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
     }
-    #messages-container::-webkit-scrollbar {
+
+    .reserve-chat-scroll::-webkit-scrollbar {
         width: 6px;
     }
-    #messages-container::-webkit-scrollbar-track {
+
+    .reserve-chat-scroll::-webkit-scrollbar-track {
         background: transparent;
     }
-    #messages-container::-webkit-scrollbar-thumb {
+
+    .reserve-chat-scroll::-webkit-scrollbar-thumb {
         background-color: rgba(156, 163, 175, 0.5);
         border-radius: 3px;
     }
@@ -353,24 +596,29 @@
         }, 5000);
     }
 
-    // Preview uploaded image
-    document.getElementById('payment_proof').addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.createElement('img');
-                preview.src = e.target.result;
-                preview.className = 'mt-4 mx-auto max-h-48 rounded-lg';
-                
-                const container = document.querySelector('.border-dashed');
-                const existingPreview = container.querySelector('img');
-                if (existingPreview) {
-                    existingPreview.remove();
+    // Preview uploaded image (only on pages that include the upload field)
+    const paymentProofInput = document.getElementById('payment_proof');
+    if (paymentProofInput) {
+        paymentProofInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(loadEvent) {
+                    const container = document.querySelector('.border-dashed');
+                    if (!container) return;
+
+                    const preview = document.createElement('img');
+                    preview.src = loadEvent.target.result;
+                    preview.className = 'mt-4 mx-auto max-h-48 rounded-lg';
+
+                    const existingPreview = container.querySelector('img');
+                    if (existingPreview) {
+                        existingPreview.remove();
+                    }
+                    container.appendChild(preview);
                 }
-                container.appendChild(preview);
+                reader.readAsDataURL(e.target.files[0]);
             }
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
+        });
+    }
 </script>
 {% endblock %}
