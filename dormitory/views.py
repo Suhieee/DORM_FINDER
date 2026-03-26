@@ -110,7 +110,7 @@ class PublicDormListView(ListView):
 
     def get_queryset(self):
         queryset = Dorm.objects.select_related('landlord').prefetch_related(
-            'images', 'amenities', 'reviews'
+            'images', 'amenities', 'reviews', 'nearby_schools'
         ).filter(
             available=True, 
             approval_status="approved"
@@ -146,6 +146,11 @@ class PublicDormListView(ListView):
         amenities = self.request.GET.getlist('amenities')
         if amenities:
             queryset = queryset.filter(amenities__id__in=amenities).distinct()
+
+        # School filtering
+        school_id = self.request.GET.get('school')
+        if school_id:
+            queryset = queryset.filter(nearby_schools__id=school_id).distinct()
 
         # Location-based filtering
         lat = self.request.GET.get('lat')
@@ -228,7 +233,9 @@ class PublicDormListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['amenities'] = Amenity.objects.all()
+        context['schools'] = School.objects.all()
         context['selected_amenities'] = self.request.GET.getlist('amenities')
+        context['selected_school'] = self.request.GET.get('school', '')
         
         # Add dorm data for map
         dorms_data = []
@@ -244,7 +251,6 @@ class PublicDormListView(ListView):
         context['dorms_json'] = json.dumps(dorms_data)
         
         # Add schools data for map
-        from dormitory.models import School
         schools_data = []
         for school in School.objects.all():
             if school.latitude and school.longitude:
