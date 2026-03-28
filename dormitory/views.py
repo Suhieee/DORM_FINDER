@@ -555,6 +555,36 @@ class DormListView(LoginRequiredMixin, ListView):
         if school_id:
             queryset = queryset.filter(nearby_schools__id=school_id)
 
+        # Location-based filtering (within 5km radius)
+        lat = self.request.GET.get('lat')
+        lng = self.request.GET.get('lng')
+        if lat and lng:
+            try:
+                lat = float(lat)
+                lng = float(lng)
+
+                from math import radians, sin, cos, sqrt, atan2
+
+                def calculate_distance(lat1, lon1, lat2, lon2):
+                    R = 6371  # Earth radius in km
+                    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                    return R * c
+
+                nearby_ids = []
+                for dorm in queryset:
+                    if dorm.latitude and dorm.longitude:
+                        distance = calculate_distance(lat, lng, float(dorm.latitude), float(dorm.longitude))
+                        if distance <= 5.0:
+                            nearby_ids.append(dorm.id)
+
+                queryset = queryset.filter(id__in=nearby_ids)
+            except (ValueError, TypeError):
+                pass  # Ignore invalid coords
+
         # Apply sorting
         if sort_by == 'price_asc':
             queryset = queryset.order_by('price')
@@ -564,10 +594,6 @@ class DormListView(LoginRequiredMixin, ListView):
             # Default sorting by newest
             queryset = queryset.order_by('-id')
 
-        # Debug print final query
-        print(f"Final query: {queryset.query}")
-        print(f"Number of results: {queryset.count()}")
-        
         end_time = time.time()
         print(f"Query execution time: {end_time - start_time:.2f} seconds")
         

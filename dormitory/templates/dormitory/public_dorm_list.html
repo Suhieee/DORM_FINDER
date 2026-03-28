@@ -901,6 +901,17 @@ function initializeMap() {
         show: false // Hide by default
     }).addTo(map);
     
+    // Add error handling for routing service
+    routingControl.on('routingerror', function(e) {
+        console.error('Routing error:', e);
+        showNotification('Unable to calculate route. Try refreshing the page or check your internet connection.', 'error');
+    });
+    
+    routingControl.on('error', function(error) {
+        console.error('Routing control error:', error);
+        showNotification('Routing service temporarily unavailable. Please try again later.', 'error');
+    });
+    
     // Store routing control for later use
     map.routingControl = routingControl;
     
@@ -1003,45 +1014,64 @@ function showRoutingPanel() {
 
 // Route functions
 function showRouteToDorm(lat, lng, dormName) {
-    if (!map || !map.routingControl) return;
+    if (!map || !map.routingControl) {
+        alert('Map or routing service not available. Please refresh the page.');
+        return;
+    }
+    
+    // Show loading message
+    showNotification('Loading route...', 'info');
     
     // Get user's current location or use a default starting point
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-            
-            // Check if user is within Manila bounds
-            if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
-                map.routingControl.setWaypoints([
-                    L.latLng(userLat, userLng),
-                    L.latLng(lat, lng)
-                ]);
-                showRoutingPanel();
-            } else {
-                // Use Manila center as starting point
-                map.routingControl.setWaypoints([
-                    L.latLng(14.5995, 120.9842), // Manila center
-                    L.latLng(lat, lng)
-                ]);
-                showRoutingPanel();
-                alert('Using Manila center as starting point. Enable location access for personalized routes.');
-            }
-        }, function() {
-            // Use Manila center as starting point if geolocation fails
-            map.routingControl.setWaypoints([
-                L.latLng(14.5995, 120.9842), // Manila center
-                L.latLng(lat, lng)
-            ]);
-            showRoutingPanel();
-        });
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                try {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    console.log('Geolocation success:', { userLat, userLng });
+                    
+                    // Check if user is within Manila bounds
+                    if (userLat >= 14.0 && userLat <= 15.5 && userLng >= 120.0 && userLng <= 122.0) {
+                        map.routingControl.setWaypoints([
+                            L.latLng(userLat, userLng),
+                            L.latLng(lat, lng)
+                        ]);
+                        showNotification('Route loaded. Creating directions from your location...', 'success');
+                        showRoutingPanel();
+                    } else {
+                        // Use Manila center as starting point
+                        map.routingControl.setWaypoints([
+                            L.latLng(14.5995, 120.9842),
+                            L.latLng(lat, lng)
+                        ]);
+                        showNotification('Your location is outside the service area. Using Manila center as starting point.', 'info');
+                        showRoutingPanel();
+                    }
+                } catch (err) {
+                    console.error('Error processing geolocation:', err);
+                    useDefaultRoute(lat, lng, dormName);
+                }
+            },
+            function(error) {
+                console.warn('Geolocation error:', error.code, error.message);
+                let errorMsg = 'Location access denied. Using Manila center as starting point.';
+                if (error.code === 1) {
+                    errorMsg = 'Permission denied. Please allow location access in browser settings.';
+                } else if (error.code === 2) {
+                    errorMsg = 'Location unavailable. Using Manila center as starting point.';
+                } else if (error.code === 3) {
+                    errorMsg = 'Location request timed out. Using Manila center as starting point.';
+                }
+                showNotification(errorMsg, 'warning');
+                useDefaultRoute(lat, lng, dormName);
+            },
+            { timeout: 10000, enableHighAccuracy: false }
+        );
     } else {
-        // Use Manila center as starting point if geolocation not supported
-        map.routingControl.setWaypoints([
-            L.latLng(14.5995, 120.9842), // Manila center
-            L.latLng(lat, lng)
-        ]);
-        showRoutingPanel();
+        console.warn('Geolocation not supported by browser');
+        showNotification('Browser does not support location access. Using Manila center as starting point.', 'info');
+        useDefaultRoute(lat, lng, dormName);
     }
 }
 
@@ -1491,6 +1521,62 @@ function clearLocationFilter() {
             filterMap.removeLayer(filterMarker.radiusCircle);
         }
         filterMarker = null;
+    }
+}
+
+// Helper function for default route
+function useDefaultRoute(lat, lng, locationName) {
+    if (!map || !map.routingControl) return;
+    try {
+        map.routingControl.setWaypoints([
+            L.latLng(14.5995, 120.9842),
+            L.latLng(lat, lng)
+        ]);
+        showRoutingPanel();
+    } catch (err) {
+        console.error('Error setting default route:', err);
+        alert('Failed to create route. Please try again or refresh the page.');
+    }
+}
+
+// Notification helper function
+function showNotification(message, type = 'info') {
+    console.log(`[${type}] ${message}`);
+    
+    // Try to use existing notification system or create a toast
+    const messageContainer = document.getElementById('message-container');
+    if (messageContainer) {
+        const notification = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-50' : 
+                       type === 'warning' ? 'bg-yellow-50' : 
+                       type === 'error' ? 'bg-red-50' : 'bg-blue-50';
+        const textColor = type === 'success' ? 'text-green-800' : 
+                        type === 'warning' ? 'text-yellow-800' : 
+                        type === 'error' ? 'text-red-800' : 'text-blue-800';
+        const borderColor = type === 'success' ? 'border-green-200' : 
+                          type === 'warning' ? 'border-yellow-200' : 
+                          type === 'error' ? 'border-red-200' : 'border-blue-200';
+        
+        notification.className = `flex items-center p-4 mb-2 rounded-lg border ${bgColor} ${textColor} ${borderColor} shadow-md`;
+        notification.innerHTML = `
+            <span class="text-sm font-medium">${message}</span>
+            <button type="button" class="ml-auto text-lg font-bold opacity-75 hover:opacity-100" onclick="this.parentElement.remove()">×</button>
+        `;
+        messageContainer.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    } else {
+        // Fallback to alert
+        if (type === 'error') {
+            alert('ERROR: ' + message);
+        } else if (type === 'warning') {
+            alert('WARNING: ' + message);
+        }
     }
 }
 
