@@ -564,7 +564,7 @@ class DormListView(LoginRequiredMixin, ListView):
         if school_id:
             queryset = queryset.filter(nearby_schools__id=school_id)
 
-        # Apply location radius filter (5km) if coordinates are provided
+        # Location-based filtering (within 5km radius)
         lat = self.request.GET.get('lat')
         lng = self.request.GET.get('lng')
         if lat and lng:
@@ -606,7 +606,6 @@ class DormListView(LoginRequiredMixin, ListView):
 
         # Keep lightweight diagnostics without forcing SQL compilation of empty sets.
         print(f"Number of results: {queryset.count()}")
-        
         end_time = time.time()
         print(f"Query execution time: {end_time - start_time:.2f} seconds")
         
