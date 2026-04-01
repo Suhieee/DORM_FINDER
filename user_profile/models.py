@@ -53,6 +53,8 @@ class TenantPreferences(models.Model):
     ]
     
     ROOM_TYPE_CHOICES = [
+        ('whole_unit', 'Whole Unit'),
+        ('bedspace', 'Bed Space / Shared Space'),
         ('single', 'Single Room'),
         ('shared', 'Shared Room'),
         ('any', 'No Preference'),

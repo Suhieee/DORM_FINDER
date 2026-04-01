@@ -64,41 +64,34 @@
         <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Payment Method</h2>
             
-            <form method="post" class="space-y-4">
+            <form method="post" enctype="multipart/form-data" class="space-y-4" id="paymentMethodForm">
                 {% csrf_token %}
-                
-                {% if accepts_gateway %}
-                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                    <input type="radio" name="payment_method" value="gateway" class="mr-3">
-                    <div class="inline-block">
-                        <div class="font-medium text-gray-900">Online Payment Gateway</div>
-                        <div class="text-sm text-gray-600">Pay securely via MonGo Pay (Credit/Debit Card, E-Wallet)</div>
-                        <div class="mt-2">
-                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">Instant Verification</span>
-                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">Secure</span>
-                        </div>
-                    </div>
-                </label>
-                {% endif %}
                 
                 <!-- PayMongo Checkout (GCash, PayMaya, Cards) - RECOMMENDED -->
                 <label class="block p-4 border-2 border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gradient-to-r from-blue-50 to-white">
-                    <input type="radio" name="payment_method" value="gcash" class="mr-3" checked>
+                    <input type="radio" name="payment_method" value="gcash" class="mr-3 payment-method-radio" {% if selected_payment_method == 'gcash' %}checked{% endif %}>
                     <div class="inline-block">
                         <div class="font-medium text-gray-900 flex items-center">
                             <span class="mr-2">PayMongo Checkout</span>
                             <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">RECOMMENDED</span>
                         </div>
                         <div class="text-sm text-gray-600">Pay via GCash, PayMaya, or Credit/Debit Card</div>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            <svg class="w-8 h-8" viewBox="0 0 50 50" fill="none">
-                                <circle cx="25" cy="25" r="25" fill="#007DFF"/>
-                                <text x="25" y="30" font-family="Arial" font-size="18" font-weight="bold" fill="white" text-anchor="middle">G</text>
-                            </svg>
-                            <svg class="w-8 h-8" viewBox="0 0 50 50" fill="none">
-                                <circle cx="25" cy="25" r="25" fill="#00D632"/>
-                                <text x="25" y="30" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">PM</text>
-                            </svg>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
+                                <img src="{% static 'images/gcash.png' %}" alt="GCash" class="w-4 h-4 rounded-sm" loading="lazy">
+                                GCash
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                                <img src="{% static 'images/maya.png' %}" alt="Maya" class="w-4 h-4 rounded-sm" loading="lazy">
+                                Maya
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="14" rx="3" fill="#475569"/>
+                                    <rect x="3" y="9" width="18" height="2" fill="#E2E8F0"/>
+                                </svg>
+                                Cards
+                            </span>
                             <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">✓ Instant</span>
                             <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">✓ Secure</span>
                             <span class="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">✓ Email Receipt</span>
@@ -108,7 +101,7 @@
                 
                 {% if accepts_manual %}
                 <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                    <input type="radio" name="payment_method" value="manual" class="mr-3">
+                    <input type="radio" name="payment_method" value="manual" class="mr-3 payment-method-radio" {% if selected_payment_method == 'manual' %}checked{% endif %}>
                     <div class="inline-block">
                         <div class="font-medium text-gray-900">Manual Payment Upload</div>
                         <div class="text-sm text-gray-600">Transfer to landlord and upload payment proof</div>
@@ -117,19 +110,18 @@
                         </div>
                     </div>
                 </label>
-                {% endif %}
-                
-                {% if accepts_cash %}
-                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                    <input type="radio" name="payment_method" value="cash" class="mr-3">
-                    <div class="inline-block">
-                        <div class="font-medium text-gray-900">Cash Payment On-Site</div>
-                        <div class="text-sm text-gray-600">Arrange cash payment with landlord</div>
-                        <div class="mt-2">
-                            <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded">Coordinate with Landlord</span>
-                        </div>
-                    </div>
-                </label>
+
+                <div id="manualUploadSection" class="hidden p-4 rounded-lg border border-yellow-200 bg-yellow-50">
+                    <label for="manualPaymentProof" class="block text-sm font-semibold text-gray-800 mb-2">Upload Payment Proof (Image)</label>
+                    <input id="manualPaymentProof" type="file" name="payment_proof" accept="image/*"
+                           class="w-full text-sm text-gray-600
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-yellow-100 file:text-yellow-900
+                                  hover:file:bg-yellow-200">
+                    <p class="mt-2 text-xs text-yellow-900">After submitting, your proof is sent to the landlord for verification.</p>
+                </div>
                 {% endif %}
                 
                 <div class="pt-4">
@@ -173,4 +165,29 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const form = document.getElementById('paymentMethodForm');
+    if (!form) return;
+
+    const methodRadios = form.querySelectorAll('.payment-method-radio');
+    const manualSection = document.getElementById('manualUploadSection');
+    const manualFile = document.getElementById('manualPaymentProof');
+
+    function syncManualUploadState() {
+        if (!manualSection || !manualFile) return;
+        const selected = form.querySelector('input[name="payment_method"]:checked');
+        const isManual = selected && selected.value === 'manual';
+        manualSection.classList.toggle('hidden', !isManual);
+        manualFile.required = !!isManual;
+    }
+
+    methodRadios.forEach((radio) => {
+        radio.addEventListener('change', syncManualUploadState);
+    });
+
+    syncManualUploadState();
+})();
+</script>
 {% endblock %}

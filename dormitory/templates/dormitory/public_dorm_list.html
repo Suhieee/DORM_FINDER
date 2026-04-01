@@ -477,9 +477,9 @@ function clearPaymentTerms() {
                                     Click on the map to set a location filter. All dorms within 5km will be shown.
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <input type="hidden" name="lat" id="filterLat" value="{{ request.GET.lat|default:'' }}">
-                                    <input type="hidden" name="lng" id="filterLng" value="{{ request.GET.lng|default:'' }}">
-                                    <input type="text" id="filterLocation" placeholder="Selected location..." 
+                                     <input type="hidden" name="lat_old" id="filterLatOld" value="{{ request.GET.lat|default:'' }}">
+                                     <input type="hidden" name="lng_old" id="filterLngOld" value="{{ request.GET.lng|default:'' }}">
+                                     <input type="text" id="filterLocationOld" placeholder="Selected location..." 
                                            value="{{ request.GET.location|default:'' }}" 
                                            class="flex-1 p-2 border border-gray-300 rounded text-sm" readonly>
                                     <button type="button" onclick="clearLocationFilter()" 

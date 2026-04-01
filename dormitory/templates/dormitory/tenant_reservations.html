@@ -701,7 +701,7 @@
                                         Pay Now
                                     </a>
                                     <p class="text-xs mt-2" id="paymentNote">
-                                        Pay online with MonGo Pay or upload manual payment proof
+                                        Pay with PayMongo Checkout or upload manual payment proof
                                     </p>
                                 </div>
                             </div>
@@ -774,66 +774,6 @@
                         })();
                     </script>
                     {% endif %}
-                    
-                    <h4 class="font-semibold mb-4">
-                        {% if selected_reservation.status == 'pending_payment' %}
-                            Payment Required
-                        {% else %}
-                            Optional Payment
-                        {% endif %}
-                    </h4>
-                    
-                    <!-- Payment Details -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div class="space-y-2">
-                            <p><span class="text-gray-600">Amount:</span> ₱{{ selected_reservation.dorm.price }}</p>
-                            <p><span class="text-gray-600">Reservation ID:</span> {{ selected_reservation.id }}</p>
-                            {% if selected_reservation.status == 'pending_payment' %}
-                            <p class="text-sm text-red-600 font-semibold">Payment is REQUIRED to confirm your reservation.</p>
-                            {% else %}
-                            <p class="text-sm text-gray-500">Payment is optional but recommended to secure your slot.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- GCash QR Code -->
-                    {% if selected_reservation.qr_code %}
-                    <div class="text-center mb-4">
-                        <h5 class="font-medium mb-2">Scan QR Code to Pay</h5>
-                        <img src="{{ selected_reservation.qr_code.url }}" alt="GCash QR Code" class="mx-auto rounded-lg" style="max-width: 200px;">
-                    </div>
-                    {% endif %}
-
-                    <!-- Payment Instructions -->
-                    <div class="bg-blue-50 text-blue-800 p-4 rounded-lg mb-4">
-                        <h5 class="font-medium mb-2">GCash Payment Instructions:</h5>
-                        <ol class="list-decimal list-inside space-y-1 text-sm">
-                            <li>Open your GCash app</li>
-                            <li>Scan the QR code above</li>
-                            <li>Verify the payment amount</li>
-                            <li>Complete the payment</li>
-                            <li>Take a screenshot of your payment confirmation</li>
-                        </ol>
-                    </div>
-
-                    <!-- Upload Payment Proof -->
-                    <form method="post" enctype="multipart/form-data" class="space-y-4">
-                        {% csrf_token %}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Payment Proof</label>
-                            <input type="file" name="payment_proof" accept="image/*" required
-                                   class="w-full text-sm text-gray-500
-                                          file:mr-4 file:py-2 file:px-4
-                                          file:rounded-full file:border-0
-                                          file:text-sm file:font-semibold
-                                          file:bg-blue-50 file:text-blue-700
-                                          hover:file:bg-blue-100">
-                            <p class="mt-1 text-sm text-gray-500">Please upload a screenshot of your payment confirmation</p>
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            Submit Payment Proof
-                        </button>
-                    </form>
                 </div>
                 {% endif %}
 

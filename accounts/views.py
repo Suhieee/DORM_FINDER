@@ -11,7 +11,7 @@ from .forms import (
 )
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib import messages
-from dormitory.models import Dorm, Review, Reservation, Message
+from dormitory.models import Dorm, Review, Reservation, Message, School
 from dormitory.models_transaction import TransactionLog
 from django.views import View
 from .models import Notification, CustomUser, UserReport
@@ -452,6 +452,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
             # --- Prepare base queryset with SMART FILTERING based on preferences ---
             base_queryset = Dorm.objects.filter(approval_status="approved", available=True)
+            matched_school_ids = set()
             
             # Apply preference-based filters if they exist
             if preferences:
@@ -470,12 +471,32 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     )
                 
                 # Room type filter
-                if preferences.preferred_room_type == 'single':
+                if preferences.preferred_room_type in ['single', 'whole_unit']:
                     base_queryset = base_queryset.filter(accommodation_type='whole_unit')
-                elif preferences.preferred_room_type == 'shared':
+                elif preferences.preferred_room_type in ['shared', 'bedspace']:
                     base_queryset = base_queryset.filter(
                         accommodation_type__in=['bedspace', 'room_sharing']
                     )
+
+                # Preferred-location filter with university/school awareness.
+                preferred_location = (preferences.preferred_location or '').strip()
+                if preferred_location:
+                    matched_schools = School.objects.filter(
+                        Q(name__icontains=preferred_location) |
+                        Q(address__icontains=preferred_location)
+                    )
+
+                    if matched_schools.exists():
+                        matched_school_ids = set(matched_schools.values_list('id', flat=True))
+                        base_queryset = base_queryset.filter(
+                            Q(nearby_schools__in=matched_schools) |
+                            Q(address__icontains=preferred_location)
+                        ).distinct()
+                    else:
+                        base_queryset = base_queryset.filter(
+                            Q(address__icontains=preferred_location) |
+                            Q(name__icontains=preferred_location)
+                        )
 
             base_queryset = base_queryset.annotate(
                 avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
@@ -552,18 +573,21 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
             # --- Calculate distance score based on preferences or school ---
             if preferences and preferences.preferred_location:
-                # Use Google Geocoding API or simple text matching for now
-                # For now, we'll use simple text matching and distance if coords available
+                preferred_location = preferences.preferred_location.lower().strip()
                 for dorm in dorms:
-                    if dorm.latitude and dorm.longitude:
-                        # Calculate distance from preferred location (would need geocoding in production)
-                        # For now, give bonus if address contains preferred location
-                        if preferences.preferred_location.lower() in dorm.address.lower():
+                    if matched_school_ids:
+                        dorm_school_ids = set(dorm.nearby_schools.values_list('id', flat=True))
+                        if dorm_school_ids.intersection(matched_school_ids):
+                            dorm.distance_score = 1.0
+                        elif preferred_location in (dorm.address or '').lower() or preferred_location in (dorm.name or '').lower():
+                            dorm.distance_score = 0.85
+                        else:
+                            dorm.distance_score = 0.3
+                    else:
+                        if preferred_location in (dorm.address or '').lower() or preferred_location in (dorm.name or '').lower():
                             dorm.distance_score = 1.0
                         else:
                             dorm.distance_score = 0.5
-                    else:
-                        dorm.distance_score = 0.5
             else:
                 # No preferences, use default distance scoring
                 for dorm in dorms:

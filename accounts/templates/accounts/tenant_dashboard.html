@@ -217,7 +217,7 @@
 
     <div class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
         {% for dorm, explanation in dorms %}
-        <div class="hero-dorm-card bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
+        <div class="hero-dorm-card hero-dorm-card--tooltip bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div class="hero-dorm-media relative h-48 w-full bg-gray-100">
                 {% if dorm.images.all|length > 0 %}
                 <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-carousel="slide">
@@ -249,7 +249,7 @@
                 <img class="w-full h-48 object-contain scale-90 hover:scale-100 transition-transform duration-300" 
                      src="{% static 'images/default_dorm.svg' %}" alt="No Image" />
                 {% endif %}
-                <div class="absolute top-2 left-2">
+                <div class="absolute top-2 left-2 z-50">
                     <span class="hero-accommodation-badge px-3 py-1 text-sm font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
@@ -284,9 +284,17 @@
                     </div>
                 </div>
                 <p class="hero-explanation text-sm text-gray-600 mb-2 flex items-start">
-                    <svg class="w-4 h-4 mr-1 mt-0.5 flex-shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                    <span class="hero-info-tooltip" tabindex="0" aria-label="Why this dorm is recommended">
+                        <svg class="w-4 h-4 mr-1 mt-0.5 flex-shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="hero-info-tooltip-card">
+                            <span class="hero-info-tooltip-title">How scoring works</span>
+                            <span class="hero-info-tooltip-list">Base: rating 20%, location 20%, amenities 15%, review volume 5%, price efficiency.</span>
+                            <span class="hero-info-tooltip-list">Bonuses: favorites similarity +15%, similar-tenant interest +15%, preference match up to +30%, budget match +10%.</span>
+                            <span class="hero-info-tooltip-reason">Why this appeared: {{ explanation }}{% if dorm.preference_match_percentage %} ({{ dorm.preference_match_percentage }}% preference match){% endif %}</span>
+                        </span>
+                    </span>
                     <span class="text-blue-700 font-medium">{{ explanation }}</span>
                 </p>
                 <div class="flex items-center mb-3">
@@ -354,7 +362,7 @@
     
     <div class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
         {% for dorm, explanation in bedspace_dorms %}
-        <div class="hero-dorm-card bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
+        <div class="hero-dorm-card hero-dorm-card--tooltip bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div class="hero-dorm-media relative h-48 w-full bg-gray-100">
                 {% if dorm.images.all|length > 0 %}
                 <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-carousel="slide">
@@ -386,7 +394,7 @@
                 <img class="w-full h-48 object-contain scale-90 hover:scale-100 transition-transform duration-300" 
                      src="{% static 'images/default_dorm.svg' %}" alt="No Image" />
                 {% endif %}
-                <div class="absolute top-2 left-2">
+                <div class="absolute top-2 left-2 z-50">
                     <span class="hero-accommodation-badge px-3 py-1 text-sm font-medium rounded-full {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-100 text-blue-800{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
@@ -421,9 +429,17 @@
                     </div>
                 </div>
                 <div class="hero-explanation text-sm text-gray-600 mb-2 flex items-start">
-                    <svg class="w-5 h-5 mr-2 flex-shrink-0 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                    <span class="hero-info-tooltip" tabindex="0" aria-label="Why this bedspace is recommended">
+                        <svg class="w-5 h-5 mr-2 flex-shrink-0 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="hero-info-tooltip-card">
+                            <span class="hero-info-tooltip-title">How scoring works</span>
+                            <span class="hero-info-tooltip-list">Base: rating 20%, location 20%, amenities 15%, review volume 5%, price efficiency.</span>
+                            <span class="hero-info-tooltip-list">Bonuses: favorites similarity +15%, similar-tenant interest +15%, preference match up to +30%, budget match +10%.</span>
+                            <span class="hero-info-tooltip-reason">Why this appeared: {{ explanation }}{% if dorm.preference_match_percentage %} ({{ dorm.preference_match_percentage }}% preference match){% endif %}</span>
+                        </span>
+                    </span>
                     <span>{{ explanation }}</span>
                 </div>
                 <div class="flex items-center mb-2">
@@ -827,6 +843,15 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
 }
 
+.hero-dorm-card--tooltip {
+    overflow: visible !important;
+}
+
+.hero-dorm-card--tooltip:hover,
+.hero-dorm-card--tooltip:focus-within {
+    z-index: 40;
+}
+
 .hero-dorm-card::before {
     content: "";
     position: absolute;
@@ -883,6 +908,71 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 0.7rem;
     background: rgba(14, 116, 144, 0.06);
     border: 1px solid rgba(14, 116, 144, 0.14);
+}
+
+.hero-info-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: flex-start;
+    cursor: help;
+    outline: none;
+    z-index: 70;
+}
+
+.hero-info-tooltip-card {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    width: 280px;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(8, 145, 178, 0.25);
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.72rem;
+    line-height: 1.15rem;
+    font-weight: 600;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+    z-index: 120;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+}
+
+.hero-info-tooltip-title {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin-bottom: 0.2rem;
+}
+
+.hero-info-tooltip-list {
+    display: block;
+    margin-top: 0.2rem;
+    color: #0f172a;
+    font-size: 0.69rem;
+    line-height: 1.05rem;
+}
+
+.hero-info-tooltip-reason {
+    display: block;
+    margin-top: 0.35rem;
+    padding-top: 0.28rem;
+    border-top: 1px dashed rgba(8, 145, 178, 0.22);
+    color: #0f766e;
+    font-size: 0.69rem;
+    font-weight: 700;
+    line-height: 1.05rem;
+}
+
+.hero-info-tooltip:hover .hero-info-tooltip-card,
+.hero-info-tooltip:focus .hero-info-tooltip-card,
+.hero-info-tooltip:focus-visible .hero-info-tooltip-card {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .hero-card-action {

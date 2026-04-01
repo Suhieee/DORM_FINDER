@@ -20,7 +20,7 @@ from datetime import timedelta
 import json
 import logging
 
-from .models import Reservation, Dorm, PaymentConfiguration
+from .models import Reservation, Dorm, PaymentConfiguration, Message
 from .models_transaction import TransactionLog, PaymentEventLog
 from .payment_service import mongo_pay_service
 from .payment_paymongo import paymongo_service
@@ -175,7 +175,7 @@ def payment_observability_dashboard(request):
 def payment_booking_intent(request, reservation_id):
     """
     Create a booking intent and display payment breakdown
-    User can choose payment method: gateway or manual upload
+    User can choose payment method: PayMongo checkout or manual upload
     """
     reservation = get_object_or_404(
         Reservation.objects.select_related('dorm', 'tenant', 'dorm__payment_config'),
@@ -204,33 +204,73 @@ def payment_booking_intent(request, reservation_id):
     payment_breakdown = payment_config.calculate_total_amount()
     partial_payment_amount = payment_config.get_partial_payment_amount()
     
+    selected_payment_method = 'gcash'
+
     # Handle payment method selection
     if request.method == 'POST':
         payment_method = request.POST.get('payment_method')
+        selected_payment_method = payment_method or 'gcash'
         
-        if payment_method == 'gateway':
-            # Proceed with payment gateway
-            return redirect('dormitory:payment_gateway_checkout', reservation_id=reservation.id)
-        
-        elif payment_method == 'gcash':
+        if payment_method == 'gcash':
             # Proceed with PayMongo Checkout (supports GCash, PayMaya, Cards)
             return redirect('dormitory:paymongo_checkout', reservation_id=reservation.id)
         
         elif payment_method == 'manual':
-            # Allow manual upload
+            # Manual flow requires proof upload on this page.
+            payment_proof = request.FILES.get('payment_proof')
+            if not payment_proof:
+                messages.error(request, "Please upload a payment proof image for manual payment.")
+            else:
+                reservation.payment_method = 'manual'
+                reservation.status = 'pending_payment'
+                reservation.payment_status = 'processing'
+                reservation.payment_proof = payment_proof
+                reservation.payment_submitted_at = timezone.now()
+                reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
+                reservation.save()
+
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.dorm.landlord,
+                    content="Payment proof has been submitted and is awaiting verification.",
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+
+                notify_user(
+                    user=reservation.dorm.landlord,
+                    message=f"Payment proof submitted for {reservation.dorm.name}. Please verify.",
+                    related_object_id=reservation.id
+                )
+
+                messages.success(request, "Payment proof uploaded successfully! Waiting for landlord verification.")
+                base_url = reverse('dormitory:tenant_reservations')
+                return redirect(f"{base_url}?selected_reservation={reservation.id}")
+
+            context = {
+                'reservation': reservation,
+                'payment_config': payment_config,
+                'payment_breakdown': payment_breakdown,
+                'partial_payment_amount': partial_payment_amount,
+                'accepts_gateway': payment_config.accepts_gateway,
+                'accepts_manual': payment_config.accepts_manual,
+                'accepts_cash': payment_config.accepts_cash,
+                'accepts_partial': payment_config.accepts_partial_payment,
+                'selected_payment_method': selected_payment_method,
+            }
+            return render(request, 'dormitory/payment_booking_intent.html', context)
+
+        # Backward-compatible manual selection without proof upload.
+        elif payment_method == 'manual_defer':
             reservation.payment_method = 'manual'
             reservation.status = 'pending_payment'
             reservation.save()
             messages.info(request, "Please upload your payment proof.")
-            return redirect('dormitory:tenant_reservations')
-        
-        elif payment_method == 'cash':
-            # Cash payment arrangement
-            reservation.payment_method = 'cash'
-            reservation.status = 'pending_payment'
-            reservation.save()
-            messages.info(request, "Cash payment arranged. Please coordinate with the landlord.")
-            return redirect('dormitory:tenant_reservations')
+            base_url = reverse('dormitory:tenant_reservations')
+            return redirect(f"{base_url}?selected_reservation={reservation.id}")
+
+        messages.error(request, "Please choose a valid payment method.")
+        return redirect('dormitory:payment_booking_intent', reservation_id=reservation.id)
     
     context = {
         'reservation': reservation,
@@ -241,6 +281,7 @@ def payment_booking_intent(request, reservation_id):
         'accepts_manual': payment_config.accepts_manual,
         'accepts_cash': payment_config.accepts_cash,
         'accepts_partial': payment_config.accepts_partial_payment,
+        'selected_payment_method': selected_payment_method,
     }
     
     return render(request, 'dormitory/payment_booking_intent.html', context)

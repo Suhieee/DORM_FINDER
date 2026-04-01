@@ -355,6 +355,15 @@ class PublicRoommateDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['compatibility_score'] = None
+
+        if self.request.user.is_authenticated and self.request.user != self.object.user:
+            user_post = RoommatePost.objects.filter(user=self.request.user).first()
+            if user_post and user_post != self.object:
+                from .services import RoommateMatchingService
+                score, _ = RoommateMatchingService.calculate_compatibility(user_post, self.object)
+                context['compatibility_score'] = round(float(score), 1)
+
         return context
 
 
@@ -555,6 +564,37 @@ class DormListView(LoginRequiredMixin, ListView):
         if school_id:
             queryset = queryset.filter(nearby_schools__id=school_id)
 
+        # Apply location radius filter (5km) if coordinates are provided
+        lat = self.request.GET.get('lat')
+        lng = self.request.GET.get('lng')
+        if lat and lng:
+            try:
+                lat = float(lat)
+                lng = float(lng)
+                from math import radians, sin, cos, sqrt, atan2
+
+                def calculate_distance(lat1, lon1, lat2, lon2):
+                    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+                    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                    return 6371 * c
+
+                nearby_dorm_ids = []
+                for dorm in queryset:
+                    if dorm.latitude and dorm.longitude:
+                        distance = calculate_distance(lat, lng, float(dorm.latitude), float(dorm.longitude))
+                        if distance <= 5.0:
+                            nearby_dorm_ids.append(dorm.id)
+
+                if nearby_dorm_ids:
+                    queryset = queryset.filter(id__in=nearby_dorm_ids)
+                else:
+                    queryset = queryset.none()
+            except (ValueError, TypeError):
+                pass
+
         # Apply sorting
         if sort_by == 'price_asc':
             queryset = queryset.order_by('price')
@@ -564,8 +604,7 @@ class DormListView(LoginRequiredMixin, ListView):
             # Default sorting by newest
             queryset = queryset.order_by('-id')
 
-        # Debug print final query
-        print(f"Final query: {queryset.query}")
+        # Keep lightweight diagnostics without forcing SQL compilation of empty sets.
         print(f"Number of results: {queryset.count()}")
         
         end_time = time.time()
@@ -870,7 +909,15 @@ class RoommateDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Add user's own post to context for Connect button
-        context['user_post'] = RoommatePost.objects.filter(user=self.request.user).first()
+        user_post = RoommatePost.objects.filter(user=self.request.user).first()
+        context['user_post'] = user_post
+        context['compatibility_score'] = None
+
+        if user_post and user_post != self.object and self.request.user != self.object.user:
+            from .services import RoommateMatchingService
+            score, _ = RoommateMatchingService.calculate_compatibility(user_post, self.object)
+            context['compatibility_score'] = round(float(score), 1)
+
         return context
 
 class RoommateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -1367,6 +1414,11 @@ class UpdateReservationStatusView(View):
             if reservation.payment_proof:
                 reservation.has_paid_reservation = True
                 reservation.status = 'confirmed'  # Change status to confirmed after payment verification
+                reservation.payment_status = 'success'
+                reservation.payment_verified_at = timezone.now()
+                if not reservation.payment_method:
+                    reservation.payment_method = 'manual'
+                reservation.save()
                 messages.success(request, f"Payment for {reservation.dorm.name} has been verified.")
                 # Create a system message
                 Message.objects.create(
@@ -1397,6 +1449,9 @@ class UpdateReservationStatusView(View):
                 reservation.payment_submitted_at = None
                 reservation.has_paid_reservation = False
                 reservation.status = 'pending_payment'  # Reset to pending_payment
+                reservation.payment_status = 'failed'
+                reservation.payment_verified_at = None
+                reservation.save()
                 messages.warning(request, f"Payment proof for {reservation.dorm.name} has been rejected.")
                 # Create a system message
                 Message.objects.create(
@@ -1840,7 +1895,17 @@ class tenantReservationsView(ListView):
                 payment_proof = request.FILES['payment_proof']
                 reservation.payment_proof = payment_proof
                 reservation.payment_submitted_at = timezone.now()
-                reservation.payment_amount = reservation.dorm.price  # Set amount to dorm price
+                reservation.payment_method = 'manual'
+                reservation.payment_status = 'processing'
+                reservation.status = 'pending_payment'
+
+                # Use configured total amount (deposit + advance + fees) if available.
+                try:
+                    payment_config = reservation.dorm.payment_config
+                    payment_breakdown = payment_config.calculate_total_amount()
+                    reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
+                except Exception:
+                    reservation.payment_amount = reservation.dorm.price
                 # Keep status as pending_payment until landlord verifies
                 reservation.save()
 
