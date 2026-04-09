@@ -254,11 +254,14 @@
                         {{ dorm.get_accommodation_type_display }}
                     </span>
                 </div>
+                <div class="absolute top-2 right-2 z-50">
+                    <span class="hero-card-tag hero-card-tag--recommended hero-card-tag--compact">Top Pick</span>
+                </div>
             </div>
             <div class="p-4">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1">
-                        <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
+                        <h3 class="hero-dorm-title" title="{{ dorm.name }}">{{ dorm.name }}</h3>
                         {% if dorm.landlord.is_identity_verified %}
                         <div class="mt-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
@@ -271,7 +274,6 @@
                         {% endif %}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="hero-card-tag hero-card-tag--recommended bg-green-100 text-green-600 px-2 py-1 rounded-full text-sm">Recommended</span>
                         {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
@@ -324,18 +326,6 @@
                         </svg>
                         {{ dorm.recent_views|default:"0" }} views
                     </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    {% for amenity in dorm.amenities.all|slice:":3" %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
-                        {{ amenity.name }}
-                    </span>
-                    {% endfor %}
-                    {% if dorm.amenities.count > 3 %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                        +{{ dorm.amenities.count|add:"-3" }} more
-                    </span>
-                    {% endif %}
                 </div>
                 <div class="flex justify-end">
                     <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="hero-card-action inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
@@ -403,7 +393,7 @@
             <div class="p-4">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1">
-                        <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
+                        <h3 class="hero-dorm-title" title="{{ dorm.name }}">{{ dorm.name }}</h3>
                         {% if dorm.landlord.is_identity_verified %}
                         <div class="mt-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
@@ -416,7 +406,6 @@
                         {% endif %}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="hero-card-tag hero-card-tag--bedspace bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm">Bedspace</span>
                         {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
@@ -472,23 +461,13 @@
                         {{ dorm.recent_views|default:"0" }} views
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    {% if dorm.available_beds %}
+                {% if dorm.available_beds %}
+                <div class="mb-4">
                     <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600">
                         {{ dorm.available_beds }} beds available
                     </span>
-                    {% endif %}
-                    {% for amenity in dorm.amenities.all|slice:":2" %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
-                        {{ amenity.name }}
-                    </span>
-                    {% endfor %}
-                    {% if dorm.amenities.count > 2 %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                        +{{ dorm.amenities.count|add:"-2" }} more
-                    </span>
-                    {% endif %}
                 </div>
+                {% endif %}
                 <div class="flex justify-end">
                     <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="hero-card-action inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
                 </div>
@@ -556,7 +535,7 @@
             <div class="p-4">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1">
-                        <h3 class="text-xl font-semibold">{{ dorm.name }}</h3>
+                        <h3 class="hero-dorm-title" title="{{ dorm.name }}">{{ dorm.name }}</h3>
                         {% if dorm.landlord.is_identity_verified %}
                         <div class="mt-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
@@ -569,7 +548,6 @@
                         {% endif %}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="hero-card-tag hero-card-tag--popular bg-red-100 text-red-600 px-2 py-1 rounded-full text-sm">Popular</span>
                         {% if request.user.is_authenticated and request.user.user_type == 'tenant' %}
                         <button type="button"
                                 data-dorm-id="{{ dorm.id }}"
@@ -610,18 +588,6 @@
                         </svg>
                         {{ dorm.recent_views|default:"0" }} views
                     </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    {% for amenity in dorm.amenities.all|slice:":3" %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
-                        {{ amenity.name }}
-                    </span>
-                    {% endfor %}
-                    {% if dorm.amenities.count > 3 %}
-                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                        +{{ dorm.amenities.count|add:"-3" }} more
-                    </span>
-                    {% endif %}
                 </div>
                 <div class="flex justify-end">
                     <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="hero-card-action inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
@@ -969,22 +935,32 @@ document.addEventListener('DOMContentLoaded', function() {
     border: 1px solid transparent;
 }
 
+.hero-dorm-title {
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    font-weight: 700;
+    line-height: 1.2;
+    min-height: 2.4em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
 .hero-card-tag--recommended {
     border-color: rgba(8, 145, 178, 0.35);
     background: rgba(236, 254, 255, 0.9);
     color: #0f766e;
 }
 
-.hero-card-tag--bedspace {
-    border-color: rgba(37, 99, 235, 0.35);
-    background: rgba(219, 234, 254, 0.9);
-    color: #1d4ed8;
-}
-
-.hero-card-tag--popular {
-    border-color: rgba(14, 116, 144, 0.35);
-    background: rgba(224, 242, 254, 0.95);
-    color: #0e7490;
+.hero-card-tag--compact {
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 6px 16px rgba(12, 61, 107, 0.2);
 }
 
 .hero-explanation {
