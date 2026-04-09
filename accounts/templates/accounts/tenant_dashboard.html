@@ -666,7 +666,9 @@
         </div>
         <h3 class="text-xl font-semibold mb-2 text-blue-800">tenant-Focused</h3>
         <p class="text-gray-600 dark:text-gray-500">Properties selected with tenant needs and budgets in mind.</p>
-      </div>
+    </div>
+    </div>
+</div>
 
 <script>
 let imagesLoaded = 0;
@@ -689,6 +691,56 @@ function checkAllImagesLoaded() {
     }
 }
 
+function initializeCarousels() {
+    const carousels = document.querySelectorAll('[data-carousel="slide"]');
+
+    carousels.forEach(function (carousel) {
+        const items = carousel.querySelectorAll('[data-carousel-item]');
+        const prevButton = carousel.querySelector('[data-carousel-prev]');
+        const nextButton = carousel.querySelector('[data-carousel-next]');
+
+        if (items.length <= 1) {
+            if (items.length === 1) {
+                items[0].classList.remove('hidden');
+            }
+            return;
+        }
+
+        let currentIndex = 0;
+
+        function showItem(index) {
+            items.forEach((item, itemIndex) => {
+                if (itemIndex === index) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+
+        function nextItem() {
+            currentIndex = (currentIndex + 1) % items.length;
+            showItem(currentIndex);
+        }
+
+        function prevItem() {
+            currentIndex = (currentIndex - 1 + items.length) % items.length;
+            showItem(currentIndex);
+        }
+
+        if (prevButton) {
+            prevButton.addEventListener('click', prevItem);
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', nextItem);
+        }
+
+        showItem(currentIndex);
+        setInterval(nextItem, 5000);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Add click handlers to all favorite buttons
     document.querySelectorAll('.favorite-btn').forEach(button => {
@@ -698,6 +750,8 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleFavorite(dormId);
         });
     });
+
+    initializeCarousels();
 
     // Count total images and set up load listeners
     const images = document.getElementsByTagName('img');
