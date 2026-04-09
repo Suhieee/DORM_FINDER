@@ -923,7 +923,37 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .hero-dorm-media {
+    position: relative;
+    overflow: hidden;
     background: radial-gradient(circle at 15% 20%, rgba(186, 230, 253, 0.85), rgba(224, 242, 254, 0.65) 40%, rgba(236, 254, 255, 0.8));
+}
+
+/* Local carousel layout: keep images bounded to card media box. */
+[data-local-carousel="slide"] {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+[data-local-carousel="slide"] > div {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+[data-local-carousel-item] {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+}
+
+[data-local-carousel-item] img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .hero-accommodation-badge {

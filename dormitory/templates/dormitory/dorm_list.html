@@ -704,7 +704,7 @@ function clearPaymentTerms() {
             <div class="p-4">
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex-1 pr-2">
-                        <h3 class="text-lg font-semibold text-gray-900 truncate">{{ dorm.name }}</h3>
+                        <h3 class="browse-dorm-title text-gray-900 line-clamp-2" title="{{ dorm.name }}">{{ dorm.name }}</h3>
                         {% if dorm.landlord.is_identity_verified %}
                         <div class="mt-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
@@ -727,7 +727,7 @@ function clearPaymentTerms() {
                     {% endif %}
                 </div>
 
-                <p class="text-sm text-gray-600 mb-3">{{ dorm.address }}</p>
+                <p class="text-sm text-gray-600 mb-3 line-clamp-1" title="{{ dorm.address }}">{{ dorm.address|truncatechars:42 }}</p>
 
                 <div class="flex items-center mb-3">
                     {% for i in "12345" %}
@@ -1806,6 +1806,14 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 .browse-accommodation-badge {
     border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.browse-dorm-title {
+    font-size: clamp(1rem, 1.15vw, 1.125rem);
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .browse-price {
