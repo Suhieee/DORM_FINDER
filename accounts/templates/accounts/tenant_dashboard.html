@@ -220,24 +220,24 @@
         <div class="hero-dorm-card hero-dorm-card--tooltip bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div class="hero-dorm-media relative h-48 w-full bg-gray-100">
                 {% if dorm.images.all|length > 0 %}
-                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-carousel="slide">
+                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-local-carousel="slide">
                     <div class="h-48 w-full rounded-t-lg">
                         {% for image in dorm.images.all|slice:':5' %}
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                        <div class="hidden duration-700 ease-in-out" data-local-carousel-item="{% if forloop.first %}active{% endif %}">
                             <img src="{{ image.image.url }}" class="block w-full h-full object-cover rounded-t-lg" alt="Dorm Image">
                         </div>
                         {% endfor %}
                         {% if dorm.images.all|length > 1 %}
                         <button type="button" 
                             class="absolute top-1/2 left-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-prev>
+                            data-local-carousel-prev>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                             </svg>
                         </button>
                         <button type="button" 
                             class="absolute top-1/2 right-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-next>
+                            data-local-carousel-next>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
@@ -365,24 +365,24 @@
         <div class="hero-dorm-card hero-dorm-card--tooltip bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div class="hero-dorm-media relative h-48 w-full bg-gray-100">
                 {% if dorm.images.all|length > 0 %}
-                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-carousel="slide">
+                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-local-carousel="slide">
                     <div class="h-48 w-full rounded-t-lg">
                         {% for image in dorm.images.all|slice:':5' %}
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                        <div class="hidden duration-700 ease-in-out" data-local-carousel-item="{% if forloop.first %}active{% endif %}">
                             <img src="{{ image.image.url }}" class="block w-full h-full object-cover rounded-t-lg" alt="Dorm Image">
                         </div>
                         {% endfor %}
                         {% if dorm.images.all|length > 1 %}
                         <button type="button" 
                             class="absolute top-1/2 left-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-prev>
+                            data-local-carousel-prev>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                             </svg>
                         </button>
                         <button type="button" 
                             class="absolute top-1/2 right-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-next>
+                            data-local-carousel-next>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
@@ -518,24 +518,24 @@
         <div class="hero-dorm-card bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div class="hero-dorm-media relative h-48 w-full bg-gray-100">
                 {% if dorm.images.all|length > 0 %}
-                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-carousel="slide">
+                <div id="carousel-{{ dorm.id }}" class="h-48 w-full" data-local-carousel="slide">
                     <div class="h-48 w-full rounded-t-lg">
                         {% for image in dorm.images.all|slice:':5' %}
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item="{% if forloop.first %}active{% endif %}">
+                        <div class="hidden duration-700 ease-in-out" data-local-carousel-item="{% if forloop.first %}active{% endif %}">
                             <img src="{{ image.image.url }}" class="block w-full h-full object-cover rounded-t-lg" alt="Dorm Image">
                         </div>
                         {% endfor %}
                         {% if dorm.images.all|length > 1 %}
                         <button type="button" 
                             class="absolute top-1/2 left-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-prev>
+                            data-local-carousel-prev>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                             </svg>
                         </button>
                         <button type="button" 
                             class="absolute top-1/2 right-0 z-30 -translate-y-1/2 flex items-center justify-center h-8 w-8 bg-gray-900/60 text-white rounded-full hover:bg-gray-900/80 shadow transition" 
-                            data-carousel-next>
+                            data-local-carousel-next>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
@@ -692,12 +692,12 @@ function checkAllImagesLoaded() {
 }
 
 function initializeCarousels() {
-    const carousels = document.querySelectorAll('[data-carousel="slide"]');
+    const carousels = document.querySelectorAll('[data-local-carousel="slide"]');
 
     carousels.forEach(function (carousel) {
-        const items = carousel.querySelectorAll('[data-carousel-item]');
-        const prevButton = carousel.querySelector('[data-carousel-prev]');
-        const nextButton = carousel.querySelector('[data-carousel-next]');
+        const items = carousel.querySelectorAll('[data-local-carousel-item]');
+        const prevButton = carousel.querySelector('[data-local-carousel-prev]');
+        const nextButton = carousel.querySelector('[data-local-carousel-next]');
 
         if (items.length <= 1) {
             if (items.length === 1) {
