@@ -36,6 +36,17 @@
                     <span class="text-gray-600">Subtotal</span>
                     <span class="font-medium">₱{{ payment_breakdown.subtotal|floatformat:2 }}</span>
                 </div>
+
+                {% if payment_breakdown.discount_amount > 0 %}
+                <div class="flex justify-between text-emerald-700">
+                    <span>PWD discount ({{ payment_breakdown.discount_percent|floatformat:0 }}%)</span>
+                    <span class="font-medium">-₱{{ payment_breakdown.discount_amount|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">After discount</span>
+                    <span class="font-medium">₱{{ payment_breakdown.discounted_subtotal|floatformat:2 }}</span>
+                </div>
+                {% endif %}
                 
                 <div class="flex justify-between">
                     <span class="text-gray-600">Processing Fee ({{ payment_breakdown.processing_fee_percent }}%)</span>

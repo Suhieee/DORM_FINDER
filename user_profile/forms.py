@@ -38,6 +38,41 @@ class UserProfileForm(forms.ModelForm):
         return user_profile
 
 
+class PWDVerificationForm(forms.Form):
+    pwd_document = forms.ImageField(
+        required=True,
+        help_text='Upload a clear image of your PWD ID, birth certificate, valid government ID, disability certificate, or equivalent proof.',
+        widget=forms.FileInput(attrs={
+            'accept': 'image/*',
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700'
+        })
+    )
+    pwd_id_photo = forms.ImageField(
+        required=True,
+        help_text='Upload a clear photo of you holding your valid ID or PWD ID for identity matching.',
+        widget=forms.FileInput(attrs={
+            'accept': 'image/*',
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700'
+        })
+    )
+    pwd_reference_number = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200',
+            'placeholder': 'PWD ID / reference number (optional)'
+        })
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200',
+            'placeholder': 'Anything an admin should know about your PWD discount request (optional)'
+        })
+    )
+
+
 class TenantPreferencesForm(forms.ModelForm):
     """Form for tenant preferences - smart matching system"""
     

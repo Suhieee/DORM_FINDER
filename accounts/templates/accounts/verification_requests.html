@@ -34,6 +34,53 @@
             </div>
         </div>
 
+        <div class="mb-8 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+            <h2 class="text-base font-semibold text-cyan-900">What this verification is about</h2>
+            <p class="mt-2 text-sm leading-relaxed text-cyan-900/90">
+                This page is for landlord identity verification. Admins review submitted government IDs and proof documents to confirm
+                that a landlord account is legitimate before allowing full platform trust and visibility.
+            </p>
+            <p class="mt-2 text-sm leading-relaxed text-cyan-900/90">
+                Approve only when details are valid and readable. Reject when documents are unclear, mismatched, or incomplete.
+            </p>
+        </div>
+
+        <div class="admin-surface rounded-xl shadow-sm border border-gray-200 mb-8 p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Tenant PWD Discount Requests</h2>
+                    <p class="text-sm text-slate-600 mt-1">These are tenant-submitted PWD verification requests for discount eligibility.</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 text-sm font-semibold w-fit">
+                    Pending: {{ pending_pwd_requests.count }}
+                </span>
+            </div>
+
+            {% if pending_pwd_requests %}
+                <div class="space-y-3">
+                    {% for profile in pending_pwd_requests %}
+                    <div class="rounded-lg border border-slate-200 bg-white p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <p class="text-base font-semibold text-slate-900">{{ profile.user.get_full_name|default:profile.user.username }}</p>
+                            <p class="text-sm text-slate-600">{{ profile.user.email }}</p>
+                            <p class="text-xs text-slate-500 mt-1">Submitted: {{ profile.pwd_submitted_at|date:"M d, Y g:i A"|default:"recently" }}</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'user_profile:review_pwd_verification' profile.user.id %}"
+                               class="inline-flex items-center px-4 py-2 rounded-lg bg-cyan-700 text-white text-sm font-semibold hover:bg-cyan-800 transition-colors">
+                                Review PWD Request
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                    No pending tenant PWD discount requests.
+                </div>
+            {% endif %}
+        </div>
+
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="admin-stat-card rounded-xl shadow-sm border border-gray-200 p-6">

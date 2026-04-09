@@ -1,10 +1,14 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import DetailView, UpdateView, View
+from django.views.generic import DetailView, ListView, UpdateView, View
 from django.urls import reverse_lazy, reverse
 from accounts.models import CustomUser  
 from .models import UserProfile, FavoriteDorm, TenantPreferences
 from .forms import UserProfileForm, TenantPreferencesForm, RoommatePreferencesForm
 from django.contrib import messages
+from .forms import PWDVerificationForm
+from accounts.models import Notification
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from dormitory.models import Dorm
@@ -67,6 +71,121 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def form_invalid(self, form):
         messages.error(self.request, 'There was an error updating your profile. Please try again.')
         return super().form_invalid(form)
+
+
+class SubmitPWDVerificationView(LoginRequiredMixin, View):
+    template_name = 'user_profile/submit_pwd_verification.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != 'tenant':
+            messages.warning(request, 'PWD discount requests are only for tenants.');
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        if profile.is_pwd_verified:
+            messages.info(request, 'Your PWD discount is already approved.')
+            return redirect('user_profile:profile')
+        if profile.pwd_verification_status == 'pending':
+            messages.warning(request, 'Your PWD discount request is already pending review.')
+            return redirect('user_profile:profile')
+
+        form = PWDVerificationForm()
+        return render(request, self.template_name, {'form': form, 'profile': profile})
+
+    def post(self, request):
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        if profile.is_pwd_verified:
+            messages.info(request, 'Your PWD discount is already approved.')
+            return redirect('user_profile:profile')
+
+        form = PWDVerificationForm(request.POST, request.FILES)
+        if form.is_valid():
+            profile.pwd_document = form.cleaned_data['pwd_document']
+            profile.pwd_id_photo = form.cleaned_data['pwd_id_photo']
+            profile.pwd_reference_number = form.cleaned_data['pwd_reference_number']
+            profile.pwd_verification_status = 'pending'
+            profile.pwd_rejection_reason = None
+            profile.pwd_submitted_at = timezone.now()
+            profile.save(update_fields=[
+                'pwd_document',
+                'pwd_id_photo',
+                'pwd_reference_number',
+                'pwd_verification_status',
+                'pwd_rejection_reason',
+                'pwd_submitted_at',
+            ])
+
+            messages.success(request, 'PWD discount request submitted. An admin will review it shortly.')
+            return redirect('user_profile:profile')
+
+        return render(request, self.template_name, {'form': form, 'profile': profile})
+
+
+@method_decorator(login_required, name='dispatch')
+class PWDVerificationRequestsView(UserPassesTestMixin, ListView):
+    model = UserProfile
+    template_name = 'user_profile/pwd_verification_requests.html'
+    context_object_name = 'requests_list'
+
+    def test_func(self):
+        return self.request.user.user_type == 'admin'
+
+    def get_queryset(self):
+        return UserProfile.objects.select_related('user').filter(
+            user__user_type='tenant',
+            pwd_verification_status='pending'
+        ).order_by('-pwd_submitted_at')
+
+
+@method_decorator(login_required, name='dispatch')
+class ReviewPWDVerificationView(UserPassesTestMixin, View):
+    template_name = 'user_profile/review_pwd_verification.html'
+
+    def test_func(self):
+        return self.request.user.user_type == 'admin'
+
+    def get_profile(self, user_id):
+        return get_object_or_404(UserProfile, user__id=user_id, user__user_type='tenant')
+
+    def get(self, request, user_id):
+        profile = self.get_profile(user_id)
+        return render(request, self.template_name, {'profile': profile})
+
+    def post(self, request, user_id):
+        profile = self.get_profile(user_id)
+        action = request.POST.get('action')
+        rejection_reason = request.POST.get('rejection_reason', '').strip()
+
+        if action == 'approve':
+            profile.pwd_verification_status = 'approved'
+            profile.is_pwd_verified = True
+            profile.pwd_reviewed_at = timezone.now()
+            profile.pwd_rejection_reason = None
+            profile.save(update_fields=['pwd_verification_status', 'is_pwd_verified', 'pwd_reviewed_at', 'pwd_rejection_reason'])
+            Notification.objects.create(
+                user=profile.user,
+                message='Your PWD discount request has been approved. The discount will now be applied automatically.',
+                related_object_id=profile.user.id,
+            )
+            messages.success(request, f'PWD discount approved for {profile.user.username}.')
+        elif action == 'reject':
+            profile.pwd_verification_status = 'rejected'
+            profile.is_pwd_verified = False
+            profile.pwd_reviewed_at = timezone.now()
+            profile.pwd_rejection_reason = rejection_reason or 'No reason provided.'
+            profile.save(update_fields=['pwd_verification_status', 'is_pwd_verified', 'pwd_reviewed_at', 'pwd_rejection_reason'])
+            Notification.objects.create(
+                user=profile.user,
+                message=f'Your PWD discount request was rejected. Reason: {profile.pwd_rejection_reason}',
+                related_object_id=profile.user.id,
+            )
+            messages.warning(request, f'PWD discount rejected for {profile.user.username}.')
+        else:
+            messages.error(request, 'Invalid action.')
+
+        return redirect('user_profile:pwd_verification_requests')
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class ToggleFavoriteDormView(LoginRequiredMixin, View):
@@ -229,6 +348,13 @@ class RequestPasswordOTPView(LoginRequiredMixin, View):
 
     def post(self, request):
         user = request.user
+
+        if not user.email:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Please add an email to your profile before changing your password.'},
+                status=400,
+            )
+
         otp  = str(random.randint(100000, 999999))
 
         # Store OTP + expiry (10 minutes) in session
@@ -298,7 +424,12 @@ class ChangePasswordWithOTPView(LoginRequiredMixin, View):
             return JsonResponse({'status': 'error', 'message': 'No OTP request found. Please request a new code.'}, status=400)
 
         # Expiry check
-        expires_at = timezone.datetime.fromisoformat(expires_str)
+        try:
+            expires_at = timezone.datetime.fromisoformat(expires_str)
+        except (TypeError, ValueError):
+            self._clear_otp(request)
+            return JsonResponse({'status': 'error', 'message': 'OTP data is invalid. Please request a new code.'}, status=400)
+
         if timezone.is_naive(expires_at):
             expires_at = timezone.make_aware(expires_at)
         if timezone.now() > expires_at:

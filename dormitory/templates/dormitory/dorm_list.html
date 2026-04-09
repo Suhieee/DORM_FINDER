@@ -63,7 +63,7 @@
 
                     <div class="grid grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[320px] lg:ml-auto lg:mr-0">
                         <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
-                            <p class="text-2xl font-bold text-white leading-tight">{{ page_obj.paginator.count|default:"0" }}</p>
+                            <p class="text-2xl font-bold text-white leading-tight">{{ dorms|length|default:"0" }}</p>
                             <p class="text-xs font-semibold text-cyan-200 uppercase tracking-wide mt-1">Results</p>
                         </div>
                         <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
@@ -107,6 +107,7 @@
             <input type="hidden" name="min_rating"         id="hMinRating" value="{{ request.GET.min_rating|default:'' }}">
             <input type="hidden" name="advance_months"     id="hAdvanceMonths" value="{{ request.GET.advance_months|default:'' }}">
             <input type="hidden" name="deposit_months"     id="hDepositMonths" value="{{ request.GET.deposit_months|default:'' }}">
+            <input type="hidden" name="school"             id="hSchool"    value="{{ request.GET.school|default:'' }}">
             <div id="hAmenitiesContainer">{% for aid in selected_amenities %}<input type="hidden" name="amenities" value="{{ aid }}">{% endfor %}</div>
             <input type="hidden" name="lat"      id="filterLat"      value="{{ request.GET.lat|default:'' }}">
             <input type="hidden" name="lng"      id="filterLng"      value="{{ request.GET.lng|default:'' }}">
@@ -174,6 +175,27 @@
                         <div class="flex gap-2 mt-3">
                             <button type="button" onclick="applyAmenities()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
                             <button type="button" onclick="clearAmenities()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- School -->
+                <div class="relative">
+                    <button type="button" onclick="togglePill('schoolPanel')"
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.school %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                        School <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="schoolPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Nearby School</p>
+                        <select id="localSchool" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                            <option value="">All Schools</option>
+                            {% for school in schools %}
+                            <option value="{{ school.id }}" {% if request.GET.school == school.id|stringformat:'s' %}selected{% endif %}>{{ school.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="flex gap-2 mt-3">
+                            <button type="button" onclick="applySchoolFilter()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="clearSchoolFilter()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
                         </div>
                     </div>
                 </div>
@@ -331,6 +353,16 @@ function applyAmenities() { buildAmenitiesHidden(); document.getElementById('fil
 function clearAmenities() {
     document.querySelectorAll('input[name="_amenity"]').forEach(cb => cb.checked = false);
     document.getElementById('hAmenitiesContainer').innerHTML = '';
+    document.getElementById('filterForm').submit();
+}
+function applySchoolFilter() {
+    document.getElementById('hSchool').value = document.getElementById('localSchool').value;
+    document.getElementById('filterForm').submit();
+}
+function clearSchoolFilter() {
+    document.getElementById('hSchool').value = '';
+    const schoolSelect = document.getElementById('localSchool');
+    if (schoolSelect) schoolSelect.value = '';
     document.getElementById('filterForm').submit();
 }
 let currentRating = parseInt('{{ request.GET.min_rating|default:"0" }}') || 0;
@@ -574,7 +606,7 @@ function clearPaymentTerms() {
         <div>
             <h2 class="text-2xl font-bold text-gray-900">Available Dorms</h2>
             <p class="text-gray-600 mt-1">
-                Showing {{ page_obj.start_index|default:"0" }}-{{ page_obj.end_index|default:"0" }} of {{ page_obj.paginator.count|default:"0" }} results
+                Showing <span id="visibleDormCount">0</span> of <span id="totalDormCount">{{ dorms|length|default:"0" }}</span> dorms
             </p>
         </div>
         <div class="flex items-center space-x-2">
@@ -625,9 +657,9 @@ function clearPaymentTerms() {
     <!-- Dorms Grid -->
     <div id="dormsGrid" class="w-full max-w-none grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
         {% for dorm in dorms %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
+        <div data-dorm-card class="{% if forloop.counter > 12 %}hidden {% endif %}browse-dorm-card bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
             <!-- Dorm Image with Slider -->
-            <div class="relative h-48 bg-gray-200">
+            <div class="browse-dorm-media relative h-48 bg-gray-200">
                 {% if dorm.images.all %}
                 <div id="carousel-{{ dorm.id }}" class="h-48" data-carousel="slide">
                     <div class="h-48 rounded-t-lg">
@@ -661,8 +693,8 @@ function clearPaymentTerms() {
 
   
                 <!-- Accommodation Type Badge -->
-                <div class="absolute top-3 left-5 right-5 z-50">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-purple-600 text-white{% else %}bg-green-600 text-white{% endif %}">
+                <div class="absolute top-3 left-5 right-5 z-30">
+                    <span class="browse-accommodation-badge px-2.5 py-1 text-xs font-semibold rounded-full shadow-md {% if dorm.accommodation_type == 'whole_unit' %}bg-blue-600 text-white{% elif dorm.accommodation_type == 'bedspace' %}bg-sky-600 text-white{% else %}bg-green-600 text-white{% endif %}">
                         {{ dorm.get_accommodation_type_display }}
                     </span>
                 </div>
@@ -716,7 +748,7 @@ function clearPaymentTerms() {
                 </div>
 
                 <div class="flex justify-between items-center mb-4">
-                    <p class="text-base font-bold text-blue-600">₱{{ dorm.price }}/month</p>
+                    <p class="browse-price text-base font-bold text-blue-600">₱{{ dorm.price }}/month</p>
                     <div class="flex items-center text-sm text-gray-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -761,7 +793,7 @@ function clearPaymentTerms() {
                 <!-- Action Buttons -->
                 <div class="flex justify-end">
                     <a href="{% url 'dormitory:dorm_detail' dorm.pk %}" 
-                       class="inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
+                       class="browse-card-action inline-block text-center bg-blue-600 text-white px-4 py-1 text-sm rounded hover:bg-blue-700 transition duration-300">View Details →</a>
                 </div>
             </div>
         </div>
@@ -779,49 +811,23 @@ function clearPaymentTerms() {
         {% endfor %}
     </div>
 
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="flex justify-center mb-8">
-        <nav class="flex items-center space-x-2">
-            {% if page_obj.has_previous %}
-                <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
-                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    First
-                </a>
-                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
-                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Previous
-                </a>
-            {% endif %}
-
-            <span class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
-                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Next
-                </a>
-                <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.target_price %}&target_price={{ request.GET.target_price }}{% endif %}" 
-                   class="px-4 py-2 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Last
-                </a>
-            {% endif %}
-        </nav>
+    <div id="loadMoreSection" class="flex justify-center mb-8 {% if dorms|length <= 12 %}hidden{% endif %}">
+        <button type="button" id="loadMoreBtn" class="px-6 py-3 text-sm font-semibold rounded-full border border-cyan-200 bg-white text-cyan-800 shadow-sm hover:bg-cyan-50 hover:border-cyan-300 transition-colors">
+            Load More Dorms
+        </button>
     </div>
-    {% endif %}
 </div>
 
 <script>
 // Filter functionality
+const DORM_BATCH_SIZE = 12;
+
 function toggleFilters() {
     const content = document.getElementById('filtersContent');
     const arrow = document.getElementById('filtersArrow');
     content.classList.toggle('hidden');
     arrow.classList.toggle('rotate-180');
-    
-    // Initialize filter map when filters are expanded
+
     if (!content.classList.contains('hidden')) {
         setTimeout(function() {
             initializeFilterMap();
@@ -833,13 +839,46 @@ function clearFilters() {
     window.location.href = window.location.pathname;
 }
 
+function initializeLoadMore() {
+    const cards = Array.from(document.querySelectorAll('[data-dorm-card]'));
+    const loadMoreSection = document.getElementById('loadMoreSection');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const visibleCountEl = document.getElementById('visibleDormCount');
+
+    if (!cards.length || !visibleCountEl) {
+        return;
+    }
+
+    let visibleCount = Math.min(DORM_BATCH_SIZE, cards.length);
+    visibleCountEl.textContent = visibleCount;
+
+    function revealNextBatch() {
+        const nextCards = cards.slice(visibleCount, visibleCount + DORM_BATCH_SIZE);
+        nextCards.forEach(card => card.classList.remove('hidden'));
+        visibleCount += nextCards.length;
+        visibleCountEl.textContent = visibleCount;
+
+        if (visibleCount >= cards.length && loadMoreSection) {
+            loadMoreSection.classList.add('hidden');
+        }
+    }
+
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', revealNextBatch);
+    }
+
+    if (visibleCount >= cards.length && loadMoreSection) {
+        loadMoreSection.classList.add('hidden');
+    }
+}
+
 function setViewMode(mode) {
     const gridView = document.getElementById('gridView');
     const listView = document.getElementById('listView');
     const mapView = document.getElementById('mapView');
     const dormsGrid = document.getElementById('dormsGrid');
     const mapContainer = document.getElementById('mapContainer');
-    
+
     if (mode === 'grid') {
         gridView.className = 'p-2 rounded-lg bg-blue-100 text-blue-600';
         listView.className = 'p-2 rounded-lg text-gray-400 hover:text-gray-600';
@@ -1601,6 +1640,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize carousels for dorm images
     initializeCarousels();
+    initializeLoadMore();
 
     // Hide loader
     const loader = document.getElementById('page-loader');
@@ -1731,6 +1771,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
+    line-clamp: 1;
     -webkit-line-clamp: 1;
 }
 
@@ -1738,7 +1779,53 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
+}
+
+.browse-dorm-card {
+    position: relative;
+    border: 1px solid rgba(8, 145, 178, 0.18);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(247, 252, 255, 0.99) 100%);
+}
+
+.browse-dorm-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0c3d6b 0%, #1565c0 50%, #0891b2 100%);
+    z-index: 10;
+}
+
+.browse-dorm-media {
+    background: radial-gradient(circle at 14% 20%, rgba(186, 230, 253, 0.8), rgba(224, 242, 254, 0.62) 45%, rgba(239, 246, 255, 0.82));
+}
+
+.browse-accommodation-badge {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.browse-price {
+    color: #0c4a6e;
+    font-weight: 800;
+}
+
+.browse-card-action {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 0.38rem 1rem;
+    background: linear-gradient(135deg, #0c3d6b 0%, #1565c0 55%, #0891b2 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 18px rgba(21, 101, 192, 0.26);
+}
+
+.browse-card-action:hover {
+    background: linear-gradient(135deg, #0a2f52 0%, #1253a4 55%, #0b7f9b 100%);
+    box-shadow: 0 12px 22px rgba(12, 61, 107, 0.34);
 }
 
 /* Message Animation */

@@ -25,6 +25,7 @@ from .models_transaction import TransactionLog, PaymentEventLog
 from .payment_service import mongo_pay_service
 from .payment_paymongo import paymongo_service
 from accounts.models import Notification
+from user_profile.models import UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +202,8 @@ def payment_booking_intent(request, reservation_id):
         )
     
     # Calculate payment breakdown
+    tenant_profile, _ = UserProfile.objects.get_or_create(user=reservation.tenant)
+    payment_config._tenant_for_discount = tenant_profile
     payment_breakdown = payment_config.calculate_total_amount()
     partial_payment_amount = payment_config.get_partial_payment_amount()
     
@@ -318,6 +321,8 @@ def payment_gateway_checkout(request, reservation_id):
     # Get payment configuration
     try:
         payment_config = reservation.dorm.payment_config
+        tenant_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        payment_config._tenant_for_discount = tenant_profile
         payment_breakdown = payment_config.calculate_total_amount()
         total_amount = Decimal(str(payment_breakdown['total']))
     except PaymentConfiguration.DoesNotExist:
@@ -881,6 +886,8 @@ def paymongo_gcash_checkout(request, reservation_id):
     # Get payment configuration
     try:
         payment_config = reservation.dorm.payment_config
+        tenant_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        payment_config._tenant_for_discount = tenant_profile
         payment_breakdown = payment_config.calculate_total_amount()
         total_amount = Decimal(str(payment_breakdown['total']))
     except PaymentConfiguration.DoesNotExist:
@@ -1391,6 +1398,8 @@ def paymongo_checkout(request, reservation_id):
     # Get payment configuration
     try:
         payment_config = reservation.dorm.payment_config
+        tenant_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        payment_config._tenant_for_discount = tenant_profile
         payment_breakdown = payment_config.calculate_total_amount()
         total_amount = Decimal(str(payment_breakdown['total']))
     except PaymentConfiguration.DoesNotExist:

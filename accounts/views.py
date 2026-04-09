@@ -1949,6 +1949,12 @@ class VerificationRequestsView(UserPassesTestMixin, ListView):
             user_type='landlord',
             verification_status='rejected'
         ).order_by('-verification_reviewed_at')
+
+        # Add pending tenant PWD discount requests so admins can review from the same dashboard page.
+        context['pending_pwd_requests'] = UserProfile.objects.select_related('user').filter(
+            user__user_type='tenant',
+            pwd_verification_status='pending'
+        ).order_by('-pwd_submitted_at')
         
         return context
 

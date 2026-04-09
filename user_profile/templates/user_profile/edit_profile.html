@@ -265,7 +265,7 @@
                 </p>
             </div>
             <div id="pwdStep1Error" class="hidden mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
-            <button onclick="requestOTP()" id="sendOtpBtn"
+            <button type="button" onclick="requestOTP()" id="sendOtpBtn"
                     class="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition flex items-center justify-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -279,7 +279,7 @@
             <!-- Resend row + countdown -->
             <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                 <span>Enter the code sent to <strong>{{ request.user.email }}</strong></span>
-                <button onclick="requestOTP(true)" id="resendBtn"
+                <button type="button" onclick="requestOTP(true)" id="resendBtn"
                         class="hidden text-blue-600 font-medium hover:underline">Resend code</button>
                 <span id="otpCountdown" class="text-gray-400 tabular-nums"></span>
             </div>
@@ -336,7 +336,7 @@
                 <p id="matchHint" class="text-xs mt-0.5"></p>
             </div>
 
-            <button onclick="submitPasswordChange()" id="changePwdBtn"
+            <button type="button" onclick="submitPasswordChange()" id="changePwdBtn"
                     class="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -475,6 +475,17 @@
     const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
     let countdownTimer = null;
 
+    async function parseJsonResponse(resp) {
+        const raw = await resp.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            data = null;
+        }
+        return { ok: resp.ok, status: resp.status, data };
+    }
+
     function openPasswordModal() {
         document.getElementById('pwdModal').classList.remove('hidden');
         document.getElementById('pwdStep1').classList.remove('hidden');
@@ -503,11 +514,12 @@
 
     /* Request OTP */
     async function requestOTP(isResend = false) {
-        const btn     = document.getElementById('sendOtpBtn');
-        const btnText = document.getElementById('sendOtpBtnText');
+        const btn     = isResend ? document.getElementById('resendBtn') : document.getElementById('sendOtpBtn');
+        const btnText = isResend ? document.getElementById('resendBtn') : document.getElementById('sendOtpBtnText');
         const errBox  = isResend ? document.getElementById('pwdStep2Error') : document.getElementById('pwdStep1Error');
 
-        btnText.textContent   = 'Sending…';
+        const originalText = isResend ? 'Resend code' : 'Send OTP to my email';
+        btnText.textContent   = isResend ? 'Sending...' : 'Sending...';
         btn.disabled          = true;
         errBox.classList.add('hidden');
 
@@ -515,10 +527,11 @@
             const resp = await fetch('{% url "user_profile:request_password_otp" %}', {
                 method: 'POST',
                 headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
             });
-            const data = await resp.json();
+            const result = await parseJsonResponse(resp);
 
-            if (data.status === 'ok') {
+            if (result.ok && result.data?.status === 'ok') {
                 // Show step 2
                 document.getElementById('pwdStep1').classList.add('hidden');
                 document.getElementById('pwdStep2').classList.remove('hidden');
@@ -526,14 +539,24 @@
                 startCountdown(600); // 10 min
                 setTimeout(() => document.querySelector('.otp-box').focus(), 100);
             } else {
-                errBox.textContent = data.message || 'Failed to send OTP.';
+                if (!result.data) {
+                    if (result.status === 403) {
+                        errBox.textContent = 'Security check failed. Refresh the page and try again.';
+                    } else if (result.status === 401 || result.status === 302) {
+                        errBox.textContent = 'Your session expired. Please sign in again.';
+                    } else {
+                        errBox.textContent = 'Failed to send OTP. Please try again.';
+                    }
+                } else {
+                    errBox.textContent = result.data.message || 'Failed to send OTP.';
+                }
                 errBox.classList.remove('hidden');
             }
         } catch (err) {
             errBox.textContent = 'Network error. Please try again.';
             errBox.classList.remove('hidden');
         } finally {
-            btnText.textContent = isResend ? 'Resend code' : 'Send OTP to my email';
+            btnText.textContent = originalText;
             btn.disabled        = false;
         }
     }
@@ -658,16 +681,27 @@
                 method: 'POST',
                 headers: { 'X-CSRFToken': CSRF },
                 body: form,
+                credentials: 'same-origin',
             });
-            const data = await resp.json();
+            const result = await parseJsonResponse(resp);
 
-            if (data.status === 'ok') {
+            if (result.ok && result.data?.status === 'ok') {
                 clearInterval(countdownTimer);
                 sucBox.textContent = '✓ Password changed successfully!';
                 sucBox.classList.remove('hidden');
                 setTimeout(() => { closePwdModal(); }, 2000);
             } else {
-                errBox.textContent = data.message || 'Something went wrong.';
+                if (!result.data) {
+                    if (result.status === 403) {
+                        errBox.textContent = 'Security check failed. Refresh the page and try again.';
+                    } else if (result.status === 401 || result.status === 302) {
+                        errBox.textContent = 'Your session expired. Please sign in again.';
+                    } else {
+                        errBox.textContent = 'Something went wrong while changing password.';
+                    }
+                } else {
+                    errBox.textContent = result.data.message || 'Something went wrong while changing password.';
+                }
                 errBox.classList.remove('hidden');
             }
         } catch (err) {

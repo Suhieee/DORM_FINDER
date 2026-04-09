@@ -12,7 +12,14 @@
                     <div class="text-center mb-4">
                         <h4>Reservation Details</h4>
                         <p><strong>Dorm:</strong> {{ reservation.dorm.name }}</p>
-                        <p><strong>Price:</strong> ₱{{ reservation.dorm.price }}</p>
+                        {% if payment_breakdown %}
+                            <p><strong>Price:</strong> ₱{{ payment_breakdown.total|floatformat:2 }}</p>
+                            {% if payment_breakdown.discount_amount > 0 %}
+                                <p class="text-sm text-green-700">PWD discount applied: -₱{{ payment_breakdown.discount_amount|floatformat:2 }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p><strong>Price:</strong> ₱{{ reservation.dorm.price }}</p>
+                        {% endif %}
                         <p><strong>Reservation Date:</strong> {{ reservation.reservation_date|date:"F d, Y" }}</p>
                         <p><strong>Reservation ID:</strong> {{ reservation.id }}</p>
                     </div>

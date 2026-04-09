@@ -1,0 +1,46 @@
+{% extends 'accounts/base.html' %}
+{% block title %}PWD Requests{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex items-end justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">PWD Discount Requests</h1>
+            <p class="mt-2 text-slate-600">Review pending tenant requests for PWD discount approval.</p>
+        </div>
+    </div>
+
+    <div class="mb-6 rounded-2xl border border-cyan-100 bg-cyan-50/70 p-5">
+        <h2 class="text-base font-semibold text-cyan-900">What this verification is about</h2>
+        <p class="mt-2 text-sm leading-relaxed text-cyan-900/90">
+            Tenants submit their PWD proof to request eligibility for the system PWD discount. Approving a request marks the tenant as
+            verified and automatically applies the configured PWD discount to their succeeding reservation payment computations.
+        </p>
+        <p class="mt-2 text-sm leading-relaxed text-cyan-900/90">
+            Reject requests that have invalid or unreadable proof and provide a clear reason so the tenant can re-submit correctly.
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        {% if requests_list %}
+        <div class="divide-y divide-slate-100">
+            {% for profile in requests_list %}
+            <div class="p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900">{{ profile.user.get_full_name|default:profile.user.username }}</h2>
+                    <p class="text-sm text-slate-600">{{ profile.user.email }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Submitted {{ profile.pwd_submitted_at|default:'recently' }}</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'user_profile:review_pwd_verification' profile.user.id %}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-cyan-700 text-white text-sm font-semibold hover:bg-cyan-800 transition-colors">Review</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-10 text-center text-slate-500">
+            No pending PWD discount requests.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

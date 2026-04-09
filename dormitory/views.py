@@ -16,6 +16,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, ListView
 from accounts.models import CustomUser, Notification
 from django.core.exceptions import ValidationError
+from user_profile.models import UserProfile
 
 from io import BytesIO
 from django.core.files.base import ContentFile
@@ -447,7 +448,7 @@ class DormListView(LoginRequiredMixin, ListView):
     model = Dorm
     template_name = "dormitory/dorm_list.html"
     context_object_name = "dorms"
-    paginate_by = 12
+    paginate_by = None
 
     def get_queryset(self):
         """Filter dorms based on search parameters with optimized queries"""
@@ -680,6 +681,13 @@ class DormDetailView(LoginRequiredMixin, DetailView):
         # Add schools to the context
         from dormitory.models import School  # Import your School model
         context['schools'] = School.objects.all()  # Or filter as needed
+
+        payment_config = getattr(self.object, 'payment_config', None)
+        if payment_config:
+            tenant_profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+            payment_config._tenant_for_discount = tenant_profile
+            context['payment_breakdown'] = payment_config.calculate_total_amount()
+            context['partial_payment_amount'] = payment_config.get_partial_payment_amount()
 
         # Get similar dorms based on price range, amenities, and location
         current_dorm = self.object
@@ -1210,6 +1218,13 @@ class ReservationPaymentView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        try:
+            payment_config = self.object.dorm.payment_config
+            tenant_profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+            payment_config._tenant_for_discount = tenant_profile
+            context['payment_breakdown'] = payment_config.calculate_total_amount()
+        except Exception:
+            context['payment_breakdown'] = None
         if not self.object.qr_code:
             messages.warning(self.request, "QR code not found. Please contact support.")
         return context
@@ -1901,6 +1916,8 @@ class tenantReservationsView(ListView):
                 # Use configured total amount (deposit + advance + fees) if available.
                 try:
                     payment_config = reservation.dorm.payment_config
+                    tenant_profile, _ = UserProfile.objects.get_or_create(user=reservation.tenant)
+                    payment_config._tenant_for_discount = tenant_profile
                     payment_breakdown = payment_config.calculate_total_amount()
                     reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
                 except Exception:

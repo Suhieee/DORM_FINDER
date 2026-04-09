@@ -14,6 +14,27 @@ class UserProfile(models.Model):
     verification_token = models.CharField(max_length=64, blank=True, null=True)
     verification_token_created_at = models.DateTimeField(blank=True, null=True)
 
+    PWD_VERIFICATION_STATUS_CHOICES = [
+        ('none', 'Not Submitted'),
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    pwd_verification_status = models.CharField(
+        max_length=20,
+        choices=PWD_VERIFICATION_STATUS_CHOICES,
+        default='none'
+    )
+    pwd_document = models.ImageField(upload_to='verification_docs/pwd/', blank=True, null=True)
+    pwd_id_photo = models.ImageField(upload_to='verification_docs/pwd/id_photo/', blank=True, null=True)
+    pwd_reference_number = models.CharField(max_length=100, blank=True, null=True)
+    pwd_rejection_reason = models.TextField(blank=True, null=True)
+    pwd_submitted_at = models.DateTimeField(blank=True, null=True)
+    pwd_reviewed_at = models.DateTimeField(blank=True, null=True)
+    is_pwd_verified = models.BooleanField(default=False)
+    pwd_discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=20.00)
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 

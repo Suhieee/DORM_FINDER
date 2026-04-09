@@ -598,8 +598,16 @@ class PaymentConfiguration(models.Model):
         deposit = base_price * self.deposit_months
         advance = base_price * self.advance_months
         subtotal = deposit + advance
-        fee = subtotal * (Decimal(str(self.processing_fee_percent)) / Decimal('100'))
-        total = subtotal + fee
+        discount_percent = Decimal('0')
+
+        tenant_profile = getattr(self, '_tenant_for_discount', None)
+        if tenant_profile and getattr(tenant_profile, 'is_pwd_verified', False):
+            discount_percent = Decimal(str(getattr(tenant_profile, 'pwd_discount_percent', 20)))
+
+        discount_amount = subtotal * (discount_percent / Decimal('100'))
+        discounted_subtotal = subtotal - discount_amount
+        fee = discounted_subtotal * (Decimal(str(self.processing_fee_percent)) / Decimal('100'))
+        total = discounted_subtotal + fee
         
         return {
             'base_price': float(base_price),
@@ -608,6 +616,9 @@ class PaymentConfiguration(models.Model):
             'advance': float(advance),
             'advance_months': self.advance_months,
             'subtotal': float(subtotal),
+            'discount_percent': float(discount_percent),
+            'discount_amount': float(discount_amount),
+            'discounted_subtotal': float(discounted_subtotal),
             'processing_fee': float(fee),
             'processing_fee_percent': float(self.processing_fee_percent),
             'total': float(total),

@@ -1,0 +1,54 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Review PWD Request{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-slate-900">Review PWD Discount Request</h1>
+            <p class="mt-2 text-slate-600">Tenant: {{ profile.user.get_full_name|default:profile.user.username }}</p>
+            <p class="mt-2 text-sm text-slate-500">Accepted evidence may include a PWD ID, valid government ID, birth certificate, or disability certificate, plus a holding-ID photo when needed for identity matching.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
+            <div class="rounded-xl bg-slate-50 p-4">
+                <p class="text-slate-500">Email</p>
+                <p class="font-semibold text-slate-900">{{ profile.user.email }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-4">
+                <p class="text-slate-500">Reference Number</p>
+                <p class="font-semibold text-slate-900">{{ profile.pwd_reference_number|default:'N/A' }}</p>
+            </div>
+        </div>
+
+        {% if profile.pwd_document %}
+        <div class="mb-6">
+            <p class="text-sm font-semibold text-slate-700 mb-2">Submitted proof</p>
+            <a href="{{ profile.pwd_document.url }}" target="_blank" class="inline-block">
+                <img src="{{ profile.pwd_document.url }}" alt="PWD proof" class="max-h-96 rounded-xl border border-slate-200 shadow-sm">
+            </a>
+        </div>
+        {% endif %}
+
+        {% if profile.pwd_id_photo %}
+        <div class="mb-6">
+            <p class="text-sm font-semibold text-slate-700 mb-2">Photo holding valid ID or PWD ID</p>
+            <a href="{{ profile.pwd_id_photo.url }}" target="_blank" class="inline-block">
+                <img src="{{ profile.pwd_id_photo.url }}" alt="ID holder photo" class="max-h-96 rounded-xl border border-slate-200 shadow-sm">
+            </a>
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button type="submit" name="action" value="approve" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Approve</button>
+                <button type="submit" name="action" value="reject" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors">Reject</button>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Rejection reason</label>
+                <textarea name="rejection_reason" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" placeholder="Only needed if rejecting"></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

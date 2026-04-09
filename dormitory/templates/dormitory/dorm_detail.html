@@ -456,9 +456,7 @@
             </div>
             <h4 class="font-semibold text-sm ml-2 text-gray-900">Payment Terms</h4>
         </div>
-        {% with config=dorm.payment_config %}
-        {% if config %}
-            {% with breakdown=config.calculate_total_amount %}
+        {% if payment_breakdown %}
             <div class="space-y-2">
                 <!-- Advance & Deposit badges -->
                 <div class="flex flex-wrap gap-2 mb-2">
@@ -477,35 +475,43 @@
                     <div class="space-y-1 text-xs text-gray-700">
                         <div class="flex justify-between">
                             <span>Monthly Rent</span>
-                            <span class="font-medium">₱{{ breakdown.base_price|floatformat:2 }}</span>
+                            <span class="font-medium">₱{{ payment_breakdown.base_price|floatformat:2 }}</span>
                         </div>
-                        {% if config.advance_months > 0 %}
+                        {% if dorm.payment_config.advance_months > 0 %}
                         <div class="flex justify-between">
-                            <span>Advance ({{ config.advance_months }} month{{ config.advance_months|pluralize }})</span>
-                            <span class="font-medium">₱{{ breakdown.advance|floatformat:2 }}</span>
+                            <span>Advance ({{ dorm.payment_config.advance_months }} month{{ dorm.payment_config.advance_months|pluralize }})</span>
+                            <span class="font-medium">₱{{ payment_breakdown.advance|floatformat:2 }}</span>
                         </div>
                         {% endif %}
-                        {% if config.deposit_months > 0 %}
+                        {% if dorm.payment_config.deposit_months > 0 %}
                         <div class="flex justify-between">
-                            <span>Security Deposit ({{ config.deposit_months }} month{{ config.deposit_months|pluralize }})</span>
-                            <span class="font-medium">₱{{ breakdown.deposit|floatformat:2 }}</span>
+                            <span>Security Deposit ({{ dorm.payment_config.deposit_months }} month{{ dorm.payment_config.deposit_months|pluralize }})</span>
+                            <span class="font-medium">₱{{ payment_breakdown.deposit|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        {% if payment_breakdown.discount_amount > 0 %}
+                        <div class="flex justify-between text-emerald-700">
+                            <span>PWD discount ({{ payment_breakdown.discount_percent|floatformat:0 }}%)</span>
+                            <span class="font-medium">-₱{{ payment_breakdown.discount_amount|floatformat:2 }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>After discount</span>
+                            <span class="font-medium">₱{{ payment_breakdown.discounted_subtotal|floatformat:2 }}</span>
                         </div>
                         {% endif %}
                         <div class="flex justify-between border-t border-blue-200 pt-1 mt-1 font-bold text-blue-900">
                             <span>Estimated Total</span>
-                            <span>₱{{ breakdown.total|floatformat:2 }}</span>
+                            <span>₱{{ payment_breakdown.total|floatformat:2 }}</span>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">* Includes {{ breakdown.processing_fee_percent }}% processing fee</p>
+                    <p class="text-xs text-gray-400 mt-1">* Includes {{ payment_breakdown.processing_fee_percent }}% processing fee</p>
                 </div>
             </div>
-            {% endwith %}
         {% else %}
         <div class="bg-gray-50 rounded-md p-3 border border-gray-200">
             <p class="text-sm text-gray-500 italic">No payment terms configured yet.</p>
         </div>
         {% endif %}
-        {% endwith %}
     </div>
     
     <!-- Key Features Card -->
