@@ -351,11 +351,10 @@ class DormVisit(models.Model):
     )
     
     TIME_SLOT_CHOICES = (
-        ('09:00-11:00', '9:00 AM - 11:00 AM'),
-        ('11:00-13:00', '11:00 AM - 1:00 PM'),
-        ('13:00-15:00', '1:00 PM - 3:00 PM'),
-        ('15:00-17:00', '3:00 PM - 5:00 PM'),
-        ('17:00-19:00', '5:00 PM - 7:00 PM'),
+        ('morning', 'Morning'),
+        ('afternoon', 'Afternoon'),
+        ('evening', 'Evening'),
+        ('flexible', 'Flexible / To Be Finalized'),
     )
     
     dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='visits')
@@ -520,6 +519,26 @@ class Reservation(models.Model):
     # Visit scheduling fields
     visit_scheduled = models.BooleanField(default=False, help_text="Whether landlord scheduled a visit")
     visit_status = models.CharField(max_length=20, choices=VISIT_STATUS_CHOICES, default='not_scheduled')
+    visit_confirmed_by_tenant = models.BooleanField(
+        default=False,
+        help_text="Whether tenant has accepted the landlord's proposed visit schedule"
+    )
+    visit_reschedule_requested = models.BooleanField(
+        default=False,
+        help_text="Whether tenant requested a different visit schedule"
+    )
+    tenant_preferred_visit_window = models.CharField(
+        max_length=20,
+        choices=TIME_SLOT_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Tenant preferred generalized visit window when requesting reschedule"
+    )
+    tenant_reschedule_note = models.TextField(
+        blank=True,
+        default='',
+        help_text="Tenant note when requesting a visit reschedule"
+    )
     visit_date = models.DateField(null=True, blank=True, help_text="Scheduled visit date")
     visit_time_slot = models.CharField(max_length=20, choices=TIME_SLOT_CHOICES, null=True, blank=True)
     visit_notes = models.TextField(blank=True, help_text="Landlord notes about the visit")

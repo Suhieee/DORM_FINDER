@@ -1200,10 +1200,14 @@ class ReservationCreateView(CreateView):
             messages.error(request, "This dorm is currently not available for reservations.")
             return redirect('dormitory:dorm_detail', pk=self.dorm.id)
         
+        # Block tenants who already have an active reservation/rental.
+        # Includes occupied so tenants already renting cannot reserve again.
+        active_reservation_statuses = ['pending', 'pending_payment', 'confirmed', 'occupied']
+
         # Check if user already has ANY active reservation
         existing_active_reservation = Reservation.objects.filter(
             tenant=request.user,
-            status__in=['pending', 'confirmed', 'pending_payment']
+            status__in=active_reservation_statuses
         ).first()
         
         if existing_active_reservation:
@@ -1218,7 +1222,7 @@ class ReservationCreateView(CreateView):
         existing_reservation = Reservation.objects.filter(
             dorm=self.dorm,
             tenant=request.user,
-            status__in=['pending', 'confirmed', 'pending_payment']
+            status__in=active_reservation_statuses
         ).first()
         
         if existing_reservation:
@@ -1237,6 +1241,18 @@ class ReservationCreateView(CreateView):
         return context
 
     def form_valid(self, form):
+        # Double-check before create to avoid race-condition bypasses.
+        if Reservation.objects.filter(
+            tenant=self.request.user,
+            status__in=['pending', 'pending_payment', 'confirmed', 'occupied']
+        ).exists():
+            messages.error(
+                self.request,
+                "You already have an active reservation or ongoing rental. "
+                "Please complete or cancel it before creating a new one."
+            )
+            return redirect('dormitory:tenant_reservations')
+
         form.instance.dorm = self.dorm
         form.instance.tenant = self.request.user
         form.instance.status = 'pending'  # Landlord needs to confirm first
@@ -1439,8 +1455,17 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "Only landlords can confirm reservations.")
                 return redirect('dormitory:tenant_reservations')
             
-            # Handle visit/move-in options if present
+            # Enforce exactly one reservation flow choice when using the options modal.
             confirmation_type = request.POST.get('confirmation_type')
+
+            if action == 'confirm_with_options' and confirmation_type not in ['visit', 'movein']:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'status': 'error',
+                        'error': 'Please choose exactly one option: Schedule Visit or Set Move-in Date.'
+                    }, status=400)
+                messages.error(request, "Please choose exactly one option: Schedule Visit or Set Move-in Date.")
+                return redirect('dormitory:landlord_reservations')
             
             if confirmation_type == 'visit':
                 # Schedule a visit
@@ -1452,6 +1477,10 @@ class UpdateReservationStatusView(View):
                     from datetime import datetime
                     reservation.visit_scheduled = True
                     reservation.visit_status = 'scheduled'
+                    reservation.visit_confirmed_by_tenant = False
+                    reservation.visit_reschedule_requested = False
+                    reservation.tenant_preferred_visit_window = None
+                    reservation.tenant_reschedule_note = ''
                     reservation.visit_date = datetime.strptime(visit_date, '%Y-%m-%d').date()
                     reservation.visit_time_slot = visit_time_slot
                     reservation.visit_notes = visit_notes
@@ -1461,16 +1490,19 @@ class UpdateReservationStatusView(View):
                     Message.objects.create(
                         sender=request.user,
                         receiver=reservation.tenant,
-                        content=f"Your reservation has been confirmed! A visit has been scheduled for {visit_date} at {visit_display_time}. {visit_notes}",
+                        content=(
+                            f"Your reservation has been confirmed! Landlord proposed a visit on {visit_date} "
+                            f"during {visit_display_time}. Please confirm or request reschedule. {visit_notes}"
+                        ),
                         dorm=reservation.dorm,
                         reservation=reservation
                     )
                     notify_user(
                         user=reservation.tenant,
-                        message=f"Visit scheduled for {reservation.dorm.name} on {visit_date}",
+                        message=f"Visit proposal received for {reservation.dorm.name} on {visit_date}",
                         related_object_id=reservation.id
                     )
-                    success_message = f"Reservation confirmed and visit scheduled for {visit_date}."
+                    success_message = f"Reservation confirmed. Visit proposal sent to tenant for confirmation ({visit_date}, {visit_display_time})."
                 else:
                     messages.error(request, "Please provide visit date and time slot.")
                     return redirect('dormitory:landlord_reservations')
@@ -1485,6 +1517,10 @@ class UpdateReservationStatusView(View):
                     reservation.move_in_date = datetime.strptime(move_in_date, '%Y-%m-%d').date()
                     reservation.move_in_notes = move_in_notes
                     reservation.visit_status = 'not_scheduled'  # No visit needed
+                    reservation.visit_confirmed_by_tenant = False
+                    reservation.visit_reschedule_requested = False
+                    reservation.tenant_preferred_visit_window = None
+                    reservation.tenant_reschedule_note = ''
                     
                     # Notify tenant about move-in date
                     Message.objects.create(
@@ -1720,7 +1756,7 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "Only landlords can mark visits as completed.")
                 return redirect('dormitory:tenant_reservations')
             
-            if reservation.visit_scheduled and reservation.visit_status == 'scheduled':
+            if reservation.visit_scheduled and reservation.visit_status == 'scheduled' and reservation.visit_confirmed_by_tenant:
                 reservation.visit_status = 'completed'
                 reservation.visit_completed_at = timezone.now()
                 reservation.save()
@@ -1741,7 +1777,149 @@ class UpdateReservationStatusView(View):
                     related_object_id=reservation.id
                 )
             else:
-                messages.error(request, "This visit cannot be marked as completed.")
+                messages.error(request, "This visit cannot be marked as completed until tenant confirms the schedule.")
+
+        elif action == 'accept_visit_schedule':
+            if request.user.user_type != 'tenant':
+                messages.error(request, "Only tenants can confirm visit schedules.")
+                return redirect('dormitory:landlord_reservations')
+
+            if reservation.visit_scheduled and reservation.visit_status == 'scheduled' and not reservation.visit_confirmed_by_tenant:
+                reservation.visit_confirmed_by_tenant = True
+                reservation.save()
+
+                visit_label = reservation.get_visit_time_slot_display() if reservation.visit_time_slot else 'selected window'
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.dorm.landlord,
+                    content=(
+                        f"Tenant accepted the visit schedule: {reservation.visit_date} ({visit_label})."
+                    ),
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.dorm.landlord,
+                    message=f"Tenant confirmed visit schedule for {reservation.dorm.name}.",
+                    related_object_id=reservation.id
+                )
+                messages.success(request, "Visit schedule confirmed. Waiting for landlord to mark visit as completed after your visit.")
+            else:
+                messages.error(request, "No pending visit schedule to confirm.")
+
+        elif action == 'request_visit_reschedule':
+            if request.user.user_type != 'tenant':
+                messages.error(request, "Only tenants can request reschedule.")
+                return redirect('dormitory:landlord_reservations')
+
+            preferred_window = (request.POST.get('preferred_visit_window') or '').strip()
+            reschedule_note = (request.POST.get('reschedule_note') or '').strip()
+
+            if reservation.visit_scheduled and reservation.visit_status == 'scheduled' and not reservation.visit_confirmed_by_tenant:
+                landlord_message = "Tenant requested visit reschedule."
+                if preferred_window:
+                    landlord_message += f" Preferred window: {preferred_window}."
+                if reschedule_note:
+                    landlord_message += f" Note: {reschedule_note}"
+
+                reservation.visit_reschedule_requested = True
+                reservation.tenant_preferred_visit_window = preferred_window or None
+                reservation.tenant_reschedule_note = reschedule_note
+                reservation.save()
+
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.dorm.landlord,
+                    content=landlord_message,
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.dorm.landlord,
+                    message=f"Tenant requested visit reschedule for {reservation.dorm.name}.",
+                    related_object_id=reservation.id
+                )
+                messages.success(request, "Reschedule request sent. Waiting for landlord approval or new schedule.")
+            else:
+                messages.error(request, "No pending visit schedule to reschedule.")
+
+        elif action == 'reject_visit_reschedule':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can reject reschedule requests.")
+                return redirect('dormitory:tenant_reservations')
+
+            if reservation.visit_reschedule_requested:
+                reservation.visit_reschedule_requested = False
+                reservation.tenant_preferred_visit_window = None
+                reservation.tenant_reschedule_note = ''
+                reservation.save()
+
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=reservation.tenant,
+                    content=(
+                        "Your reschedule request was not approved. "
+                        "Please proceed with the current schedule or send a new request in chat."
+                    ),
+                    dorm=reservation.dorm,
+                    reservation=reservation
+                )
+                notify_user(
+                    user=reservation.tenant,
+                    message=f"Reschedule request for {reservation.dorm.name} was not approved.",
+                    related_object_id=reservation.id
+                )
+                messages.success(request, "Reschedule request rejected. Current schedule remains active.")
+            else:
+                messages.error(request, "No reschedule request to reject.")
+
+        elif action == 'propose_visit_schedule':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can propose visit schedules.")
+                return redirect('dormitory:tenant_reservations')
+
+            confirmation_type = request.POST.get('confirmation_type')
+            if confirmation_type != 'visit':
+                messages.error(request, "Please choose Schedule Visit for this action.")
+                return redirect('dormitory:landlord_reservations')
+
+            visit_date = request.POST.get('visit_date')
+            visit_time_slot = request.POST.get('visit_time_slot')
+            visit_notes = request.POST.get('visit_notes', '')
+
+            if not (visit_date and visit_time_slot):
+                messages.error(request, "Please provide visit date and preferred time window.")
+                return redirect('dormitory:landlord_reservations')
+
+            from datetime import datetime
+            reservation.visit_scheduled = True
+            reservation.visit_status = 'scheduled'
+            reservation.visit_confirmed_by_tenant = False
+            reservation.visit_reschedule_requested = False
+            reservation.visit_date = datetime.strptime(visit_date, '%Y-%m-%d').date()
+            reservation.visit_time_slot = visit_time_slot
+            reservation.visit_notes = visit_notes
+            reservation.tenant_preferred_visit_window = None
+            reservation.tenant_reschedule_note = ''
+            reservation.save()
+
+            visit_display_time = dict(reservation.TIME_SLOT_CHOICES).get(visit_time_slot, visit_time_slot)
+            Message.objects.create(
+                sender=request.user,
+                receiver=reservation.tenant,
+                content=(
+                    f"Landlord approved your reschedule request and proposed a new visit on {visit_date} "
+                    f"during {visit_display_time}. Please confirm this schedule."
+                ),
+                dorm=reservation.dorm,
+                reservation=reservation
+            )
+            notify_user(
+                user=reservation.tenant,
+                message=f"New visit schedule proposal for {reservation.dorm.name} is ready for your confirmation.",
+                related_object_id=reservation.id
+            )
+            messages.success(request, "New visit proposal sent to tenant for confirmation.")
         
         elif action == 'mark_moved_out':
             if request.user.user_type != 'landlord':

@@ -374,6 +374,20 @@
                 Mark as Moved Out
             </button>
             {% endif %}
+
+            {% if selected_reservation.visit_reschedule_requested %}
+            <button type="button" onclick="openConfirmModal('propose_visit_schedule')"
+                    class="landlord-chip-btn">
+                Approve: Propose New Schedule
+            </button>
+            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject_visit_reschedule">
+                <button type="submit" class="landlord-chip-btn landlord-chip-btn--danger">
+                    Reject Reschedule Request
+                </button>
+            </form>
+            {% endif %}
         </div>
 
         <!-- Details Toggle Button -->
@@ -1087,7 +1101,7 @@
                                 <p class="font-semibold">{{ selected_reservation.visit_date|date:"F j, Y" }}</p>
                             </div>
                             <div>
-                                <span class="text-gray-600">Time Slot:</span>
+                                <span class="text-gray-600">Time Window:</span>
                                 <p class="font-semibold">{{ selected_reservation.get_visit_time_slot_display }}</p>
                             </div>
                             <div class="col-span-2">
@@ -1100,6 +1114,32 @@
                                     {{ selected_reservation.get_visit_status_display }}
                                 </span>
                             </div>
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Tenant Agreement:</span>
+                                {% if selected_reservation.visit_confirmed_by_tenant %}
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Accepted</span>
+                                {% else %}
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending Tenant Confirmation</span>
+                                {% endif %}
+                            </div>
+                            {% if selected_reservation.visit_reschedule_requested %}
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Reschedule Request:</span>
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Requested by tenant</span>
+                            </div>
+                            {% if selected_reservation.tenant_preferred_visit_window %}
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Tenant preferred window:</span>
+                                <p class="font-semibold">{{ selected_reservation.get_tenant_preferred_visit_window_display }}</p>
+                            </div>
+                            {% endif %}
+                            {% if selected_reservation.tenant_reschedule_note %}
+                            <div class="col-span-2">
+                                <span class="text-gray-600">Tenant note:</span>
+                                <p class="text-sm">{{ selected_reservation.tenant_reschedule_note }}</p>
+                            </div>
+                            {% endif %}
+                            {% endif %}
                             {% if selected_reservation.visit_notes %}
                             <div class="col-span-2">
                                 <span class="text-gray-600">Notes:</span>
@@ -1109,7 +1149,7 @@
                         </div>
                         
                         <!-- Mark Visit as Completed Button -->
-                        {% if selected_reservation.visit_status == 'scheduled' %}
+                        {% if selected_reservation.visit_status == 'scheduled' and selected_reservation.visit_confirmed_by_tenant %}
                         <div class="mt-4">
                             <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
                                 {% csrf_token %}
@@ -1121,6 +1161,10 @@
                             <p class="text-xs text-gray-600 mt-2 text-center">
                                 After marking as completed, tenant can access the move-in checklist
                             </p>
+                        </div>
+                        {% elif selected_reservation.visit_status == 'scheduled' and not selected_reservation.visit_confirmed_by_tenant %}
+                        <div class="mt-4 p-3 rounded-lg border border-yellow-200 bg-yellow-50 text-xs text-yellow-900">
+                            Waiting for tenant to accept the proposed visit schedule before you can mark the visit as completed.
                         </div>
                         {% endif %}
                     </div>
@@ -1157,18 +1201,18 @@
 {% if selected_reservation %}
 <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 class="text-2xl font-bold mb-6 text-gray-900">Confirm Reservation</h3>
+        <h3 id="confirmModalTitle" class="text-2xl font-bold mb-6 text-gray-900">Confirm Reservation</h3>
         
         <form id="confirmForm" method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
             {% csrf_token %}
-            <input type="hidden" name="action" value="confirm_with_options">
+            <input type="hidden" name="action" id="confirmActionInput" value="confirm_with_options">
             
             <!-- Option Selection -->
             <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Next Step:</label>
+                <label id="confirmModalSubtitle" class="block text-sm font-semibold text-gray-700 mb-3">Choose Next Step:</label>
                 
                 <!-- Option 1: Schedule Visit -->
-                <div class="mb-4 border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('visit')">
+                <div id="visitOptionCard" class="mb-4 border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('visit')">
                     <label class="flex items-start cursor-pointer">
                         <input type="radio" name="confirmation_type" value="visit" id="option_visit" class="mt-1 mr-3">
                         <div class="flex-1">
@@ -1187,15 +1231,14 @@
                                class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time Slot *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Time Window *</label>
                         <select name="visit_time_slot" id="visit_time_slot" 
                                 class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select time slot</option>
-                            <option value="09:00-11:00">9:00 AM - 11:00 AM</option>
-                            <option value="11:00-13:00">11:00 AM - 1:00 PM</option>
-                            <option value="13:00-15:00">1:00 PM - 3:00 PM</option>
-                            <option value="15:00-17:00">3:00 PM - 5:00 PM</option>
-                            <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
+                            <option value="">Select visit window</option>
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="evening">Evening</option>
+                            <option value="flexible">Flexible / To Be Finalized</option>
                         </select>
                     </div>
                     <div>
@@ -1207,7 +1250,7 @@
                 </div>
                 
                 <!-- Option 2: Set Move-in Date -->
-                <div class="border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('movein')">
+                <div id="moveinOptionCard" class="border-2 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectOption('movein')">
                     <label class="flex items-start cursor-pointer">
                         <input type="radio" name="confirmation_type" value="movein" id="option_movein" class="mt-1 mr-3">
                         <div class="flex-1">
@@ -1739,12 +1782,54 @@
     }
 
     // Confirmation Modal Functions
-    function openConfirmModal() {
+    function openConfirmModal(actionName) {
+        const actionInput = document.getElementById('confirmActionInput');
+        actionInput.value = actionName || 'confirm_with_options';
+        const isVisitOnlyMode = actionInput.value === 'propose_visit_schedule';
+        const titleEl = document.getElementById('confirmModalTitle');
+        const subtitleEl = document.getElementById('confirmModalSubtitle');
+        const visitCard = document.getElementById('visitOptionCard');
+        const moveinCard = document.getElementById('moveinOptionCard');
+        const moveinRadio = document.getElementById('option_movein');
+
+        if (isVisitOnlyMode) {
+            titleEl.textContent = 'Propose New Visit Schedule';
+            subtitleEl.textContent = 'Visit scheduling only for this request';
+            moveinCard.classList.add('hidden');
+            moveinRadio.checked = false;
+            moveinRadio.disabled = true;
+            selectOption('visit');
+        } else {
+            titleEl.textContent = 'Confirm Reservation';
+            subtitleEl.textContent = 'Choose Next Step:';
+            moveinCard.classList.remove('hidden');
+            moveinRadio.disabled = false;
+        }
         document.getElementById('confirmModal').classList.remove('hidden');
     }
 
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.add('hidden');
+        const actionInput = document.getElementById('confirmActionInput');
+        if (actionInput) {
+            actionInput.value = 'confirm_with_options';
+        }
+        const titleEl = document.getElementById('confirmModalTitle');
+        const subtitleEl = document.getElementById('confirmModalSubtitle');
+        const moveinCard = document.getElementById('moveinOptionCard');
+        const moveinRadio = document.getElementById('option_movein');
+        if (titleEl) {
+            titleEl.textContent = 'Confirm Reservation';
+        }
+        if (subtitleEl) {
+            subtitleEl.textContent = 'Choose Next Step:';
+        }
+        if (moveinCard) {
+            moveinCard.classList.remove('hidden');
+        }
+        if (moveinRadio) {
+            moveinRadio.disabled = false;
+        }
         // Reset form
         document.getElementById('confirmForm').reset();
         document.getElementById('visitDetails').classList.add('hidden');

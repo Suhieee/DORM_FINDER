@@ -78,7 +78,7 @@
             <form method="post" enctype="multipart/form-data" class="space-y-4" id="paymentMethodForm">
                 {% csrf_token %}
                 
-                <!-- PayMongo Checkout (GCash, PayMaya, Cards) - RECOMMENDED -->
+                <!-- PayMongo Checkout (GCash only) - RECOMMENDED -->
                 <label class="block p-4 border-2 border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gradient-to-r from-blue-50 to-white">
                     <input type="radio" name="payment_method" value="gcash" class="mr-3 payment-method-radio" {% if selected_payment_method == 'gcash' %}checked{% endif %}>
                     <div class="inline-block">
@@ -86,22 +86,11 @@
                             <span class="mr-2">PayMongo Checkout</span>
                             <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">RECOMMENDED</span>
                         </div>
-                        <div class="text-sm text-gray-600">Pay via GCash, PayMaya, or Credit/Debit Card</div>
+                        <div class="text-sm text-gray-600">Pay via GCash</div>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
                                 <img src="{% static 'images/gcash.png' %}" alt="GCash" class="w-4 h-4 rounded-sm" loading="lazy">
                                 GCash
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
-                                <img src="{% static 'images/maya.png' %}" alt="Maya" class="w-4 h-4 rounded-sm" loading="lazy">
-                                Maya
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <rect x="3" y="5" width="18" height="14" rx="3" fill="#475569"/>
-                                    <rect x="3" y="9" width="18" height="2" fill="#E2E8F0"/>
-                                </svg>
-                                Cards
                             </span>
                             <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">✓ Instant</span>
                             <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">✓ Secure</span>

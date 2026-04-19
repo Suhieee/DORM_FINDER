@@ -1,6 +1,6 @@
 """
 PayMongo Payment Integration Service
-Handles GCash and other PayMongo payment methods
+Handles GCash checkout for reservation payments.
 Official API Docs: https://developers.paymongo.com/docs
 """
 
@@ -496,7 +496,7 @@ class PayMongoService:
                         "show_line_items": True,
                         "description": description,
                         "line_items": line_items,
-                        "payment_method_types": ["gcash", "paymaya", "card"],
+                        "payment_method_types": ["gcash"],
                         "success_url": success_url,
                         "cancel_url": cancel_url,
                         "billing": {
