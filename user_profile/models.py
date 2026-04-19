@@ -120,6 +120,8 @@ class TenantPreferences(models.Model):
     pet_friendly_required = models.BooleanField(default=False)
     study_area_required = models.BooleanField(default=False)
     near_public_transport = models.BooleanField(default=False)
+    other_amenity_required = models.BooleanField(default=False)
+    other_amenity_text = models.CharField(max_length=120, blank=True)
     
     # Roommate Preferences
     ROOMMATE_MOOD_CHOICES = [
@@ -144,6 +146,11 @@ class TenantPreferences(models.Model):
         default='any',
         help_text='Preferred roommate personality type'
     )
+    preferred_roommate_personalities = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Preferred roommate personality types (multiple selections)'
+    )
     preferred_roommate_age_range = models.CharField(
         max_length=10,
         choices=ROOMMATE_AGE_RANGE_CHOICES,
@@ -156,6 +163,8 @@ class TenantPreferences(models.Model):
         default='any',
         help_text='Preferred roommate gender'
     )
+    preferred_roommate_other_enabled = models.BooleanField(default=False)
+    preferred_roommate_other_text = models.CharField(max_length=120, blank=True)
     roommate_budget_min = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -194,6 +203,14 @@ class TenantPreferences(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def get_primary_roommate_mood(self):
+        moods = self.preferred_roommate_personalities or []
+        valid_moods = {choice for choice, _label in self.ROOMMATE_MOOD_CHOICES if choice != 'any'}
+        for mood in moods:
+            if mood in valid_moods:
+                return mood
+        return self.preferred_roommate_mood if self.preferred_roommate_mood != 'any' else 'friendly'
     
     def sync_to_roommate_post(self):
         """
@@ -215,7 +232,7 @@ class TenantPreferences(models.Model):
                 'name': self.user.get_full_name() or self.user.username,
                 'age': age,
                 'contact_number': contact_number,
-                'mood': self.preferred_roommate_mood if self.preferred_roommate_mood != 'any' else 'friendly',
+                'mood': self.get_primary_roommate_mood(),
                 'preferred_budget_min': self.roommate_budget_min,
                 'preferred_budget_max': self.roommate_budget_max,
                 'preferred_location': self.roommate_preferred_location or self.preferred_location or '',
@@ -228,7 +245,7 @@ class TenantPreferences(models.Model):
             roommate_post.name = self.user.get_full_name() or self.user.username
             roommate_post.age = age
             roommate_post.contact_number = contact_number
-            roommate_post.mood = self.preferred_roommate_mood if self.preferred_roommate_mood != 'any' else 'friendly'
+            roommate_post.mood = self.get_primary_roommate_mood()
             roommate_post.preferred_budget_min = self.roommate_budget_min
             roommate_post.preferred_budget_max = self.roommate_budget_max
             roommate_post.preferred_location = self.roommate_preferred_location or self.preferred_location or ''
@@ -294,8 +311,17 @@ class TenantPreferences(models.Model):
         traits = []
         
         # Add personality traits
-        if self.preferred_roommate_mood and self.preferred_roommate_mood != 'any':
+        selected_moods = [
+            label for key, label in self.ROOMMATE_MOOD_CHOICES
+            if key != 'any' and key in (self.preferred_roommate_personalities or [])
+        ]
+        if selected_moods:
+            traits.append(f"Looking for roommate personality: {', '.join(selected_moods)}")
+        elif self.preferred_roommate_mood and self.preferred_roommate_mood != 'any':
             traits.append(f"Looking for {self.preferred_roommate_mood} roommate")
+
+        if self.preferred_roommate_other_enabled and self.preferred_roommate_other_text:
+            traits.append(f"Other roommate preference: {self.preferred_roommate_other_text}")
         
         # Add lifestyle preferences
         if self.roommate_cleanliness_important:

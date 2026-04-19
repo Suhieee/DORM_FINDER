@@ -799,8 +799,8 @@ function getCSRFToken() {
 <!-- AI Chatbot Widget -->
 {% include 'dormitory/components/chatbot_widget.html' %}
 
-<!-- Global Floating Messages (for logged-in users only) -->
-{% if user.is_authenticated %}
+<!-- Global Floating Messages (tenant users only) -->
+{% if user.is_authenticated and user.user_type == 'tenant' %}
     {% include 'dormitory/components/floating_messages.html' %}
 {% endif %}
 

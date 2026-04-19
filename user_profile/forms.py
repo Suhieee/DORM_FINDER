@@ -82,7 +82,8 @@ class TenantPreferencesForm(forms.ModelForm):
             'preferred_location', 'max_distance_km', 'min_budget', 'max_budget',
             'preferred_gender', 'preferred_room_type', 'wifi_required', 'parking_required',
             'laundry_required', 'kitchen_required', 'aircon_required', 'security_required',
-            'pet_friendly_required', 'study_area_required', 'near_public_transport'
+            'pet_friendly_required', 'study_area_required', 'near_public_transport',
+            'other_amenity_required', 'other_amenity_text'
         ]
         widgets = {
             'preferred_location': forms.TextInput(attrs={
@@ -111,6 +112,10 @@ class TenantPreferencesForm(forms.ModelForm):
             'preferred_room_type': forms.Select(attrs={
                 'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
             }),
+            'other_amenity_text': forms.TextInput(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Type other amenity (e.g., Elevator, Generator)'
+            }),
         }
         
         labels = {
@@ -129,6 +134,8 @@ class TenantPreferencesForm(forms.ModelForm):
             'pet_friendly_required': 'Pet Friendly',
             'study_area_required': 'Study Area',
             'near_public_transport': 'Near Public Transport',
+            'other_amenity_required': 'Others',
+            'other_amenity_text': 'Other Amenity',
         }
         
         help_texts = {
@@ -143,29 +150,53 @@ class TenantPreferencesForm(forms.ModelForm):
         checkbox_fields = [
             'wifi_required', 'parking_required', 'laundry_required', 'kitchen_required',
             'aircon_required', 'security_required', 'pet_friendly_required',
-            'study_area_required', 'near_public_transport'
+            'study_area_required', 'near_public_transport', 'other_amenity_required'
         ]
         for field in checkbox_fields:
             self.fields[field].widget.attrs.update({
                 'class': 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500'
             })
 
+    def clean(self):
+        cleaned_data = super().clean()
+        other_enabled = cleaned_data.get('other_amenity_required')
+        other_text = (cleaned_data.get('other_amenity_text') or '').strip()
+        cleaned_data['other_amenity_text'] = other_text
+
+        if other_enabled and not other_text:
+            self.add_error('other_amenity_text', 'Please specify the other amenity.')
+
+        if not other_enabled:
+            cleaned_data['other_amenity_text'] = ''
+
+        return cleaned_data
+
 
 class RoommatePreferencesForm(forms.ModelForm):
     """Form for roommate preferences - second step of smart matching"""
+    preferred_roommate_personalities = forms.MultipleChoiceField(
+        choices=[
+            ('quiet', 'Quiet and Reserved'),
+            ('friendly', 'Friendly and Social'),
+            ('adventurous', 'Adventurous and Outgoing'),
+            ('studious', 'Studious and Focused'),
+        ],
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label='Preferred Personality Types',
+        help_text='Select one or more personality types. Leave empty if no preference.'
+    )
     
     class Meta:
         model = TenantPreferences
         fields = [
-            'preferred_roommate_mood', 'preferred_roommate_age_range', 'preferred_roommate_gender',
+            'preferred_roommate_personalities', 'preferred_roommate_age_range', 'preferred_roommate_gender',
             'roommate_budget_min', 'roommate_budget_max', 'roommate_preferred_location',
             'roommate_cleanliness_important', 'roommate_quiet_environment',
-            'roommate_social_activities', 'roommate_shared_expenses'
+            'roommate_social_activities', 'roommate_shared_expenses',
+            'preferred_roommate_other_enabled', 'preferred_roommate_other_text'
         ]
         widgets = {
-            'preferred_roommate_mood': forms.Select(attrs={
-                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500'
-            }),
             'preferred_roommate_age_range': forms.Select(attrs={
                 'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500'
             }),
@@ -186,10 +217,13 @@ class RoommatePreferencesForm(forms.ModelForm):
                 'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500',
                 'placeholder': 'e.g., España, Manila'
             }),
+            'preferred_roommate_other_text': forms.TextInput(attrs={
+                'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500',
+                'placeholder': 'Type other roommate preference'
+            }),
         }
         
         labels = {
-            'preferred_roommate_mood': 'Preferred Personality Type',
             'preferred_roommate_age_range': 'Preferred Age Range',
             'preferred_roommate_gender': 'Preferred Gender',
             'roommate_budget_min': 'Minimum Budget (₱/month)',
@@ -199,10 +233,11 @@ class RoommatePreferencesForm(forms.ModelForm):
             'roommate_quiet_environment': 'Prefer Quiet Environment',
             'roommate_social_activities': 'Enjoy Social Activities',
             'roommate_shared_expenses': 'Open to Sharing Expenses',
+            'preferred_roommate_other_enabled': 'Others',
+            'preferred_roommate_other_text': 'Other Roommate Preference',
         }
         
         help_texts = {
-            'preferred_roommate_mood': 'What personality type would you prefer in a roommate?',
             'preferred_roommate_age_range': 'What age range do you prefer?',
             'roommate_budget_min': 'Minimum budget you expect roommate to have',
             'roommate_budget_max': 'Maximum budget you expect roommate to have',
@@ -210,13 +245,48 @@ class RoommatePreferencesForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.preferred_roommate_personalities:
+            self.initial['preferred_roommate_personalities'] = self.instance.preferred_roommate_personalities
+
+        self.fields['preferred_roommate_personalities'].widget.attrs.update({
+            'class': 'space-y-2'
+        })
+
         # Add custom styling for checkboxes
         checkbox_fields = [
             'roommate_cleanliness_important', 'roommate_quiet_environment',
-            'roommate_social_activities', 'roommate_shared_expenses'
+            'roommate_social_activities', 'roommate_shared_expenses', 'preferred_roommate_other_enabled'
         ]
         for field in checkbox_fields:
             self.fields[field].widget.attrs.update({
                 'class': 'w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500'
             })
+
+    def clean(self):
+        cleaned_data = super().clean()
+        selected = cleaned_data.get('preferred_roommate_personalities') or []
+        other_enabled = cleaned_data.get('preferred_roommate_other_enabled')
+        other_text = (cleaned_data.get('preferred_roommate_other_text') or '').strip()
+
+        if selected:
+            cleaned_data['preferred_roommate_mood'] = selected[0]
+        else:
+            cleaned_data['preferred_roommate_mood'] = 'any'
+
+        cleaned_data['preferred_roommate_other_text'] = other_text
+        if other_enabled and not other_text:
+            self.add_error('preferred_roommate_other_text', 'Please specify your other roommate preference.')
+
+        if not other_enabled:
+            cleaned_data['preferred_roommate_other_text'] = ''
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        selected = self.cleaned_data.get('preferred_roommate_personalities') or []
+        instance.preferred_roommate_mood = selected[0] if selected else 'any'
+        if commit:
+            instance.save()
+        return instance
 

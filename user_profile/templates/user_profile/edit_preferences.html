@@ -142,7 +142,7 @@
                     
                     <div class="grid md:grid-cols-3 gap-4">
                         {% for field in form %}
-                            {% if field.name in 'wifi_required,parking_required,laundry_required,kitchen_required,aircon_required,security_required,pet_friendly_required,study_area_required,near_public_transport' %}
+                            {% if field.name in 'wifi_required,parking_required,laundry_required,kitchen_required,aircon_required,security_required,pet_friendly_required,study_area_required,near_public_transport,other_amenity_required' %}
                                 <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     {{ field }}
                                     <label for="{{ field.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
@@ -151,6 +151,16 @@
                                 </div>
                             {% endif %}
                         {% endfor %}
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            {{ form.other_amenity_text.label }}
+                        </label>
+                        {{ form.other_amenity_text }}
+                        {% if form.other_amenity_text.errors %}
+                            <p class="text-xs text-red-600 mt-1">{{ form.other_amenity_text.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">Fill this only if Others is checked.</p>
                     </div>
                 </div>
 
@@ -169,56 +179,14 @@
                 
                 {% else %}
                 <!-- Step 2: Roommate Preferences -->
-                
-                <!-- Personality & Mood -->
-                <div class="border-b pb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Personality & Mood
-                    </h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                {{ form.preferred_roommate_mood.label }}
-                            </label>
-                            {{ form.preferred_roommate_mood }}
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Demographics -->
-                <div class="border-b pb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        Demographics
-                    </h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                {{ form.preferred_roommate_age_range.label }}
-                            </label>
-                            {{ form.preferred_roommate_age_range }}
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                {{ form.preferred_roommate_gender.label }}
-                            </label>
-                            {{ form.preferred_roommate_gender }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Budget & Location -->
+                <!-- Price -->
                 <div class="border-b pb-6">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Budget & Location
+                        Price
                     </h2>
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
@@ -241,6 +209,85 @@
                             </label>
                             {{ form.roommate_preferred_location }}
                             <p class="text-xs text-gray-500 mt-1">Where would you like your roommate to be looking?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demographic -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Demographic
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_age_range.label }}
+                            </label>
+                            {{ form.preferred_roommate_age_range }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ form.preferred_roommate_gender.label }}
+                            </label>
+                            {{ form.preferred_roommate_gender }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personality & Mood -->
+                <div class="border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Personality & Mood
+                    </h2>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            {{ form.preferred_roommate_personalities.label }}
+                        </label>
+                        <p class="text-xs text-gray-500 mb-3">Choose one or more personality types that match your preferred roommate style.</p>
+
+                        {% with selected=form.preferred_roommate_personalities.value %}
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            {% for value, label in form.preferred_roommate_personalities.field.choices %}
+                            <label for="personality-{{ value }}" class="rounded-xl border border-cyan-200 bg-white px-4 py-3 flex items-start gap-3 hover:bg-cyan-50 transition-colors cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    id="personality-{{ value }}"
+                                    name="preferred_roommate_personalities"
+                                    value="{{ value }}"
+                                    class="mt-0.5"
+                                    {% if selected %}{% if value in selected %}checked{% endif %}{% endif %}
+                                >
+                                <span class="text-sm font-semibold text-slate-700">{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+
+                        {% if form.preferred_roommate_personalities.errors %}
+                            <p class="text-xs text-red-600 mt-2">{{ form.preferred_roommate_personalities.errors.0 }}</p>
+                        {% endif %}
+
+                        <div class="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/50 p-4">
+                            <div class="flex items-center gap-2">
+                                {{ form.preferred_roommate_other_enabled }}
+                                <label for="{{ form.preferred_roommate_other_enabled.id_for_label }}" class="text-sm font-semibold text-slate-700">
+                                    {{ form.preferred_roommate_other_enabled.label }}
+                                </label>
+                            </div>
+                            <div class="mt-3">
+                                {{ form.preferred_roommate_other_text }}
+                                {% if form.preferred_roommate_other_text.errors %}
+                                    <p class="text-xs text-red-600 mt-1">{{ form.preferred_roommate_other_text.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-1">Add a custom personality or mood preference not listed above.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

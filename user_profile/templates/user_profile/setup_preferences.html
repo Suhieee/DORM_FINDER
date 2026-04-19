@@ -165,7 +165,7 @@
                     
                     <div class="grid md:grid-cols-3 gap-4">
                         {% for field in form %}
-                            {% if field.name in 'wifi_required,parking_required,laundry_required,kitchen_required,aircon_required,security_required,pet_friendly_required,study_area_required,near_public_transport' %}
+                            {% if field.name in 'wifi_required,parking_required,laundry_required,kitchen_required,aircon_required,security_required,pet_friendly_required,study_area_required,near_public_transport,other_amenity_required' %}
                                 <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     {{ field }}
                                     <label for="{{ field.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
@@ -174,6 +174,16 @@
                                 </div>
                             {% endif %}
                         {% endfor %}
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            {{ form.other_amenity_text.label }}
+                        </label>
+                        {{ form.other_amenity_text }}
+                        {% if form.other_amenity_text.errors %}
+                            <p class="text-xs text-red-600 mt-1">{{ form.other_amenity_text.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">Fill this only if Others is checked.</p>
                     </div>
                 </div>
 
@@ -190,10 +200,15 @@
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                {{ form.preferred_roommate_mood.label }}
+                                {{ form.preferred_roommate_personalities.label }}
                             </label>
-                            {{ form.preferred_roommate_mood }}
-                            <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_mood.help_text }}</p>
+                            <div class="grid sm:grid-cols-2 gap-2 rounded-lg border border-gray-200 p-3 bg-white">
+                                {{ form.preferred_roommate_personalities }}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_personalities.help_text }}</p>
+                            {% if form.preferred_roommate_personalities.errors %}
+                                <p class="text-xs text-red-600 mt-1">{{ form.preferred_roommate_personalities.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -208,6 +223,21 @@
                             </label>
                             {{ form.preferred_roommate_gender }}
                             <p class="text-xs text-gray-500 mt-1">{{ form.preferred_roommate_gender.help_text }}</p>
+                        </div>
+                        <div class="md:col-span-2 rounded-lg border border-gray-200 p-4 bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                {{ form.preferred_roommate_other_enabled }}
+                                <label for="{{ form.preferred_roommate_other_enabled.id_for_label }}" class="text-sm font-semibold text-gray-700">
+                                    {{ form.preferred_roommate_other_enabled.label }}
+                                </label>
+                            </div>
+                            <div class="mt-3">
+                                {{ form.preferred_roommate_other_text }}
+                                {% if form.preferred_roommate_other_text.errors %}
+                                    <p class="text-xs text-red-600 mt-1">{{ form.preferred_roommate_other_text.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-1">Use this for preferences not covered above.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

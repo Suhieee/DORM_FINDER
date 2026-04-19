@@ -129,7 +129,7 @@ class RoommatePostForm(forms.ModelForm):
         model = RoommatePost
         fields = [
             "name", "age", "profile_image", "contact_number", "hobbies", "mood",
-            "preferred_location", "amenities", "description",
+            "mood_other", "preferred_location", "amenities", "description",
             "preferred_budget_min", "preferred_budget_max"
         ]
         widgets = {
@@ -163,6 +163,10 @@ class RoommatePostForm(forms.ModelForm):
             "mood": forms.Select(attrs={
                 'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
             }),
+            "mood_other": forms.TextInput(attrs={
+                'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
+                'placeholder': 'Specify your personality type'
+            }),
             "preferred_location": forms.TextInput(attrs={
                 'class': 'mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200',
                 'placeholder': 'e.g. Espana, Manila near UST',
@@ -191,12 +195,19 @@ class RoommatePostForm(forms.ModelForm):
         cleaned_data = super().clean()
         min_budget = cleaned_data.get('preferred_budget_min')
         max_budget = cleaned_data.get('preferred_budget_max')
+        mood = cleaned_data.get('mood')
+        mood_other = (cleaned_data.get('mood_other') or '').strip()
 
         if min_budget is not None and max_budget is not None:
             if max_budget < min_budget:
                 raise forms.ValidationError("Maximum budget cannot be less than minimum budget")
             # Calculate average budget for the model
             cleaned_data['preferred_budget'] = (min_budget + max_budget) / 2
+
+        if mood == 'others' and not mood_other:
+            self.add_error('mood_other', 'Please specify your mood when selecting Others.')
+        if mood != 'others':
+            cleaned_data['mood_other'] = ''
 
         return cleaned_data
 

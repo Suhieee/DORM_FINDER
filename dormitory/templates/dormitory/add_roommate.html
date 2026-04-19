@@ -3,17 +3,12 @@
 {% load static %}
 {% block content %}
 
-<!-- Loader -->
-<div id="page-loader" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300">
-    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
-</div>
-
-<section class="bg-gradient-to-b from-blue-50 via-white to-white py-8 px-3 sm:px-6">
+<section class="bg-gradient-to-b from-cyan-50 via-white to-white py-8 px-3 sm:px-6">
     <div class="mx-auto max-w-3xl space-y-5">
-        <div class="rounded-2xl border border-blue-100 bg-white/90 p-5 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Roommate Finder</p>
-            <h1 class="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">Create Your Roommate Profile</h1>
-            <p class="mt-1 text-sm text-slate-600">Keep details clear and realistic so matching is more accurate and practical.</p>
+        <div class="rounded-2xl border border-cyan-200 p-5 shadow-sm" style="background: linear-gradient(135deg, #0f4f5f 0%, #0f766e 28%, #155e9c 58%, #1e3a8a 100%);">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Roommate Finder</p>
+            <h1 class="mt-1 text-2xl sm:text-3xl font-bold text-white">Create Your Roommate Profile</h1>
+            <p class="mt-1 text-sm text-cyan-100">Set accurate details so compatibility matching works better.</p>
         </div>
 
         <form id="roommateForm" method="POST" enctype="multipart/form-data" class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
@@ -30,21 +25,19 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="name" class="block text-sm font-semibold text-slate-700">Name</label>
-                    <input type="text" name="name" id="name" value="{{ form.name.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="Enter your full name" autocomplete="name" required>
+                    <input type="text" name="name" id="name" value="{{ form.name.value|default:'' }}" placeholder="Example: Maria Santos" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" required>
                     {% if form.name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
                 </div>
-
                 <div>
                     <label for="age" class="block text-sm font-semibold text-slate-700">Age</label>
-                    <input type="number" name="age" id="age" min="16" max="100" value="{{ form.age.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="Enter your age" required>
+                    <input type="number" name="age" id="age" min="16" max="100" value="{{ form.age.value|default:'' }}" placeholder="Example: 21" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" required>
                     {% if form.age.errors %}<p class="mt-1 text-xs text-red-600">{{ form.age.errors.0 }}</p>{% endif %}
                 </div>
             </div>
 
             <div>
-                <label for="profile_image" class="block text-sm font-semibold text-slate-700">Profile Image (Optional)</label>
-                <input type="file" name="profile_image" id="profile_image" accept="image/*" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800">
-                <p class="mt-1 text-xs text-slate-500">Use a clear photo. JPG/PNG is recommended.</p>
+                <label for="profile_image" class="block text-sm font-semibold text-slate-700">Profile Image</label>
+                <input type="file" name="profile_image" id="profile_image" accept="image/*" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-cyan-800">
                 {% if form.profile_image.errors %}<p class="mt-1 text-xs text-red-600">{{ form.profile_image.errors.0 }}</p>{% endif %}
             </div>
 
@@ -52,21 +45,20 @@
                 <label for="contact_number" class="block text-sm font-semibold text-slate-700">Contact Number</label>
                 <div class="mt-1 relative">
                     <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">+63</span>
-                    <input type="tel" name="contact_number" id="contact_number" value="{{ form.contact_number.value|default:'' }}" class="block w-full rounded-xl border border-slate-300 py-2.5 pl-14 pr-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="9XXXXXXXXX" inputmode="numeric" maxlength="13" autocomplete="tel" required>
+                    <input type="text" name="contact_number" id="contact_number" value="{{ form.contact_number.value|default:'' }}" placeholder="Example: 9123456789" class="block w-full rounded-xl border border-slate-300 py-2.5 pl-14 pr-3 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" required>
                 </div>
-                <p class="mt-1 text-xs text-slate-500">Accepts 9XXXXXXXXX, 09XXXXXXXXX, or +639XXXXXXXXX.</p>
                 {% if form.contact_number.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_number.errors.0 }}</p>{% endif %}
             </div>
 
             <div>
-                <label for="hobbies" class="block text-sm font-semibold text-slate-700">Hobbies (Optional)</label>
-                <textarea name="hobbies" id="hobbies" rows="2" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="e.g. Reading, Music, Gaming">{{ form.hobbies.value|default:'' }}</textarea>
+                <label for="hobbies" class="block text-sm font-semibold text-slate-700">Hobbies</label>
+                <textarea name="hobbies" id="hobbies" rows="2" placeholder="Example: Reading, gym, cooking, and weekend coffee walks" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">{{ form.hobbies.value|default:'' }}</textarea>
                 {% if form.hobbies.errors %}<p class="mt-1 text-xs text-red-600">{{ form.hobbies.errors.0 }}</p>{% endif %}
             </div>
 
             <div>
-                <label for="mood" class="block text-sm font-semibold text-slate-700">Personality Type</label>
-                <select name="mood" id="mood" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                <label for="mood" class="block text-sm font-semibold text-slate-700">Mood</label>
+                <select name="mood" id="mood" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
                     {% for key, value in form.fields.mood.choices %}
                     <option value="{{ key }}" {% if form.mood.value == key %}selected{% endif %}>{{ value }}</option>
                     {% endfor %}
@@ -74,167 +66,106 @@
                 {% if form.mood.errors %}<p class="mt-1 text-xs text-red-600">{{ form.mood.errors.0 }}</p>{% endif %}
             </div>
 
+            <div id="moodOtherWrap" class="hidden">
+                <label for="mood_other" class="block text-sm font-semibold text-slate-700">Other Mood</label>
+                <input type="text" name="mood_other" id="mood_other" value="{{ form.mood_other.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" placeholder="Specify your personality type">
+                {% if form.mood_other.errors %}<p class="mt-1 text-xs text-red-600">{{ form.mood_other.errors.0 }}</p>{% endif %}
+            </div>
+
             <div>
-                <label class="block text-sm font-semibold text-slate-700">Monthly Budget Range (PHP)</label>
-                <div class="mt-1 grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-semibold text-slate-700">Budget Range (PHP)</label>
+                <div class="grid grid-cols-2 gap-4 mt-1">
                     <div>
-                        <label for="preferred_budget_min" class="block text-xs text-slate-500">Minimum</label>
-                        <input type="number" name="preferred_budget_min" id="preferred_budget_min" value="{{ form.preferred_budget_min.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" min="0" step="500" placeholder="e.g. 3500" required>
-                        {% if form.preferred_budget_min.errors %}<p class="mt-1 text-xs text-red-600">{{ form.preferred_budget_min.errors.0 }}</p>{% endif %}
+                        <label for="preferred_budget_min" class="block text-xs text-slate-500">Minimum Budget</label>
+                        <input type="number" name="preferred_budget_min" id="preferred_budget_min" value="{{ form.preferred_budget_min.value|default:'' }}" min="0" step="500" placeholder="Example: 4000" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" required>
                     </div>
                     <div>
-                        <label for="preferred_budget_max" class="block text-xs text-slate-500">Maximum</label>
-                        <input type="number" name="preferred_budget_max" id="preferred_budget_max" value="{{ form.preferred_budget_max.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" min="0" step="500" placeholder="e.g. 7000" required>
-                        {% if form.preferred_budget_max.errors %}<p class="mt-1 text-xs text-red-600">{{ form.preferred_budget_max.errors.0 }}</p>{% endif %}
+                        <label for="preferred_budget_max" class="block text-xs text-slate-500">Maximum Budget</label>
+                        <input type="number" name="preferred_budget_max" id="preferred_budget_max" value="{{ form.preferred_budget_max.value|default:'' }}" min="0" step="500" placeholder="Example: 7000" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200" required>
                     </div>
                 </div>
-                <p id="budget-feedback" class="mt-1 text-xs text-slate-500">Enter realistic min and max amounts for better matches.</p>
+                <input type="hidden" name="preferred_budget" id="preferred_budget" value="{{ form.preferred_budget.value|default:'' }}">
+                <p id="average_budget" class="mt-1 text-xs text-slate-500"></p>
             </div>
 
             <div>
                 <label for="preferred_location" class="block text-sm font-semibold text-slate-700">Preferred Location</label>
-                <input type="text" name="preferred_location" id="preferred_location" list="locations" value="{{ form.preferred_location.value|default:'' }}" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="Enter location or select from suggestions" required>
-                <datalist id="locations">
-                    <option value="Espana, Manila (Near UST)">
-                    <option value="Sampaloc, Manila">
-                    <option value="Taft Avenue, Manila (Near DLSU)">
-                    <option value="Katipunan, Quezon City (Near ADMU)">
-                    <option value="University Belt, Manila">
-                    <option value="Malate, Manila">
-                    <option value="Diliman, Quezon City (Near UP)">
-                    <option value="Vito Cruz, Manila">
-                    <option value="Morayta, Manila">
-                    <option value="Recto, Manila">
-                </datalist>
-                {% if form.preferred_location.errors %}<p class="mt-1 text-xs text-red-600">{{ form.preferred_location.errors.0 }}</p>{% endif %}
+                <input type="text" name="preferred_location" id="preferred_location" value="{{ form.preferred_location.value|default:'' }}" placeholder="Example: Sampaloc, Manila near UST" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-slate-700">Preferred Amenities (Optional)</label>
-                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                <label class="block text-sm font-semibold text-slate-700">Amenities</label>
+                <div class="grid grid-cols-2 gap-2 mt-2">
                     {% with selected=form.amenities.value %}
                     {% for amenity in form.amenities.field.queryset %}
-                    <label for="amenity-{{ amenity.id }}" class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                        <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {% if selected %}{% if amenity.id|stringformat:"s" in selected %}checked{% endif %}{% endif %}>
+                    <label for="amenity-{{ amenity.id }}" class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 transition-colors">
+                        <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" class="h-4 w-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500" {% if selected %}{% if amenity.id|stringformat:"s" in selected %}checked{% endif %}{% endif %}>
                         <span>{{ amenity.name }}</span>
                     </label>
                     {% endfor %}
                     {% endwith %}
                 </div>
-                {% if form.amenities.errors %}<p class="mt-1 text-xs text-red-600">{{ form.amenities.errors.0 }}</p>{% endif %}
             </div>
 
             <div>
-                <label for="description" class="block text-sm font-semibold text-slate-700">About You</label>
-                <textarea name="description" id="description" rows="4" class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200" placeholder="Describe your routine, cleanliness preferences, and ideal roommate setup">{{ form.description.value|default:'' }}</textarea>
-                {% if form.description.errors %}<p class="mt-1 text-xs text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
+                <label for="description" class="block text-sm font-semibold text-slate-700">Description</label>
+                <textarea name="description" id="description" rows="4" placeholder="Example: I am a clean and respectful tenant, usually studying at night and sleeping by 11 PM. I prefer a roommate who is tidy and communicative." class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">{{ form.description.value|default:'' }}</textarea>
             </div>
 
             <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <a href="{% url 'dormitory:roommate_list' %}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</a>
-                <button id="submit-roommate-btn" type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">Post Roommate Listing</button>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-800">Post Roommate Listing</button>
             </div>
         </form>
     </div>
 </section>
 
 <script>
-function hideLoader() {
-    const loader = document.getElementById('page-loader');
-    if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 300);
+function updateBudget() {
+    const minBudget = parseFloat(document.getElementById('preferred_budget_min').value) || 0;
+    const maxBudget = parseFloat(document.getElementById('preferred_budget_max').value) || 0;
+    const average = document.getElementById('average_budget');
+
+    if (minBudget && maxBudget) {
+        if (maxBudget < minBudget) {
+            document.getElementById('preferred_budget_max').value = minBudget;
+            document.getElementById('preferred_budget').value = minBudget;
+            average.textContent = `Average: PHP ${minBudget.toLocaleString()}`;
+            average.className = 'mt-1 text-xs text-red-600';
+            return;
+        }
+
+        const avgBudget = (minBudget + maxBudget) / 2;
+        document.getElementById('preferred_budget').value = avgBudget;
+        average.textContent = `Average: PHP ${avgBudget.toLocaleString()}`;
+        average.className = 'mt-1 text-xs text-cyan-700';
+    } else {
+        average.textContent = 'Your average budget will be calculated automatically.';
+        average.className = 'mt-1 text-xs text-slate-500';
+    }
+}
+
+function updateMoodOtherVisibility() {
+    const mood = document.getElementById('mood');
+    const wrap = document.getElementById('moodOtherWrap');
+    const otherInput = document.getElementById('mood_other');
+    if (!mood || !wrap || !otherInput) return;
+
+    if (mood.value === 'others') {
+        wrap.classList.remove('hidden');
+    } else {
+        wrap.classList.add('hidden');
+        otherInput.value = '';
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const contactInput = document.getElementById('contact_number');
-    const minBudgetInput = document.getElementById('preferred_budget_min');
-    const maxBudgetInput = document.getElementById('preferred_budget_max');
-    const budgetFeedback = document.getElementById('budget-feedback');
-    const submitBtn = document.getElementById('submit-roommate-btn');
-
-    if (contactInput) {
-        contactInput.addEventListener('input', function() {
-            let digits = this.value.replace(/\D/g, '');
-            if (digits.startsWith('63')) {
-                digits = digits.slice(2);
-            }
-            if (digits.startsWith('0')) {
-                digits = digits.slice(1);
-            }
-            this.value = digits.slice(0, 10);
-        });
-    }
-
-    function updateBudgetFeedback() {
-        const minBudget = parseFloat(minBudgetInput ? minBudgetInput.value : '');
-        const maxBudget = parseFloat(maxBudgetInput ? maxBudgetInput.value : '');
-
-        if (Number.isFinite(minBudget) && Number.isFinite(maxBudget)) {
-            if (maxBudget < minBudget) {
-                if (budgetFeedback) {
-                    budgetFeedback.textContent = 'Maximum budget must be equal to or higher than minimum budget.';
-                    budgetFeedback.className = 'mt-1 text-xs text-red-600';
-                }
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                }
-                return;
-            }
-
-            const averageBudget = (minBudget + maxBudget) / 2;
-            if (budgetFeedback) {
-                budgetFeedback.textContent = `Average budget: PHP ${averageBudget.toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
-                budgetFeedback.className = 'mt-1 text-xs text-blue-700';
-            }
-            if (submitBtn) {
-                submitBtn.disabled = false;
-            }
-            return;
-        }
-
-        if (budgetFeedback) {
-            budgetFeedback.textContent = 'Enter realistic min and max amounts for better matches.';
-            budgetFeedback.className = 'mt-1 text-xs text-slate-500';
-        }
-        if (submitBtn) {
-            submitBtn.disabled = false;
-        }
-    }
-
-    if (minBudgetInput) {
-        minBudgetInput.addEventListener('input', updateBudgetFeedback);
-    }
-    if (maxBudgetInput) {
-        maxBudgetInput.addEventListener('input', updateBudgetFeedback);
-    }
-    updateBudgetFeedback();
-
-    setTimeout(hideLoader, 1200);
+    updateBudget();
+    updateMoodOtherVisibility();
+    document.getElementById('preferred_budget_min').addEventListener('input', updateBudget);
+    document.getElementById('preferred_budget_max').addEventListener('input', updateBudget);
+    document.getElementById('mood').addEventListener('change', updateMoodOtherVisibility);
 });
-
-window.addEventListener('load', hideLoader);
 </script>
-
-<style>
-.loader {
-    border-top-color: #2724e7;
-    -webkit-animation: spinner 1.5s linear infinite;
-    animation: spinner 1.5s linear infinite;
-}
-
-@-webkit-keyframes spinner {
-    0% { -webkit-transform: rotate(0deg); }
-    100% { -webkit-transform: rotate(360deg); }
-}
-
-@keyframes spinner {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-</style>
 
 {% endblock %}

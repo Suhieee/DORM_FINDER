@@ -33,6 +33,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from django.core.paginator import Paginator
 import json
+import re
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
 from django.utils.decorators import method_decorator
@@ -488,15 +489,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
                     if matched_schools.exists():
                         matched_school_ids = set(matched_schools.values_list('id', flat=True))
-                        base_queryset = base_queryset.filter(
-                            Q(nearby_schools__in=matched_schools) |
-                            Q(address__icontains=preferred_location)
-                        ).distinct()
-                    else:
-                        base_queryset = base_queryset.filter(
-                            Q(address__icontains=preferred_location) |
-                            Q(name__icontains=preferred_location)
-                        )
 
             base_queryset = base_queryset.annotate(
                 avg_rating=Coalesce(Avg('reviews__rating'), 0.0),
@@ -571,23 +563,72 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             else:
                 ml_recommended_indices = []
 
-            # --- Calculate distance score based on preferences or school ---
+            # --- Calculate distance score based on location range (not exact text) ---
             if preferences and preferences.preferred_location:
                 preferred_location = preferences.preferred_location.lower().strip()
+                max_distance_km = float(preferences.max_distance_km or 5.0)
+
+                matched_school_coords = []
+                if matched_school_ids:
+                    matched_school_coords = list(
+                        School.objects.filter(id__in=matched_school_ids)
+                        .exclude(latitude__isnull=True)
+                        .exclude(longitude__isnull=True)
+                        .values_list('latitude', 'longitude')
+                    )
+
+                normalized_location = ''.join(ch if ch.isalnum() else ' ' for ch in preferred_location)
+                location_tokens = [token for token in normalized_location.split() if len(token) >= 3]
+
+                def haversine_km(lat1, lon1, lat2, lon2):
+                    r = 6371.0
+                    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+                    return r * (2 * atan2(sqrt(a), sqrt(1 - a)))
+
                 for dorm in dorms:
                     if matched_school_ids:
                         dorm_school_ids = set(dorm.nearby_schools.values_list('id', flat=True))
-                        if dorm_school_ids.intersection(matched_school_ids):
-                            dorm.distance_score = 1.0
-                        elif preferred_location in (dorm.address or '').lower() or preferred_location in (dorm.name or '').lower():
+                        dorm_has_school_match = bool(dorm_school_ids.intersection(matched_school_ids))
+
+                        if matched_school_coords and dorm.latitude and dorm.longitude:
+                            dorm_lat = float(dorm.latitude)
+                            dorm_lng = float(dorm.longitude)
+                            nearest = min(
+                                haversine_km(dorm_lat, dorm_lng, float(s_lat), float(s_lng))
+                                for s_lat, s_lng in matched_school_coords
+                            )
+
+                            if nearest <= max_distance_km:
+                                dorm.distance_score = 1.0 - ((nearest / max_distance_km) * 0.25)
+                            elif nearest <= (max_distance_km * 2):
+                                dorm.distance_score = 0.75 - (((nearest - max_distance_km) / max_distance_km) * 0.25)
+                            else:
+                                dorm.distance_score = 0.35
+
+                            if dorm_has_school_match:
+                                dorm.distance_score = min(1.0, dorm.distance_score + 0.12)
+                        elif dorm_has_school_match:
                             dorm.distance_score = 0.85
                         else:
-                            dorm.distance_score = 0.3
+                            dorm.distance_score = 0.45
                     else:
-                        if preferred_location in (dorm.address or '').lower() or preferred_location in (dorm.name or '').lower():
-                            dorm.distance_score = 1.0
+                        searchable_text = f"{dorm.name or ''} {dorm.address or ''}".lower()
+                        if preferred_location in searchable_text:
+                            dorm.distance_score = 0.85
                         else:
-                            dorm.distance_score = 0.5
+                            token_hits = sum(1 for token in location_tokens if token in searchable_text)
+                            token_ratio = (token_hits / len(location_tokens)) if location_tokens else 0
+                            if token_ratio >= 0.67:
+                                dorm.distance_score = 0.8
+                            elif token_ratio >= 0.34:
+                                dorm.distance_score = 0.65
+                            elif token_hits > 0:
+                                dorm.distance_score = 0.55
+                            else:
+                                dorm.distance_score = 0.45
             else:
                 # No preferences, use default distance scoring
                 for dorm in dorms:

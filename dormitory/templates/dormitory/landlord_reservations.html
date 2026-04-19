@@ -1000,6 +1000,13 @@
                                  onclick="previewImage(this)">
                         </div>
                         <p class="mt-2 text-sm text-gray-500">Submitted on: {{ selected_reservation.payment_submitted_at|date:"F j, Y, g:i a" }}</p>
+                        {% if selected_reservation.manual_reference_number %}
+                        <p class="mt-2 text-sm text-blue-700">
+                            OCR extracted reference: <span class="font-semibold">{{ selected_reservation.manual_reference_number }}</span>
+                        </p>
+                        {% else %}
+                        <p class="mt-2 text-sm text-gray-500">OCR reference: Not detected from uploaded proof.</p>
+                        {% endif %}
                     </div>
 
                     <!-- Verification Actions - Only show if not verified -->

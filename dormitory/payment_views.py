@@ -19,6 +19,10 @@ from decimal import Decimal
 from datetime import timedelta
 import json
 import logging
+import os
+import re
+
+import requests
 
 from .models import Reservation, Dorm, PaymentConfiguration, Message
 from .models_transaction import TransactionLog, PaymentEventLog
@@ -28,6 +32,78 @@ from accounts.models import Notification
 from user_profile.models import UserProfile
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_manual_payment_reference_from_image(uploaded_file):
+    """
+    Use OCR API to extract a likely payment reference number from uploaded proof.
+    Returns: (reference_number|None, raw_text|str)
+    """
+    api_key = os.environ.get('OCR_SPACE_API_KEY', '').strip()
+    endpoint = os.environ.get('OCR_SPACE_ENDPOINT', 'https://api.ocr.space/parse/image').strip()
+    if not api_key:
+        return None, ''
+
+    if not uploaded_file:
+        return None, ''
+
+    original_position = 0
+    if hasattr(uploaded_file, 'tell') and hasattr(uploaded_file, 'seek'):
+        original_position = uploaded_file.tell()
+
+    try:
+        if hasattr(uploaded_file, 'seek'):
+            uploaded_file.seek(0)
+
+        file_bytes = uploaded_file.read()
+        if not file_bytes:
+            return None, ''
+
+        files = {
+            'file': (
+                getattr(uploaded_file, 'name', 'payment-proof.jpg'),
+                file_bytes,
+                getattr(uploaded_file, 'content_type', 'application/octet-stream'),
+            )
+        }
+        data = {
+            'apikey': api_key,
+            'language': 'eng',
+            'isOverlayRequired': 'false',
+            'isTable': 'false',
+            'OCREngine': '2',
+        }
+
+        response = requests.post(endpoint, data=data, files=files, timeout=20)
+        response.raise_for_status()
+        payload = response.json()
+
+        parsed_results = payload.get('ParsedResults') or []
+        raw_text = '\n'.join((item.get('ParsedText') or '').strip() for item in parsed_results).strip()
+        if not raw_text:
+            return None, ''
+
+        normalized = raw_text.replace('\n', ' ')
+        patterns = [
+            r'(?i)(?:reference|ref|ref\.|rrn|transaction\s*(?:id|no|#)?|trx\s*(?:id|no|#)?)\s*[:#\-]?\s*([A-Z0-9\-]{6,40})',
+            r'(?i)\b([A-Z0-9]{10,30})\b',
+        ]
+
+        for pattern in patterns:
+            for match in re.finditer(pattern, normalized):
+                candidate = (match.group(1) or '').strip().upper()
+                has_digit = any(ch.isdigit() for ch in candidate)
+                has_alpha = any(ch.isalpha() for ch in candidate)
+                if 6 <= len(candidate) <= 40 and has_digit and has_alpha:
+                    return candidate, raw_text
+
+        return None, raw_text
+    except Exception as exc:
+        logger.warning("Manual payment OCR extraction failed: %s", exc)
+        return None, ''
+    finally:
+        if hasattr(uploaded_file, 'seek'):
+            uploaded_file.seek(original_position)
 
 
 def notify_user(user, message, related_object_id=None):
@@ -224,18 +300,26 @@ def payment_booking_intent(request, reservation_id):
             if not payment_proof:
                 messages.error(request, "Please upload a payment proof image for manual payment.")
             else:
+                extracted_reference, raw_ocr_text = _extract_manual_payment_reference_from_image(payment_proof)
+
                 reservation.payment_method = 'manual'
                 reservation.status = 'pending_payment'
                 reservation.payment_status = 'processing'
                 reservation.payment_proof = payment_proof
+                reservation.manual_reference_number = extracted_reference
+                reservation.manual_ocr_raw_text = raw_ocr_text
                 reservation.payment_submitted_at = timezone.now()
                 reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
                 reservation.save()
 
+                landlord_notice = "Payment proof has been submitted and is awaiting verification."
+                if extracted_reference:
+                    landlord_notice += f" OCR Ref: {extracted_reference}."
+
                 Message.objects.create(
                     sender=request.user,
                     receiver=reservation.dorm.landlord,
-                    content="Payment proof has been submitted and is awaiting verification.",
+                    content=landlord_notice,
                     dorm=reservation.dorm,
                     reservation=reservation
                 )

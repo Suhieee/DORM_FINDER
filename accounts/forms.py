@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, UserReport
 from django.utils import timezone
 from datetime import timedelta
+import os
 
 
 class TenantRegistrationForm(UserCreationForm):
@@ -351,21 +352,49 @@ class ResolveReportForm(forms.Form):
 
 class IdentityVerificationForm(forms.Form):
     """Form for landlords to submit identity verification documents"""
+    MAX_FILE_SIZE_MB = 5
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+    ALLOWED_CONTENT_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+
     government_id = forms.ImageField(
         required=True,
-        help_text='Upload a clear photo of your government-issued ID (driver\'s license, passport, or national ID)',
+        help_text='Upload a clear photo of your government-issued ID (JPG, PNG, or WEBP, max 5MB)',
         widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
     )
     proof_of_ownership = forms.ImageField(
         required=True,
-        help_text='Upload proof of property ownership (title deed, tax declaration, or lease contract)',
+        help_text='Upload proof of property ownership (JPG, PNG, or WEBP, max 5MB)',
         widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
     )
     selfie_with_id = forms.ImageField(
         required=True,
-        help_text='Upload a selfie holding your government ID next to your face',
+        help_text='Upload a selfie holding your government ID next to your face (JPG, PNG, or WEBP, max 5MB)',
         widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'})
     )
+
+    def _validate_upload(self, uploaded_file, label):
+        if not uploaded_file:
+            return uploaded_file
+
+        max_bytes = self.MAX_FILE_SIZE_MB * 1024 * 1024
+        if uploaded_file.size > max_bytes:
+            raise forms.ValidationError(f'{label} must not exceed {self.MAX_FILE_SIZE_MB}MB.')
+
+        extension = os.path.splitext(uploaded_file.name)[1].lower()
+        content_type = (getattr(uploaded_file, 'content_type', '') or '').lower()
+        if extension not in self.ALLOWED_EXTENSIONS or content_type not in self.ALLOWED_CONTENT_TYPES:
+            raise forms.ValidationError(f'{label} must be a JPG, PNG, or WEBP image.')
+
+        return uploaded_file
+
+    def clean_government_id(self):
+        return self._validate_upload(self.cleaned_data.get('government_id'), 'Government ID')
+
+    def clean_proof_of_ownership(self):
+        return self._validate_upload(self.cleaned_data.get('proof_of_ownership'), 'Proof of ownership')
+
+    def clean_selfie_with_id(self):
+        return self._validate_upload(self.cleaned_data.get('selfie_with_id'), 'Selfie with ID')
 
 
 class VerificationReviewForm(forms.Form):

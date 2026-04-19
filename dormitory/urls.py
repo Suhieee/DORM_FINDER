@@ -103,4 +103,7 @@ urlpatterns = [
     
     # Cron Job Endpoint for Production (Railway)
     path('cron/cancel-expired/', views.cron_cancel_expired, name='cron_cancel_expired'),
+
+    # Search autocomplete suggestions
+    path('api/search-suggestions/', views.search_suggestions, name='search_suggestions'),
 ]

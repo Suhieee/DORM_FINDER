@@ -563,16 +563,21 @@
                             Available Amenities
                         </h3>
                     </div>
-                    {% if amenities %}
+                    {% if amenity_cards %}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {% for amenity in amenities %}
-                        <div class="flex items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                            <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
+                        {% for card in amenity_cards %}
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                            {% if card.image_url %}
+                            <img src="{{ card.image_url }}" alt="{{ card.amenity.name }}" class="w-full h-36 object-cover rounded-lg mb-3">
+                            {% endif %}
+                            <div class="flex items-center">
+                                <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
                                 <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                 </svg>
+                                </div>
+                                <span class="ml-3 font-medium text-gray-900">{{ card.amenity.name }}</span>
                             </div>
-                            <span class="ml-3 font-medium text-gray-900">{{ amenity.name }}</span>
                         </div>
                         {% endfor %}
                     </div>

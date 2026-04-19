@@ -92,8 +92,9 @@
                     <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
-                    <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search location or college"
+                          <input type="text" id="searchInputPrimary" list="searchSuggestionsList" name="search" value="{{ request.GET.search }}" placeholder="Search location or college"
                            class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400">
+                          <datalist id="searchSuggestionsList"></datalist>
                 </div>
                 <button type="submit" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors whitespace-nowrap">Search</button>
             </div>
@@ -108,6 +109,7 @@
             <input type="hidden" name="advance_months"     id="hAdvanceMonths" value="{{ request.GET.advance_months|default:'' }}">
             <input type="hidden" name="deposit_months"     id="hDepositMonths" value="{{ request.GET.deposit_months|default:'' }}">
             <input type="hidden" name="school"             id="hSchool"    value="{{ request.GET.school|default:'' }}">
+            <input type="hidden" name="amenity_keyword"    id="hAmenityKeyword" value="{{ request.GET.amenity_keyword|default:'' }}">
             <div id="hAmenitiesContainer">{% for aid in selected_amenities %}<input type="hidden" name="amenities" value="{{ aid }}">{% endfor %}</div>
             <input type="hidden" name="lat"      id="filterLat"      value="{{ request.GET.lat|default:'' }}">
             <input type="hidden" name="lng"      id="filterLng"      value="{{ request.GET.lng|default:'' }}">
@@ -159,11 +161,18 @@
                 <!-- Amenities -->
                 <div class="relative">
                     <button type="button" onclick="togglePill('amenitiesPanel')"
-                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if selected_amenities %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if selected_amenities or selected_amenity_keyword %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
                         Amenities <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div id="amenitiesPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-64">
+                    <div id="amenitiesPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
                         <p class="text-sm font-semibold text-gray-700 mb-3">Required Amenities</p>
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Other amenity keyword</label>
+                            <input type="text" id="localAmenityKeyword" value="{{ selected_amenity_keyword }}"
+                                   placeholder="e.g. pet friendly, wifi, aircon"
+                                   class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                            <p class="mt-1 text-[11px] text-gray-400">Matches amenity names, dorm description, and key features.</p>
+                        </div>
                         <div class="space-y-1 max-h-48 overflow-y-auto">
                             {% for amenity in amenities %}
                             <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
@@ -349,10 +358,20 @@ function buildAmenitiesHidden() {
         c.appendChild(inp);
     });
 }
-function applyAmenities() { buildAmenitiesHidden(); document.getElementById('filterForm').submit(); }
+function applyAmenities() {
+    buildAmenitiesHidden();
+    const keyword = document.getElementById('localAmenityKeyword');
+    if (keyword) {
+        document.getElementById('hAmenityKeyword').value = keyword.value.trim();
+    }
+    document.getElementById('filterForm').submit();
+}
 function clearAmenities() {
     document.querySelectorAll('input[name="_amenity"]').forEach(cb => cb.checked = false);
     document.getElementById('hAmenitiesContainer').innerHTML = '';
+    const keyword = document.getElementById('localAmenityKeyword');
+    if (keyword) keyword.value = '';
+    document.getElementById('hAmenityKeyword').value = '';
     document.getElementById('filterForm').submit();
 }
 function applySchoolFilter() {
@@ -379,12 +398,19 @@ function applyMoreFilters() {
     document.getElementById('hVerified').value  = document.getElementById('localVerified').checked ? 'true' : '';
     document.getElementById('hMinRating').value = currentRating > 0 ? currentRating : '';
     buildAmenitiesHidden();
+    const keyword = document.getElementById('localAmenityKeyword');
+    if (keyword) {
+        document.getElementById('hAmenityKeyword').value = keyword.value.trim();
+    }
     document.getElementById('filterForm').submit();
 }
 function clearMoreFilters() {
     document.getElementById('hSort').value = '';
     document.getElementById('hVerified').value = '';
     document.getElementById('hMinRating').value = '';
+    document.getElementById('hAmenityKeyword').value = '';
+    const keyword = document.getElementById('localAmenityKeyword');
+    if (keyword) keyword.value = '';
     currentRating = 0;
     document.querySelectorAll('.star-btn').forEach(btn => { btn.classList.add('text-gray-300'); btn.classList.remove('text-blue-600'); });
     document.getElementById('filterForm').submit();
@@ -399,6 +425,43 @@ function clearPaymentTerms() {
     document.getElementById('hDepositMonths').value = '';
     document.getElementById('filterForm').submit();
 }
+
+(function setupSearchAutocomplete() {
+    const input = document.getElementById('searchInputPrimary');
+    const dataList = document.getElementById('searchSuggestionsList');
+    if (!input || !dataList) return;
+
+    let debounceTimer = null;
+    input.setAttribute('autocomplete', 'off');
+
+    input.addEventListener('input', function() {
+        const q = (input.value || '').trim();
+        clearTimeout(debounceTimer);
+
+        if (q.length < 2) {
+            dataList.innerHTML = '';
+            return;
+        }
+
+        debounceTimer = setTimeout(async function() {
+            try {
+                const response = await fetch(`{% url 'dormitory:search_suggestions' %}?q=${encodeURIComponent(q)}`);
+                if (!response.ok) return;
+                const payload = await response.json();
+                const suggestions = payload.suggestions || [];
+
+                dataList.innerHTML = '';
+                suggestions.forEach((item) => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    dataList.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Search suggestions failed', err);
+            }
+        }, 180);
+    });
+})();
 </script>
 
 

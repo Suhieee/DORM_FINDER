@@ -4,8 +4,21 @@
 
 {% block content %}
 
-<div class="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg border border-blue-200">
-    <h2 class="text-3xl font-semibold text-gray-800 mb-6">Edit Dorm</h2>
+<div class="edit-dorm-shell">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="edit-dorm-hero rounded-2xl p-6 sm:p-8 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold tracking-[0.18em] uppercase text-cyan-200">Landlord Console</p>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">Edit Dorm Listing</h1>
+                <p class="text-cyan-100/90 mt-2 text-sm sm:text-base">Update details, amenities, map location, and listing visuals in one screen.</p>
+            </div>
+            <div class="edit-dorm-hero-chip inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-300"></span>
+                Live listing update mode
+            </div>
+        </div>
+    </div>
 
     <!-- Success Message -->
     {% if messages %}
@@ -16,13 +29,13 @@
         {% endfor %}
     {% endif %}
 
-    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+    <form method="POST" enctype="multipart/form-data" class="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 sm:p-7 border border-blue-100 grid grid-cols-12 gap-4 sm:gap-5 lg:gap-6">
         {% csrf_token %}
 
 
         
         <!-- Dorm Name -->
-        <div>
+        <div class="col-span-12 lg:col-span-7 section-card">
             <label for="id_name" class="block text-sm font-medium text-gray-700">Dorm Name</label>
             <input type="text" name="name" id="id_name" value="{{ form.name.value }}" 
                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
@@ -30,15 +43,24 @@
         </div>
 
         <!-- Address -->
-        <div>
+        <div class="col-span-12 lg:col-span-5 section-card">
             <label for="id_address" class="block text-sm font-medium text-gray-700">Address</label>
             <textarea name="address" id="id_address" rows="3" 
                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                       placeholder="Enter address" required>{{ form.address.value }}</textarea>
         </div>
 
+        <!-- Map Section -->
+        <div class="col-span-12 section-card">
+            <label class="block text-sm font-medium text-gray-700">Location</label>
+            <div id="map" class="mt-1 rounded-md border border-gray-300 h-80 w-full"></div>
+            <small class="text-gray-500">Drag marker or click map to update location</small>
+            <input type="hidden" name="latitude" id="id_latitude" value="{{ dorm.latitude }}">
+            <input type="hidden" name="longitude" id="id_longitude" value="{{ dorm.longitude }}">
+        </div>
+
         <!-- Accommodation Type -->
-        <div>
+        <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
             <label for="id_accommodation_type" class="block text-sm font-medium text-gray-700">Accommodation Type</label>
             <select name="accommodation_type" id="id_accommodation_type" 
                     class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
@@ -50,8 +72,24 @@
             </select>
         </div>
 
+        <!-- Price -->
+        <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
+            <label for="id_price" class="block text-sm font-medium text-gray-700">Price (₱)</label>
+            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" 
+                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="Enter price" required>
+        </div>
+
+        <!-- Key Features -->
+        <div class="col-span-12 xl:col-span-4 section-card section-card-accent">
+            <label for="id_key_features" class="block text-sm font-medium text-gray-700">Key Features</label>
+            <textarea name="key_features" id="id_key_features" rows="3"
+                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="One feature per line (optional)">{{ form.key_features.value }}</textarea>
+        </div>
+
         <!-- Bedspace Options -->
-        <div id="bedspace-options" class="space-y-4">
+        <div id="bedspace-options" class="col-span-12 section-card space-y-4">
             <div>
                 <label for="id_total_beds" class="block text-sm font-medium text-gray-700">Total Number of Beds</label>
                 <input type="number" name="total_beds" id="id_total_beds" 
@@ -77,103 +115,92 @@
             </div>
         </div>
 
-        <!-- Price -->
-        <div>
-            <label for="id_price" class="block text-sm font-medium text-gray-700">Price (₱)</label>
-            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" 
-                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                   placeholder="Enter price" required>
-        </div>
-
-        <!-- Additional Amenities -->
-        <div class="space-y-2">
-            <div class="flex items-center">
-                <input type="checkbox" name="is_aircon" id="id_is_aircon" 
-                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                       {% if form.is_aircon.value %}checked{% endif %}>
-                <label for="id_is_aircon" class="ml-2 text-sm text-gray-700">Air Conditioned</label>
+        <div class="col-span-12 grid grid-cols-12 gap-4 sm:gap-5">
+            <!-- Description -->
+            <div class="col-span-12 xl:col-span-8 section-card">
+                <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" id="id_description" rows="10" 
+                          class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="Enter description" required>{{ form.description.value }}</textarea>
             </div>
 
-            <div class="flex items-center">
-                <input type="checkbox" name="utilities_included" id="id_utilities_included" 
-                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                       {% if form.utilities_included.value %}checked{% endif %}>
-                <label for="id_utilities_included" class="ml-2 text-sm text-gray-700">Utilities Included in Rent (Electricity, Water)</label>
-            </div>
-        </div>
-
-        <!-- Description -->
-        <div>
-            <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
-            <textarea name="description" id="id_description" rows="4" 
-                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                      placeholder="Enter description" required>{{ form.description.value }}</textarea>
-        </div>
-
-        <!-- Payment Terms -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="advance_months" class="block text-xs text-gray-500 mb-1">Advance Payment</label>
-                    <select name="advance_months" id="advance_months" onchange="updatePaymentPreview()"
-                            class="mt-1 w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
-                        <option value="0" {% if payment_advance_months == 0 %}selected{% endif %}>None</option>
-                        <option value="1" {% if payment_advance_months == 1 %}selected{% endif %}>1 month</option>
-                        <option value="2" {% if payment_advance_months == 2 %}selected{% endif %}>2 months</option>
-                        <option value="3" {% if payment_advance_months == 3 %}selected{% endif %}>3 months</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="deposit_months" class="block text-xs text-gray-500 mb-1">Security Deposit</label>
-                    <select name="deposit_months" id="deposit_months" onchange="updatePaymentPreview()"
-                            class="mt-1 w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
-                        <option value="0" {% if payment_deposit_months == 0 %}selected{% endif %}>None</option>
-                        <option value="1" {% if payment_deposit_months == 1 %}selected{% endif %}>1 month</option>
-                        <option value="2" {% if payment_deposit_months == 2 %}selected{% endif %}>2 months</option>
-                        <option value="3" {% if payment_deposit_months == 3 %}selected{% endif %}>3 months</option>
-                    </select>
+            <div class="col-span-12 xl:col-span-4 space-y-4">
+                <!-- Payment Terms -->
+                <div class="section-card section-card-accent">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="advance_months" class="block text-xs text-gray-500 mb-1">Advance Payment</label>
+                            <select name="advance_months" id="advance_months" onchange="updatePaymentPreview()"
+                                    class="mt-1 w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="0" {% if payment_advance_months == 0 %}selected{% endif %}>None</option>
+                                <option value="1" {% if payment_advance_months == 1 %}selected{% endif %}>1 month</option>
+                                <option value="2" {% if payment_advance_months == 2 %}selected{% endif %}>2 months</option>
+                                <option value="3" {% if payment_advance_months == 3 %}selected{% endif %}>3 months</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="deposit_months" class="block text-xs text-gray-500 mb-1">Security Deposit</label>
+                            <select name="deposit_months" id="deposit_months" onchange="updatePaymentPreview()"
+                                    class="mt-1 w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="0" {% if payment_deposit_months == 0 %}selected{% endif %}>None</option>
+                                <option value="1" {% if payment_deposit_months == 1 %}selected{% endif %}>1 month</option>
+                                <option value="2" {% if payment_deposit_months == 2 %}selected{% endif %}>2 months</option>
+                                <option value="3" {% if payment_deposit_months == 3 %}selected{% endif %}>3 months</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Live Preview -->
+                    <div id="paymentPreview" class="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+                        <p class="font-semibold text-blue-800 mb-2">Move-in Cost Preview</p>
+                        <div class="space-y-1 text-gray-700">
+                            <div class="flex justify-between"><span>Monthly Rent</span><span id="previewRent">&#8369;—</span></div>
+                            <div class="flex justify-between"><span id="previewAdvanceLabel">Advance</span><span id="previewAdvance">&#8369;—</span></div>
+                            <div class="flex justify-between"><span id="previewDepositLabel">Deposit</span><span id="previewDeposit">&#8369;—</span></div>
+                            <div class="flex justify-between border-t pt-1 font-bold text-blue-900"><span>Estimated Total</span><span id="previewTotal">&#8369;—</span></div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">* Excludes processing fee. Shown to tenants on checkout.</p>
+                    </div>
                 </div>
             </div>
-            <!-- Live Preview -->
-            <div id="paymentPreview" class="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
-                <p class="font-semibold text-blue-800 mb-2">Move-in Cost Preview</p>
-                <div class="space-y-1 text-gray-700">
-                    <div class="flex justify-between"><span>Monthly Rent</span><span id="previewRent">&#8369;—</span></div>
-                    <div class="flex justify-between"><span id="previewAdvanceLabel">Advance</span><span id="previewAdvance">&#8369;—</span></div>
-                    <div class="flex justify-between"><span id="previewDepositLabel">Deposit</span><span id="previewDeposit">&#8369;—</span></div>
-                    <div class="flex justify-between border-t pt-1 font-bold text-blue-900"><span>Estimated Total</span><span id="previewTotal">&#8369;—</span></div>
-                </div>
-                <p class="text-xs text-gray-400 mt-2">* Excludes processing fee. Shown to tenants on checkout.</p>
-            </div>
-        </div>
-
-        <!-- Key Features -->
-        <div>
-            <label for="id_key_features" class="block text-sm font-medium text-gray-700">Key Features</label>
-            <textarea name="key_features" id="id_key_features" rows="3"
-                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="One feature per line (optional)">{{ form.key_features.value }}</textarea>
         </div>
 
         <!-- Amenities -->
-        <div>
+        <div class="col-span-12 section-card">
             <label class="block text-sm font-medium text-gray-700">Amenities</label>
             <div class="mt-1 grid grid-cols-2 gap-2">
                 {% for amenity in all_amenities %}
                     <div class="flex items-center">
-                        <input type="checkbox" name="amenities" value="{{ amenity.id }}" 
+                        <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}"
                                {% if amenity in dorm.amenities.all %}checked{% endif %}
                                class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
+                        <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
                     </div>
                 {% endfor %}
             </div>
         </div>
 
+        <div class="col-span-12 section-card">
+            <label class="block text-sm font-medium text-gray-700">Amenity Photos</label>
+            <p class="mt-1 text-xs text-gray-500">Upload one optional photo per selected amenity. New upload replaces previous image for that amenity.</p>
+
+            {% if existing_amenity_images %}
+            <div class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {% for item in existing_amenity_images %}
+                <div class="p-2 border border-gray-200 rounded-md bg-gray-50">
+                    <img src="{{ item.image.url }}" alt="{{ item.amenity.name }}" class="w-full h-20 object-cover rounded mb-2">
+                    <p class="text-xs text-gray-600 font-medium">{{ item.amenity.name }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div id="amenityImageInputs" class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </div>
+
         <!-- Existing Images -->
         {% if dorm.images.all %}
-            <div>
+            <div class="col-span-12 section-card">
                 <label class="block text-sm font-medium text-gray-700">Existing Images</label>
                 <div class="flex gap-4 overflow-x-auto py-2">
                     {% for image in dorm.images.all %}
@@ -189,14 +216,14 @@
         {% endif %}
 
         <!-- New Images -->
-        <div>
+        <div class="col-span-12 section-card">
             <label for="id_images" class="block text-sm font-medium text-gray-700">Upload Images</label>
             <input type="file" name="images" id="id_images" multiple 
                    class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
 
         <!-- Business Permit -->
-        <div>
+        <div class="col-span-12 section-card">
             <label class="block text-sm font-medium text-gray-700">Business Permit</label>
             {% if dorm.permit %}
                 <div class="flex items-center gap-4 mb-2">
@@ -209,69 +236,20 @@
                    class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
 
-        <!-- Map Section -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Location</label>
-            <div id="map" style="height: 300px; width: 100%;" class="mt-1 rounded-md border border-gray-300"></div>
-            <small class="text-gray-500">Drag marker or click map to update location</small>
-            <input type="hidden" name="latitude" id="id_latitude" value="{{ dorm.latitude }}">
-            <input type="hidden" name="longitude" id="id_longitude" value="{{ dorm.longitude }}">
-        </div>
-
         <!-- Availability -->
-        <div class="flex items-center">
+        <div class="col-span-12 section-card flex items-center">
             <input type="checkbox" name="available" id="id_available" 
                    {% if form.available.value %}checked{% endif %}
                    class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
             <label for="id_available" class="ml-2 text-sm text-gray-700">Available</label>
         </div>
 
-        <!-- Payment QR Code Section -->
-        <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-4">Payment QR Code</h3>
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                {% if dorm.payment_qr %}
-                <div class="mb-4">
-                    <p class="text-gray-600 mb-2">Current QR Code:</p>
-                    <div class="flex items-center space-x-4">
-                        <img src="{{ dorm.payment_qr.url }}" alt="Payment QR Code" class="max-w-xs rounded-lg">
-                        <div>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="delete_payment_qr" class="form-checkbox">
-                                <span class="ml-2">Delete current QR code</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                <div>
-                    <label for="id_payment_qr" class="block text-sm font-medium text-gray-700 mb-2">
-                        {% if dorm.payment_qr %}Update{% else %}Upload{% endif %} Payment QR Code
-                    </label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                        <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <div class="flex text-sm text-gray-600">
-                                <label for="id_payment_qr" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                    <span>Upload a QR code</span>
-                                    {{ form.payment_qr }}
-                                </label>
-                            </div>
-                            <p class="text-xs text-gray-500">PNG, JPG up to 10MB</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Submit Button -->
-        <div class="flex justify-end space-x-4">
-            <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+        <div class="col-span-12 flex justify-end space-x-4">
+            <a href="{% url 'dormitory:dorm_detail' dorm.id %}" class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                 Cancel
             </a>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg shadow-blue-300/40">
                 Save Changes
             </button>
         </div>
@@ -284,12 +262,41 @@
         </a>
     </div>
 </div>
+</div>
 
 <!-- Leaflet JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<style>
+    .edit-dorm-shell {
+        background: radial-gradient(1200px 500px at 50% -120px, rgba(59, 130, 246, 0.16), transparent 70%),
+                    linear-gradient(180deg, #f3f8ff 0%, #f8fbff 45%, #ffffff 100%);
+        min-height: calc(100vh - 90px);
+    }
+    .edit-dorm-hero {
+        background: linear-gradient(135deg, #0f3d66 0%, #0f5fa6 52%, #0891b2 100%);
+        box-shadow: 0 22px 42px -24px rgba(15, 61, 102, 0.6);
+    }
+    .edit-dorm-hero-chip {
+        color: #e0f2fe;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+        border: 1px solid #dbeafe;
+        border-radius: 0.9rem;
+        padding: 0.95rem;
+    }
+    .section-card-accent {
+        background: linear-gradient(180deg, #ffffff 0%, #f3faff 100%);
+        border-color: #bfdbfe;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -387,6 +394,31 @@ document.addEventListener("DOMContentLoaded", function() {
     map.on('drag', function() {
         map.panInsideBounds(manilaBounds, { animate: false });
     });
+
+    function renderAmenityImageInputs() {
+        const wrap = document.getElementById('amenityImageInputs');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        document.querySelectorAll('input[name="amenities"]:checked').forEach((checkbox) => {
+            const amenityId = checkbox.value;
+            const labelEl = document.querySelector(`label[for="amenity-${amenityId}"]`);
+            const amenityName = labelEl ? labelEl.textContent.trim() : `Amenity ${amenityId}`;
+
+            const row = document.createElement('div');
+            row.className = 'p-3 border border-gray-200 rounded-lg bg-gray-50';
+            row.innerHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-1">${amenityName} photo</label>
+                <input type="file" name="amenity_image_${amenityId}" accept="image/*"
+                       class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            `;
+            wrap.appendChild(row);
+        });
+    }
+
+    document.querySelectorAll('input[name="amenities"]').forEach((cb) => {
+        cb.addEventListener('change', renderAmenityImageInputs);
+    });
+    renderAmenityImageInputs();
 });
 
 // Payment Terms Live Preview

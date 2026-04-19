@@ -141,6 +141,21 @@ class DormImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.dorm.name}"
+
+
+class DormAmenityImage(models.Model):
+    dorm = models.ForeignKey(Dorm, on_delete=models.CASCADE, related_name='amenity_images')
+    amenity = models.ForeignKey(Amenity, on_delete=models.CASCADE, related_name='dorm_images')
+    image = models.ImageField(upload_to='dorm_amenity_images/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['dorm', 'amenity'], name='unique_dorm_amenity_image')
+        ]
+
+    def __str__(self):
+        return f"{self.dorm.name} - {self.amenity.name}"
     
 class RoommateAmenity(models.Model):
     """Amenities for roommate preference."""
@@ -161,6 +176,7 @@ class RoommatePost(models.Model):
         ("friendly", "Friendly and Social"),
         ("adventurous", "Adventurous and Outgoing"),
         ("studious", "Studious and Focused"),
+        ("others", "Others"),
     ]
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -198,6 +214,11 @@ class RoommatePost(models.Model):
         default="friendly",
         db_index=True,
         help_text="Choose the personality type that best describes you"
+    )
+    mood_other = models.CharField(
+        max_length=80,
+        blank=True,
+        help_text="Custom personality type when mood is set to Others"
     )
     preferred_budget_min = models.DecimalField(
         max_digits=8,
@@ -279,7 +300,12 @@ class RoommatePost(models.Model):
 
 
     def __str__(self):
-        return f"{self.name} - {self.get_mood_display()} ({self.preferred_location})"
+        return f"{self.name} - {self.get_mood_label()} ({self.preferred_location})"
+
+    def get_mood_label(self):
+        if self.mood == 'others' and self.mood_other:
+            return self.mood_other
+        return self.get_mood_display()
 
 class Message(models.Model):
     sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_messages')
@@ -455,6 +481,17 @@ class Reservation(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_proof = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
+    manual_reference_number = models.CharField(
+        max_length=80,
+        null=True,
+        blank=True,
+        help_text="Reference number extracted from manual payment proof OCR"
+    )
+    manual_ocr_raw_text = models.TextField(
+        blank=True,
+        default='',
+        help_text="Raw OCR text extracted from manual payment proof"
+    )
     payment_submitted_at = models.DateTimeField(null=True, blank=True)
     payment_deadline = models.DateTimeField(null=True, blank=True,
                                            help_text="Deadline for payment (48 hours from reservation)")

@@ -315,7 +315,7 @@ class SetupPreferencesView(LoginRequiredMixin, View):
             # Process roommate preferences (step 2)
             form = RoommatePreferencesForm(request.POST, instance=preferences)
             if form.is_valid():
-                form.save()
+                preferences = form.save()
                 
                 # Auto-create RoommatePost from preferences
                 try:
@@ -509,7 +509,7 @@ class EditPreferencesView(LoginRequiredMixin, View):
             # Step 2: Save roommate preferences
             form = RoommatePreferencesForm(request.POST, instance=preferences)
             if form.is_valid():
-                form.save()
+                preferences = form.save()
                 
                 # If user has roommate matching enabled, sync to RoommatePost
                 if preferences.preference_choice == 'dorm_and_roommate':

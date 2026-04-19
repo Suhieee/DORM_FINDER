@@ -138,16 +138,21 @@
             </div>
 
             <!-- Amenities -->
-            {% if dorm.amenities.all %}
+            {% if amenity_cards %}
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Amenities</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {% for amenity in dorm.amenities.all %}
-                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">{{ amenity.name }}</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {% for card in amenity_cards %}
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        {% if card.image_url %}
+                        <img src="{{ card.image_url }}" alt="{{ card.amenity.name }}" class="w-full h-28 object-cover rounded-md mb-2">
+                        {% endif %}
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-gray-700">{{ card.amenity.name }}</span>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>

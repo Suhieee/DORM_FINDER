@@ -3,6 +3,22 @@
 {% load static %}
 {% block content %}
 
+<div class="add-dorm-shell">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="add-dorm-hero rounded-2xl p-6 sm:p-8 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold tracking-[0.18em] uppercase text-cyan-200">Landlord Console</p>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">Add New Dorm Listing</h1>
+                    <p class="text-cyan-100/90 mt-2 text-sm sm:text-base">Fill out details, pin the exact location, and upload images in one page.</p>
+                </div>
+                <div class="add-dorm-hero-chip inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-300"></span>
+                    Listing setup optimized
+                </div>
+            </div>
+        </div>
+
 {% if form.errors %}
 <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
     <div class="flex">
@@ -29,25 +45,27 @@
 </div>
 {% endif %}
 
-<form method="POST" enctype="multipart/form-data" class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-4 border border-blue-200">
+<form method="POST" enctype="multipart/form-data" id="addDormForm" class="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 sm:p-7 border border-blue-100 grid grid-cols-12 gap-4 sm:gap-5 lg:gap-6">
     {% csrf_token %}
     
     <!-- Dorm Name -->
-    <div>
+    <div class="col-span-12 lg:col-span-7 section-card">
         <label for="name" class="block text-sm font-medium text-gray-700">Dorm Name</label>
         <input type="text" name="name" id="name" value="{{ form.name.value|default:'' }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter dorm name" required>
+        <p class="mt-1 text-xs text-gray-500">Example: Blue Haven Residences</p>
     </div>
 
     <!-- Address -->
-    <div>
+    <div class="col-span-12 lg:col-span-5 section-card">
         <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
         <textarea name="address" id="address" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter address" required>{{ form.address.value|default:'' }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Example: 123 P. Campa St, Sampaloc, Manila</p>
     </div>
 
         <!-- Location Picker -->
-    <div>
+    <div class="col-span-12 section-card">
         <label class="block text-sm font-medium text-gray-700">Select Dorm Location</label>
-        <div id="map" class="h-64 w-full mt-2 border border-gray-300 rounded-md z-30"></div>
+        <div id="map" class="h-72 w-full mt-2 border border-gray-300 rounded-md z-30"></div>
         <div id="location-info" class="mt-2 text-sm text-gray-600 hidden">
             <span id="selected-location"></span>
         </div>
@@ -56,7 +74,7 @@
     </div>
 
     <!-- Accommodation Type -->
-    <div>
+    <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
         <label for="accommodation_type" class="block text-sm font-medium text-gray-700">Accommodation Type</label>
         <select name="accommodation_type" id="accommodation_type" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             {% for value, label in form.fields.accommodation_type.choices %}
@@ -65,88 +83,94 @@
         </select>
     </div>
 
+    <!-- Price -->
+    <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
+        <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+        <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+        <p class="mt-1 text-xs text-gray-500">Example: 6500</p>
+    </div>
+
+    <!-- Key Features -->
+    <div class="col-span-12 xl:col-span-4 section-card section-card-accent">
+        <label for="key_features" class="block text-sm font-medium text-gray-700">Key Features</label>
+        <textarea name="key_features" id="key_features" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="One feature per line (optional)">{{ form.key_features.value|default:'' }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Example: Near UST, 24/7 security, Free WiFi</p>
+    </div>
+
     <!-- Bedspace Options (shown only for bedspace/room sharing) -->
-    <div id="bedspace-options" class="space-y-4">
+    <div id="bedspace-options" class="col-span-12 section-card space-y-4">
         <div>
             <label for="total_beds" class="block text-sm font-medium text-gray-700">Total Number of Beds</label>
             <input type="number" name="total_beds" id="total_beds" value="{{ form.total_beds.value|default:'1' }}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-            <p class="mt-1 text-sm text-gray-500">Total number of beds available in this unit</p>
+            <p class="mt-1 text-xs text-gray-500">Example: 8</p>
         </div>
 
         <div>
             <label for="available_beds" class="block text-sm font-medium text-gray-700">Available Beds</label>
             <input type="number" name="available_beds" id="available_beds" value="{{ form.available_beds.value|default:'1' }}" min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-            <p class="mt-1 text-sm text-gray-500">Number of beds currently available for rent</p>
+            <p class="mt-1 text-xs text-gray-500">Example: 3</p>
         </div>
 
         <div>
             <label for="max_occupants" class="block text-sm font-medium text-gray-700">Maximum Occupants</label>
             <input type="number" name="max_occupants" id="max_occupants" value="{{ form.max_occupants.value|default:'1' }}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-            <p class="mt-1 text-sm text-gray-500">Maximum number of people allowed in the unit</p>
+            <p class="mt-1 text-xs text-gray-500">Example: 8</p>
         </div>
     </div>
 
-    <!-- Price -->
-    <div>
-        <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-        <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
-    </div>
-    <!-- Description -->
-    <div>
-        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-        <textarea name="description" id="description" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description" required>{{ form.description.value|default:'' }}</textarea>
-    </div>
+    <!-- Description + Right Stack -->
+    <div class="col-span-12 grid grid-cols-12 gap-4 sm:gap-5">
+        <div class="col-span-12 xl:col-span-8 section-card">
+            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea name="description" id="description" rows="10" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description" required>{{ form.description.value|default:'' }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Example: Fully furnished bedspace with study area, strong WiFi, and walking distance to FEU.</p>
+        </div>
 
-    <!-- Payment Terms -->
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label for="advance_months" class="block text-xs text-gray-500 mb-1">Advance Payment</label>
-                <select name="advance_months" id="advance_months" onchange="updatePaymentPreview()"
-                        class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <option value="0">None</option>
-                    <option value="1" selected>1 month</option>
-                    <option value="2">2 months</option>
-                    <option value="3">3 months</option>
-                </select>
-            </div>
-            <div>
-                <label for="deposit_months" class="block text-xs text-gray-500 mb-1">Security Deposit</label>
-                <select name="deposit_months" id="deposit_months" onchange="updatePaymentPreview()"
-                        class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <option value="0">None</option>
-                    <option value="1">1 month</option>
-                    <option value="2" selected>2 months</option>
-                    <option value="3">3 months</option>
-                </select>
+        <div class="col-span-12 xl:col-span-4 space-y-4">
+            <div class="section-card section-card-accent">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="advance_months" class="block text-xs text-gray-500 mb-1">Advance Payment</label>
+                        <select name="advance_months" id="advance_months" onchange="updatePaymentPreview()"
+                                class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="0">None</option>
+                            <option value="1" selected>1 month</option>
+                            <option value="2">2 months</option>
+                            <option value="3">3 months</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="deposit_months" class="block text-xs text-gray-500 mb-1">Security Deposit</label>
+                        <select name="deposit_months" id="deposit_months" onchange="updatePaymentPreview()"
+                                class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="0">None</option>
+                            <option value="1">1 month</option>
+                            <option value="2" selected>2 months</option>
+                            <option value="3">3 months</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="paymentPreview" class="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+                    <p class="font-semibold text-blue-800 mb-2">Move-in Cost Preview</p>
+                    <div class="space-y-1 text-gray-700">
+                        <div class="flex justify-between"><span>Monthly Rent</span><span id="previewRent">&#8369;—</span></div>
+                        <div class="flex justify-between"><span id="previewAdvanceLabel">Advance (1 month)</span><span id="previewAdvance">&#8369;—</span></div>
+                        <div class="flex justify-between"><span id="previewDepositLabel">Deposit (2 months)</span><span id="previewDeposit">&#8369;—</span></div>
+                        <div class="flex justify-between border-t pt-1 font-bold text-blue-900"><span>Estimated Total</span><span id="previewTotal">&#8369;—</span></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">* Excludes processing fee. Shown to tenants on checkout.</p>
+                </div>
             </div>
         </div>
-        <!-- Live Preview -->
-        <div id="paymentPreview" class="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
-            <p class="font-semibold text-blue-800 mb-2">Move-in Cost Preview</p>
-            <div class="space-y-1 text-gray-700">
-                <div class="flex justify-between"><span>Monthly Rent</span><span id="previewRent">&#8369;—</span></div>
-                <div class="flex justify-between"><span id="previewAdvanceLabel">Advance (1 month)</span><span id="previewAdvance">&#8369;—</span></div>
-                <div class="flex justify-between"><span id="previewDepositLabel">Deposit (2 months)</span><span id="previewDeposit">&#8369;—</span></div>
-                <div class="flex justify-between border-t pt-1 font-bold text-blue-900"><span>Estimated Total</span><span id="previewTotal">&#8369;—</span></div>
-            </div>
-            <p class="text-xs text-gray-400 mt-2">* Excludes processing fee. Shown to tenants on checkout.</p>
-        </div>
-    </div>
-
-    <!-- Key Features -->
-    <div>
-        <label for="key_features" class="block text-sm font-medium text-gray-700">Key Features</label>
-        <textarea name="key_features" id="key_features" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="One feature per line (optional)">{{ form.key_features.value|default:'' }}</textarea>
     </div>
 
     <!-- Amenities -->
-    <div>
+    <div class="col-span-12 section-card">
         <label class="block text-sm font-medium text-gray-700">Amenities</label>
-        <div class="grid grid-cols-2 gap-2 mt-2">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2 max-h-56 overflow-y-auto pr-1">
             {% for amenity in amenities %}
-            <div class="flex items-center">
+            <div class="flex items-center p-2 rounded-lg bg-white border border-blue-100">
                 <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" 
                        class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                        {% if amenity.id in form.amenities.value %}checked{% endif %}>
@@ -156,8 +180,14 @@
         </div>
     </div>
 
+    <div class="col-span-12 section-card">
+        <label class="block text-sm font-medium text-gray-700">Amenity Photos (Optional)</label>
+        <p class="mt-1 text-xs text-gray-500">Upload one sample photo for selected amenities. Example: Aircon checkbox + aircon photo.</p>
+        <div id="amenityImageInputs" class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+    </div>
+
     <!-- Permit Upload -->
-    <div>
+    <div class="col-span-12 xl:col-span-5 section-card">
         <label for="permit" class="block text-sm font-medium text-gray-700">Upload Permit (Images only)</label>
         <input type="file" name="permit" id="permit" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         {% if form.permit.value %}
@@ -166,7 +196,7 @@
     </div>
 
     <!-- Payment QR Code -->
-    <div>
+    <div class="col-span-12 xl:col-span-7 section-card">
         <label for="payment_qr" class="block text-sm font-medium text-gray-700">Payment QR Code (GCash/Maya)</label>
         <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
             <div class="space-y-1 text-center">
@@ -188,22 +218,24 @@
     </div>
 
     <!-- Images Upload -->
-    <div>
+    <div class="col-span-12 section-card">
         <label for="images" class="block text-sm font-medium text-gray-700">Upload Images</label>
         <input type="file" name="images" id="images" accept="image/*" multiple class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
     </div>
 
     <!-- Availability -->
-    <div class="flex items-center">
+    <div class="col-span-12 md:col-span-6 section-card flex items-center">
         <input type="checkbox" name="available" id="available" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.available.value %}checked{% endif %}>
         <label for="available" class="ml-2 text-sm text-gray-700">Available</label>
     </div>
 
     <!-- Submit Button -->
-    <div class="text-center">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200">Add Dorm</button>
+    <div class="col-span-12 md:col-span-6 flex items-center md:justify-end">
+        <button type="submit" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl transition-colors duration-200 font-semibold shadow-lg shadow-blue-300/40">Add Dorm</button>
     </div>
 </form>
+</div>
+</div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -211,7 +243,37 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <style>
-    #map { height: 400px; }
+    .add-dorm-shell {
+        background: radial-gradient(1200px 500px at 50% -120px, rgba(59, 130, 246, 0.16), transparent 70%),
+                    linear-gradient(180deg, #f3f8ff 0%, #f8fbff 45%, #ffffff 100%);
+        min-height: calc(100vh - 90px);
+    }
+    .add-dorm-hero {
+        background: linear-gradient(135deg, #0f3d66 0%, #0f5fa6 52%, #0891b2 100%);
+        box-shadow: 0 22px 42px -24px rgba(15, 61, 102, 0.6);
+    }
+    .add-dorm-hero-chip {
+        color: #e0f2fe;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    #map { height: 22rem; }
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+        border: 1px solid #dbeafe;
+        border-radius: 0.9rem;
+        padding: 0.95rem;
+    }
+    .section-card-accent {
+        background: linear-gradient(180deg, #ffffff 0%, #f3faff 100%);
+        border-color: #bfdbfe;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+    @media (min-width: 1024px) {
+        .section-card {
+            padding: 1.05rem;
+        }
+    }
     .leaflet-control-geocoder {
         width: 300px !important;
         max-width: 100% !important;
@@ -256,6 +318,31 @@ document.addEventListener("DOMContentLoaded", function() {
     map.on("drag", function() {
         map.panInsideBounds(manilaBounds, { animate: false });
     });
+
+    function renderAmenityImageInputs() {
+        const wrap = document.getElementById("amenityImageInputs");
+        if (!wrap) return;
+        wrap.innerHTML = "";
+        document.querySelectorAll('input[name="amenities"]:checked').forEach((checkbox) => {
+            const amenityId = checkbox.value;
+            const labelEl = document.querySelector(`label[for="amenity-${amenityId}"]`);
+            const amenityName = labelEl ? labelEl.textContent.trim() : `Amenity ${amenityId}`;
+
+            const row = document.createElement("div");
+            row.className = "p-3 border border-blue-100 rounded-lg bg-white";
+            row.innerHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-1">${amenityName} photo</label>
+                <input type="file" name="amenity_image_${amenityId}" accept="image/*"
+                       class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            `;
+            wrap.appendChild(row);
+        });
+    }
+
+    document.querySelectorAll('input[name="amenities"]').forEach((cb) => {
+        cb.addEventListener("change", renderAmenityImageInputs);
+    });
+    renderAmenityImageInputs();
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors"

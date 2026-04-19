@@ -6,7 +6,7 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity, PaymentConfiguration
+    RoommateAmenity, PaymentConfiguration, DormAmenityImage
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
 from django.db.models import Avg , Q
@@ -89,6 +89,93 @@ def _get_matching_school_ids(search_query):
     return list(matching_school_ids)
 
 
+def search_suggestions(request):
+    query = (request.GET.get('q') or '').strip()
+    if len(query) < 2:
+        return JsonResponse({'suggestions': []})
+
+    q_lower = query.lower()
+
+    school_ids = _get_matching_school_ids(query)
+    school_names_qs = list(
+        School.objects.filter(
+            Q(name__icontains=query) |
+            Q(address__icontains=query) |
+            Q(id__in=school_ids)
+        ).values_list('name', flat=True)
+    )
+
+    school_names = []
+    for school_name in school_names_qs:
+        tokens = [t for t in re.split(r'[^a-zA-Z0-9]+', (school_name or '').lower()) if t]
+        acronym = _build_school_acronym(school_name)
+        if (
+            q_lower in (school_name or '').lower() or
+            any(token.startswith(q_lower) for token in tokens) or
+            (acronym and acronym.startswith(q_lower))
+        ):
+            school_names.append(school_name)
+        if len(school_names) >= 8:
+            break
+
+    dorm_names = list(
+        Dorm.objects.filter(available=True, approval_status='approved').filter(
+            Q(name__icontains=query) |
+            Q(address__icontains=query)
+        ).values_list('name', flat=True)[:8]
+    )
+
+    fallback_school_suggestions = [
+        'Far Eastern University',
+        'University of Santo Tomas',
+        'Polytechnic University of the Philippines',
+        'National University Manila',
+        'Centro Escolar University',
+        'University of the East',
+        'Adamson University',
+        'San Beda University',
+    ]
+
+    fallback_matches = []
+    for item in fallback_school_suggestions:
+        tokens = [t for t in re.split(r'[^a-zA-Z0-9]+', item.lower()) if t]
+        acronym = _build_school_acronym(item)
+        if (
+            q_lower in item.lower() or
+            any(token.startswith(q_lower) for token in tokens) or
+            (acronym and acronym.startswith(q_lower))
+        ):
+            fallback_matches.append(item)
+
+    suggestions = []
+    seen = set()
+    for item in school_names + dorm_names + fallback_matches:
+        key = (item or '').strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        suggestions.append(item)
+        if len(suggestions) >= 10:
+            break
+
+    return JsonResponse({'suggestions': suggestions})
+
+
+def _build_amenity_cards(dorm):
+    amenity_images = {
+        item.amenity_id: item.image.url
+        for item in dorm.amenity_images.select_related('amenity').all()
+        if item.image
+    }
+    return [
+        {
+            'amenity': amenity,
+            'image_url': amenity_images.get(amenity.id),
+        }
+        for amenity in dorm.amenities.all()
+    ]
+
+
 class LoginRequiredActionMixin:
     """Mixin to handle login required actions with proper redirect"""
     
@@ -147,6 +234,14 @@ class PublicDormListView(ListView):
         amenities = self.request.GET.getlist('amenities')
         if amenities:
             queryset = queryset.filter(amenities__id__in=amenities).distinct()
+
+        amenity_keyword = (self.request.GET.get('amenity_keyword') or '').strip()
+        if amenity_keyword:
+            queryset = queryset.filter(
+                models.Q(amenities__name__icontains=amenity_keyword) |
+                models.Q(description__icontains=amenity_keyword) |
+                models.Q(key_features__icontains=amenity_keyword)
+            ).distinct()
 
         # School filtering
         school_id = self.request.GET.get('school')
@@ -235,7 +330,8 @@ class PublicDormListView(ListView):
         context = super().get_context_data(**kwargs)
         context['amenities'] = Amenity.objects.all()
         context['schools'] = School.objects.all()
-        context['selected_amenities'] = self.request.GET.getlist('amenities')
+        context['selected_amenities'] = [int(aid) for aid in self.request.GET.getlist('amenities') if str(aid).isdigit()]
+        context['selected_amenity_keyword'] = (self.request.GET.get('amenity_keyword') or '').strip()
         context['selected_school'] = self.request.GET.get('school', '')
         
         # Add dorm data for map
@@ -284,6 +380,7 @@ class PublicDormDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['amenities'] = self.object.amenities.all()
+        context['amenity_cards'] = _build_amenity_cards(self.object)
         context['dorm_id'] = self.object.id
         context['latitude'] = self.object.latitude
         context['longitude'] = self.object.longitude
@@ -399,6 +496,16 @@ class AddDormView(LoginRequiredMixin, CreateView):
         for image in images:
             DormImage.objects.create(dorm=self.object, image=image)
 
+        selected_amenities = form.cleaned_data.get('amenities') or []
+        for amenity in selected_amenities:
+            amenity_image = self.request.FILES.get(f'amenity_image_{amenity.id}')
+            if amenity_image:
+                DormAmenityImage.objects.update_or_create(
+                    dorm=self.object,
+                    amenity=amenity,
+                    defaults={'image': amenity_image},
+                )
+
         # Save payment configuration
         advance_months = int(form.data.get('advance_months', 1))
         deposit_months = int(form.data.get('deposit_months', 2))
@@ -481,6 +588,7 @@ class DormListView(LoginRequiredMixin, ListView):
         search_query = self.request.GET.get('search', '')
         target_price = self.request.GET.get('target_price')
         amenities = self.request.GET.getlist('amenities')
+        amenity_keyword = (self.request.GET.get('amenity_keyword') or '').strip()
         school_id = self.request.GET.get('school')
         sort_by = self.request.GET.get('sort')
         accommodation_type = self.request.GET.get('accommodation_type')
@@ -560,6 +668,13 @@ class DormListView(LoginRequiredMixin, ListView):
         # Apply amenities filter if provided
         if amenities:
             queryset = queryset.filter(amenities__id__in=amenities).distinct()
+
+        if amenity_keyword:
+            queryset = queryset.filter(
+                Q(amenities__name__icontains=amenity_keyword) |
+                Q(description__icontains=amenity_keyword) |
+                Q(key_features__icontains=amenity_keyword)
+            ).distinct()
             
         # Apply school filter if provided
         if school_id:
@@ -623,6 +738,7 @@ class DormListView(LoginRequiredMixin, ListView):
         context['current_search'] = self.request.GET.get('search', '')
         context['current_target_price'] = self.request.GET.get('target_price', '50000')
         context['selected_amenities'] = [int(a) for a in self.request.GET.getlist('amenities')]
+        context['selected_amenity_keyword'] = (self.request.GET.get('amenity_keyword') or '').strip()
         context['selected_school'] = self.request.GET.get('school', '')
         context['selected_sort'] = self.request.GET.get('sort', '')
         
@@ -673,6 +789,7 @@ class DormDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['amenities'] = self.object.amenities.all()  # Get amenities for this dorm
+        context['amenity_cards'] = _build_amenity_cards(self.object)
         context['dorm_id'] = self.object.id  # Pass dorm_id to context
         context['form'] = ReviewForm()  # Pass the review form to the template
         context['latitude'] = self.object.latitude  # Pass dorm latitude
@@ -795,6 +912,18 @@ class EditDormView(LoginRequiredMixin, UpdateView):
                 dorm.save()
                 form.save_m2m()  # Save amenities
 
+                selected_amenities = form.cleaned_data.get('amenities') or []
+                for amenity in selected_amenities:
+                    amenity_image = self.request.FILES.get(f'amenity_image_{amenity.id}')
+                    if amenity_image:
+                        DormAmenityImage.objects.update_or_create(
+                            dorm=dorm,
+                            amenity=amenity,
+                            defaults={'image': amenity_image},
+                        )
+
+                DormAmenityImage.objects.filter(dorm=dorm).exclude(amenity__in=selected_amenities).delete()
+
                 # Save payment configuration
                 advance_months = int(self.request.POST.get('advance_months', 1))
                 deposit_months = int(self.request.POST.get('deposit_months', 2))
@@ -816,6 +945,7 @@ class EditDormView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['all_amenities'] = Amenity.objects.all()
+        context['existing_amenity_images'] = self.object.amenity_images.select_related('amenity').all()
         try:
             config = self.object.payment_config
             context['payment_advance_months'] = config.advance_months
