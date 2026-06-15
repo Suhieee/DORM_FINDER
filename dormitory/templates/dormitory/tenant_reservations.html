@@ -618,9 +618,9 @@
 
                 <!-- Reservation Status -->
                 <div class="border-t pt-4">
-                    <h4 class="font-semibold mb-2">Status</h4>
-                    <div class="flex items-center justify-between">
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm
+                    <h4 class="font-semibold mb-3">Status</h4>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold w-fit
                             {% if selected_reservation.status == 'pending' %}
                                 bg-yellow-100 text-yellow-800
                             {% elif selected_reservation.status == 'confirmed' %}
@@ -635,19 +635,86 @@
                             {{ selected_reservation.get_status_display }}
                         </div>
 
-                        <!-- Cancel button for cancellable reservation states -->
-                        {% if selected_reservation.status == 'pending' or selected_reservation.status == 'pending_payment' or selected_reservation.status == 'confirmed' %}
-                        <button type="button" onclick="openCancelModal()"
-                                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
-                            {% if selected_reservation.has_paid_reservation %}
-                            Cancel & Request Refund
-                            {% else %}
-                            Cancel Reservation
+                        <!-- Action buttons -->
+                        <div class="flex gap-2 flex-wrap">
+                            <!-- Cancel button for cancellable reservation states -->
+                            {% if selected_reservation.status == 'pending' or selected_reservation.status == 'pending_payment' or selected_reservation.status == 'confirmed' %}
+                            <button type="button" onclick="openCancelModal()"
+                                    class="inline-flex items-center gap-1.5 bg-red-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-red-700 transition-all shadow-sm hover:shadow-md">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                {% if selected_reservation.has_paid_reservation %}
+                                Cancel &amp; Request Refund
+                                {% else %}
+                                Cancel Reservation
+                                {% endif %}
+                            </button>
                             {% endif %}
-                        </button>
-                        {% endif %}
+                            
+                            <!-- Move-out request button for occupied/confirmed tenants -->
+                            {% if selected_reservation.status == 'occupied' or selected_reservation.status == 'confirmed' %}
+                            {% if not selected_reservation.move_out_requested %}
+                            <button type="button" onclick="openMoveOutModal()"
+                                    class="inline-flex items-center gap-1.5 bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-orange-700 transition-all shadow-sm hover:shadow-md">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Request Early Move-Out
+                            </button>
+                            {% else %}
+                            <button type="button" disabled
+                                    class="inline-flex items-center gap-1.5 bg-gray-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Move-Out Requested
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+
+                <!-- Move-Out Status Section -->
+                {% if selected_reservation.move_out_requested %}
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="font-semibold mb-4 flex items-center text-orange-900">
+                        <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Move-Out Request Status
+                    </h4>
+                    
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div class="text-sm space-y-3">
+                            <div>
+                                <span class="text-gray-600">Requested Date:</span>
+                                <p class="font-semibold text-lg">{{ selected_reservation.move_out_requested_date|date:"F j, Y - g:i A" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Your Reason:</span>
+                                <p class="text-sm whitespace-pre-wrap bg-white rounded p-2 mt-1 border border-gray-200">{{ selected_reservation.move_out_requested_reason }}</p>
+                            </div>
+                            {% if selected_reservation.move_out_approved %}
+                            <div class="pt-2 border-t border-orange-300">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    ✓ Approved on {{ selected_reservation.move_out_approved_date|date:"F j, Y" }}
+                                </span>
+                            </div>
+                            {% else %}
+                            <div class="pt-2 border-t border-orange-300">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                    ⏳ Pending landlord response
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Payment Section - Only show for pending_payment status -->
                 {% if selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation and not selected_reservation.payment_proof %}
@@ -1011,54 +1078,128 @@
     </div>
 </div>
 
-<!-- Cancellation Modal (outside main container for full page centering) -->
-{% if selected_reservation and selected_reservation.status != 'occupied' and selected_reservation.status != 'completed' and selected_reservation.status != 'declined' and selected_reservation.status != 'cancelled' %}
-<div id="cancelModal" class="fixed inset-0 bg-gray-600/50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-    <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Cancel Reservation</h3>
-            <form method="post" action="{% url 'dormitory:cancel_reservation_with_refund' selected_reservation.id %}">
+<!-- Move-Out Request Modal -->
+{% if selected_reservation %}
+<div id="moveOutModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeMoveOutModal()"></div>
+        <div class="inline-block bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all my-8 sm:max-w-lg sm:w-full">
+            <div class="bg-orange-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="text-lg font-bold text-white">Request Early Move-Out</h3>
+                    </div>
+                    <button type="button" onclick="closeMoveOutModal()" class="text-white/70 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
                 {% csrf_token %}
-                <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                    <p class="font-semibold">Refund policy</p>
-                    <p>7+ days before move-in: 100% refund</p>
-                    <p>3-6 days before move-in: 50% refund</p>
-                    <p>Less than 3 days before move-in: no refund</p>
-                    <p>Maximum of 3 automatic refunds per tenant per month.</p>
+                <input type="hidden" name="action" value="request_move_out">
+                <div class="px-6 py-4 space-y-4">
+                    <div class="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-orange-800">Please note:</p>
+                        <p class="text-sm text-orange-700 mt-1">Your landlord will review this request. Early move-out may be subject to penalties or refund adjustments depending on your agreement.</p>
+                    </div>
+                    <div>
+                        <label for="moveout_reason" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Reason for Move-Out <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="moveout_reason" id="moveout_reason" rows="4"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                placeholder="Please explain why you need to move out early..."
+                                required></textarea>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="cancellation_reason_select" class="block text-sm font-medium text-gray-700 mb-2">
-                        Select cancellation reason <span class="text-red-500">*</span>
-                    </label>
-                    <select name="cancellation_reason_select" id="cancellation_reason_select" 
-                            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onchange="toggleOtherReason()" required>
-                        <option value="">-- Select a reason --</option>
-                        <option value="Found a better option">Found a better option</option>
-                        <option value="Change of plans">Change of plans</option>
-                        <option value="Too expensive">Too expensive</option>
-                        <option value="Location not suitable">Location not suitable</option>
-                        <option value="Dorm conditions not as expected">Dorm conditions not as expected</option>
-                        <option value="Financial reasons">Financial reasons</option>
-                        <option value="Personal reasons">Personal reasons</option>
-                        <option value="Other">Other (Please specify)</option>
-                    </select>
-                </div>
-                <div id="otherReasonDiv" class="mb-4 hidden">
-                    <label for="cancellation_reason_other" class="block text-sm font-medium text-gray-700 mb-2">
-                        Please specify your reason
-                    </label>
-                    <textarea name="cancellation_reason_other" id="cancellation_reason_other" rows="3"
-                            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Type your reason here..."></textarea>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeCancelModal()"
-                            class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeMoveOutModal()"
+                            class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-300 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
-                            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                            class="px-5 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-semibold hover:bg-orange-700 transition-all shadow-md">
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Cancellation Modal -->
+{% if selected_reservation and selected_reservation.status != 'occupied' and selected_reservation.status != 'completed' and selected_reservation.status != 'declined' and selected_reservation.status != 'cancelled' %}
+<div id="cancelModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeCancelModal()"></div>
+        <div class="inline-block bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all my-8 sm:max-w-lg sm:w-full">
+            <div class="bg-red-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <h3 class="text-lg font-bold text-white">Cancel Reservation</h3>
+                    </div>
+                    <button type="button" onclick="closeCancelModal()" class="text-white/70 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form method="post" action="{% url 'dormitory:cancel_reservation_with_refund' selected_reservation.id %}">
+                {% csrf_token %}
+                <div class="px-6 py-4 space-y-4">
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-amber-800">Refund Policy</p>
+                        <ul class="text-sm text-amber-700 mt-1 space-y-0.5 list-disc list-inside">
+                            <li>7+ days before move-in: <strong>100% refund</strong></li>
+                            <li>3-6 days before move-in: <strong>50% refund</strong></li>
+                            <li>Less than 3 days before move-in: <strong>no refund</strong></li>
+                            <li class="list-none text-xs mt-1">Max 3 automatic refunds per tenant per month.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label for="cancellation_reason_select" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Select cancellation reason <span class="text-red-500">*</span>
+                        </label>
+                        <select name="cancellation_reason_select" id="cancellation_reason_select" 
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                onchange="toggleOtherReason()" required>
+                            <option value="">-- Select a reason --</option>
+                            <option value="Found a better option">Found a better option</option>
+                            <option value="Change of plans">Change of plans</option>
+                            <option value="Too expensive">Too expensive</option>
+                            <option value="Location not suitable">Location not suitable</option>
+                            <option value="Dorm conditions not as expected">Dorm conditions not as expected</option>
+                            <option value="Financial reasons">Financial reasons</option>
+                            <option value="Personal reasons">Personal reasons</option>
+                            <option value="Other">Other (Please specify)</option>
+                        </select>
+                    </div>
+                    <div id="otherReasonDiv" class="hidden">
+                        <label for="cancellation_reason_other" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Please specify your reason
+                        </label>
+                        <textarea name="cancellation_reason_other" id="cancellation_reason_other" rows="3"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                placeholder="Type your reason here..."></textarea>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeCancelModal()"
+                            class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all shadow-md">
                         Confirm Cancellation
                     </button>
                 </div>
@@ -1564,6 +1705,15 @@
             otherTextarea.required = false;
             otherTextarea.value = '';
         }
+    }
+
+    function openMoveOutModal() {
+        document.getElementById('moveOutModal').classList.remove('hidden');
+    }
+
+    function closeMoveOutModal() {
+        document.getElementById('moveOutModal').classList.add('hidden');
+        document.getElementById('moveout_reason').value = '';
     }
 
     // Close modal when clicking outside

@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import DetailView, ListView, UpdateView, View
 from django.urls import reverse_lazy, reverse
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from accounts.models import CustomUser  
 from .models import UserProfile, FavoriteDorm, TenantPreferences
 from .forms import UserProfileForm, TenantPreferencesForm, RoommatePreferencesForm
@@ -13,7 +15,6 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from dormitory.models import Dorm
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
@@ -53,6 +54,7 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
                 
         return context
     
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = UserProfile
     form_class = UserProfileForm
@@ -73,6 +75,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_invalid(form)
 
 
+@method_decorator(ratelimit(key='user', rate='3/d', method='POST', block=True), name='dispatch')
 class SubmitPWDVerificationView(LoginRequiredMixin, View):
     template_name = 'user_profile/submit_pwd_verification.html'
 
@@ -241,6 +244,7 @@ class PublicLandlordProfileView(LoginRequiredMixin, UserPassesTestMixin, DetailV
         return context
 
 
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class SetupPreferencesView(LoginRequiredMixin, View):
     """Two-step wizard for setting up dorm and roommate preferences"""
     template_name = "user_profile/setup_preferences.html"
@@ -343,6 +347,7 @@ class SetupPreferencesView(LoginRequiredMixin, View):
 # Change Password via OTP (email)
 # ─────────────────────────────────────────────
 
+@method_decorator(ratelimit(key='user', rate='5/h', method='POST', block=True), name='dispatch')
 class RequestPasswordOTPView(LoginRequiredMixin, View):
     """Generate a 6-digit OTP, store it in the session, and send it via SendGrid."""
 
@@ -406,6 +411,7 @@ class RequestPasswordOTPView(LoginRequiredMixin, View):
             return JsonResponse({'status': 'error', 'message': 'Failed to send OTP. Please try again.'}, status=500)
 
 
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class ChangePasswordWithOTPView(LoginRequiredMixin, View):
     """Validate the OTP from session, then change the password."""
 
@@ -468,6 +474,7 @@ class ChangePasswordWithOTPView(LoginRequiredMixin, View):
         request.session.modified = True
 
 
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class EditPreferencesView(LoginRequiredMixin, View):
     """View for tenants to edit their preferences anytime (two-step)"""
     template_name = "user_profile/edit_preferences.html"

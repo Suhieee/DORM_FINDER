@@ -214,9 +214,56 @@
                             </div>
                             <div class="ml-3">
                                 <label for="terms" class="text-sm text-gray-700">
-                                    I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a>
+                                    I agree to the 
+                                    <button type="button" onclick="openTermsModal()" 
+                                            class="text-blue-600 hover:underline font-medium">
+                                        Terms and Conditions
+                                    </button>
                                     and understand that this reservation is subject to landlord approval.
                                 </label>
+                            </div>
+                        </div>
+                        {% if landlord_terms %}
+                        <div class="mt-3 border-t border-gray-100 pt-3">
+                            <button type="button" onclick="openTermsModal()" 
+                                    class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Read Terms & Conditions
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Terms Modal -->
+                    <div id="termsModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                        <div class="flex items-center justify-center min-h-screen px-4">
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeTermsModal()"></div>
+                            <div class="inline-block bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all my-8 sm:max-w-2xl sm:w-full">
+                                <div class="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-bold text-white bg-blue-500 px-6 py-2.5 rounded-full font-semibold">Terms &amp; Conditions</h3>
+                                        <button type="button" onclick="closeTermsModal()" class="text-white/80 hover:text-white">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="px-6 py-4 max-h-96 overflow-y-auto bg-white text-gray-900 text-sm leading-relaxed">
+                                    {% if landlord_terms %}
+                                        {{ landlord_terms|linebreaks }}
+                                    {% else %}
+                                        <p class="text-gray-500 italic">No Terms and Conditions have been set by this dorm owner.</p>
+                                    {% endif %}
+                                </div>
+                                <div class="bg-gray-50 px-6 py-3 flex justify-end">
+                                    <button type="button" onclick="closeTermsModal()" 
+                                            class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
+                                        Close
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -594,6 +641,16 @@
                 // You can implement an endpoint to fetch new messages since lastMessageId
             }
         }, 5000);
+    }
+
+    // Terms and Conditions Modal
+    function openTermsModal() {
+        document.getElementById('termsModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeTermsModal() {
+        document.getElementById('termsModal').classList.add('hidden');
+        document.body.style.overflow = '';
     }
 
     // Preview uploaded image (only on pages that include the upload field)

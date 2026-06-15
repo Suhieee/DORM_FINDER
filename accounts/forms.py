@@ -1,12 +1,46 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.core.exceptions import ValidationError
 from .models import CustomUser, UserReport
+from user_profile.models import UserProfile
 from django.utils import timezone
 from datetime import timedelta
 import os
 
 
-class TenantRegistrationForm(UserCreationForm):
+class AntiSpamFormMixin:
+    honeypot = forms.CharField(required=False, widget=forms.HiddenInput(), label='')
+
+    def clean_honeypot(self):
+        value = (self.cleaned_data.get('honeypot') or '').strip()
+        if value:
+            raise forms.ValidationError('Invalid submission detected.')
+        return value
+
+
+class ResendVerificationForm(AntiSpamFormMixin, AuthenticationForm):
+    pass
+
+
+class VerifiedAuthenticationForm(AuthenticationForm):
+    """Authentication form that blocks login until the account email is verified."""
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+
+        try:
+            profile = user.userprofile
+        except UserProfile.DoesNotExist:
+            profile = None
+
+        if not profile or not profile.is_verified:
+            raise ValidationError(
+                "Please verify your email address before logging in. Check your inbox or request a new verification email.",
+                code='email_unverified',
+            )
+
+
+class TenantRegistrationForm(AntiSpamFormMixin, UserCreationForm):
     """Separate registration form for tenants"""
     first_name = forms.CharField(
         max_length=30, 
@@ -81,7 +115,7 @@ class TenantRegistrationForm(UserCreationForm):
         return user
 
 
-class LandlordRegistrationForm(UserCreationForm):
+class LandlordRegistrationForm(AntiSpamFormMixin, UserCreationForm):
     """Separate registration form for landlords"""
     first_name = forms.CharField(
         max_length=30, 
@@ -156,7 +190,7 @@ class LandlordRegistrationForm(UserCreationForm):
         return user
 
 
-class CustomUserCreationForm(UserCreationForm):
+class CustomUserCreationForm(AntiSpamFormMixin, UserCreationForm):
     first_name = forms.CharField(
         max_length=30, 
         required=True, 
@@ -224,7 +258,7 @@ class CustomUserCreationForm(UserCreationForm):
         return email
 
 
-class AdminCreationForm(UserCreationForm):
+class AdminCreationForm(AntiSpamFormMixin, UserCreationForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
@@ -255,7 +289,7 @@ class AdminCreationForm(UserCreationForm):
         return user
 
 
-class UserReportForm(forms.ModelForm):
+class UserReportForm(AntiSpamFormMixin, forms.ModelForm):
     class Meta:
         model = UserReport
         fields = ['reason', 'description', 'evidence', 'evidence_image']
@@ -350,7 +384,7 @@ class ResolveReportForm(forms.Form):
     )
 
 
-class IdentityVerificationForm(forms.Form):
+class IdentityVerificationForm(AntiSpamFormMixin, forms.Form):
     """Form for landlords to submit identity verification documents"""
     MAX_FILE_SIZE_MB = 5
     ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -397,7 +431,7 @@ class IdentityVerificationForm(forms.Form):
         return self._validate_upload(self.cleaned_data.get('selfie_with_id'), 'Selfie with ID')
 
 
-class VerificationReviewForm(forms.Form):
+class VerificationReviewForm(AntiSpamFormMixin, forms.Form):
     """Form for admins to review identity verification requests"""
     ACTION_CHOICES = [
         ('approve', 'Approve Verification'),

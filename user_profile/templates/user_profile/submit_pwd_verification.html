@@ -10,6 +10,7 @@
 
         <form method="post" enctype="multipart/form-data" class="space-y-5">
             {% csrf_token %}
+            {{ form.honeypot }}
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-2">Valid ID / birth certificate</label>
                 {{ form.pwd_document }}

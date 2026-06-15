@@ -6,9 +6,9 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity, PaymentConfiguration, DormAmenityImage
+    RoommateAmenity, PaymentConfiguration, DormAmenityImage, LandlordTerms
 )
-from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm
+from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm, LandlordTermsForm
 from django.db.models import Avg , Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -176,6 +176,105 @@ def _build_amenity_cards(dorm):
     ]
 
 
+MANILA_LOCATION_FILTERS = [
+    {
+        'value': 'manila_city',
+        'label': 'Manila City Center',
+        'lat': 14.5995,
+        'lng': 120.9842,
+    },
+    {
+        'value': 'intramuros',
+        'label': 'Intramuros',
+        'lat': 14.5897,
+        'lng': 120.9747,
+    },
+    {
+        'value': 'ermita',
+        'label': 'Ermita',
+        'lat': 14.5831,
+        'lng': 120.9800,
+    },
+    {
+        'value': 'malate_taft',
+        'label': 'Malate / Taft',
+        'lat': 14.5649,
+        'lng': 120.9935,
+    },
+    {
+        'value': 'quiapo',
+        'label': 'Quiapo',
+        'lat': 14.5989,
+        'lng': 120.9831,
+    },
+    {
+        'value': 'sampaloc_ust',
+        'label': 'Sampaloc / UST',
+        'lat': 14.6091,
+        'lng': 120.9897,
+    },
+    {
+        'value': 'barangay_308',
+        'label': 'Barangay 308 (Sampaloc area)',
+        'lat': 14.6076,
+        'lng': 120.9948,
+    },
+    {
+        'value': 'barangay_391',
+        'label': 'Barangay 391 (Quiapo area)',
+        'lat': 14.5977,
+        'lng': 120.9863,
+    },
+]
+
+
+def _calculate_distance_km(lat1, lon1, lat2, lon2):
+    from math import radians, sin, cos, sqrt, atan2
+
+    earth_radius_km = 6371
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return earth_radius_km * c
+
+
+def _filter_items_within_radius(items, lat, lng, radius_km=5.0):
+    nearby_items = []
+    for item in items:
+        item_lat = getattr(item, 'latitude', None)
+        item_lng = getattr(item, 'longitude', None)
+        if item_lat is None or item_lng is None:
+            continue
+        distance = _calculate_distance_km(lat, lng, float(item_lat), float(item_lng))
+        if distance <= radius_km:
+            nearby_items.append(item)
+    return nearby_items
+
+
+def _resolve_location_filter(request):
+    location_key = (request.GET.get('location') or '').strip()
+    for location in MANILA_LOCATION_FILTERS:
+        if location['value'] == location_key:
+            return location
+
+    lat = request.GET.get('lat')
+    lng = request.GET.get('lng')
+    if lat and lng:
+        try:
+            return {
+                'value': location_key,
+                'label': f'{float(lat):.4f}, {float(lng):.4f}',
+                'lat': float(lat),
+                'lng': float(lng),
+            }
+        except (TypeError, ValueError):
+            return None
+
+    return None
+
+
 class LoginRequiredActionMixin:
     """Mixin to handle login required actions with proper redirect"""
     
@@ -195,6 +294,9 @@ class PublicDormListView(ListView):
     template_name = "dormitory/public_dorm_list.html"
     context_object_name = "dorms"
     paginate_by = 12
+
+    def get_location_filter(self):
+        return _resolve_location_filter(self.request)
 
     def get_queryset(self):
         queryset = Dorm.objects.select_related('landlord').prefetch_related(
@@ -249,37 +351,14 @@ class PublicDormListView(ListView):
             queryset = queryset.filter(nearby_schools__id=school_id).distinct()
 
         # Location-based filtering
-        lat = self.request.GET.get('lat')
-        lng = self.request.GET.get('lng')
-        if lat and lng:
-            try:
-                lat = float(lat)
-                lng = float(lng)
-                # Filter dorms within 5km radius
-                from math import radians, sin, cos, sqrt, atan2
-                
-                # Haversine formula for distance calculation
-                def calculate_distance(lat1, lon1, lat2, lon2):
-                    R = 6371  # Earth's radius in kilometers
-                    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-                    dlat = lat2 - lat1
-                    dlon = lon2 - lon1
-                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-                    c = 2 * atan2(sqrt(a), sqrt(1-a))
-                    distance = R * c
-                    return distance
-                
-                # Filter dorms within 5km
-                nearby_dorms = []
-                for dorm in queryset:
-                    if dorm.latitude and dorm.longitude:
-                        distance = calculate_distance(lat, lng, float(dorm.latitude), float(dorm.longitude))
-                        if distance <= 5.0:  # 5km radius
-                            nearby_dorms.append(dorm.id)
-                
-                queryset = queryset.filter(id__in=nearby_dorms)
-            except (ValueError, TypeError):
-                pass  # Invalid coordinates, ignore location filter
+        location_filter = self.get_location_filter()
+        if location_filter:
+            nearby_dorms = _filter_items_within_radius(
+                queryset,
+                location_filter['lat'],
+                location_filter['lng'],
+            )
+            queryset = queryset.filter(id__in=[dorm.id for dorm in nearby_dorms])
 
         # Accommodation type filtering
         accommodation_type = self.request.GET.get('accommodation_type')
@@ -329,10 +408,24 @@ class PublicDormListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['amenities'] = Amenity.objects.all()
-        context['schools'] = School.objects.all()
+        location_filter = self.get_location_filter()
+        schools = list(School.objects.all())
+        if location_filter:
+            schools = _filter_items_within_radius(
+                schools,
+                location_filter['lat'],
+                location_filter['lng'],
+            )
+
+        context['schools'] = schools
         context['selected_amenities'] = [int(aid) for aid in self.request.GET.getlist('amenities') if str(aid).isdigit()]
         context['selected_amenity_keyword'] = (self.request.GET.get('amenity_keyword') or '').strip()
         context['selected_school'] = self.request.GET.get('school', '')
+        context['location_options'] = MANILA_LOCATION_FILTERS
+        context['selected_location'] = location_filter['value'] if location_filter else ''
+        context['selected_location_label'] = location_filter['label'] if location_filter else ''
+        context['selected_location_lat'] = location_filter['lat'] if location_filter else ''
+        context['selected_location_lng'] = location_filter['lng'] if location_filter else ''
         
         # Add dorm data for map
         dorms_data = []
@@ -349,7 +442,7 @@ class PublicDormListView(ListView):
         
         # Add schools data for map
         schools_data = []
-        for school in School.objects.all():
+        for school in schools:
             if school.latitude and school.longitude:
                 schools_data.append({
                     'id': school.id,
@@ -438,6 +531,9 @@ class PublicRoommateListView(ListView):
     context_object_name = "roommates"
     ordering = ["-date_posted"]
 
+    def get_queryset(self):
+        return RoommatePost.objects.filter(is_public=True).order_by("-date_posted")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Add amenities for filtering
@@ -450,6 +546,9 @@ class PublicRoommateDetailView(DetailView):
     model = RoommatePost
     template_name = "dormitory/public_roommate_detail.html"
     context_object_name = "roommate"
+
+    def get_queryset(self):
+        return RoommatePost.objects.filter(is_public=True)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -556,6 +655,9 @@ class DormListView(LoginRequiredMixin, ListView):
     template_name = "dormitory/dorm_list.html"
     context_object_name = "dorms"
     paginate_by = None
+
+    def get_location_filter(self):
+        return _resolve_location_filter(self.request)
 
     def get_queryset(self):
         """Filter dorms based on search parameters with optimized queries"""
@@ -732,7 +834,16 @@ class DormListView(LoginRequiredMixin, ListView):
         
         # Get all amenities and schools
         context['amenities'] = Amenity.objects.all()
-        context['schools'] = School.objects.all()
+        location_filter = self.get_location_filter()
+        schools = list(School.objects.all())
+        if location_filter:
+            schools = _filter_items_within_radius(
+                schools,
+                location_filter['lat'],
+                location_filter['lng'],
+            )
+
+        context['schools'] = schools
         
         # Pass current filter values back to template
         context['current_search'] = self.request.GET.get('search', '')
@@ -741,6 +852,11 @@ class DormListView(LoginRequiredMixin, ListView):
         context['selected_amenity_keyword'] = (self.request.GET.get('amenity_keyword') or '').strip()
         context['selected_school'] = self.request.GET.get('school', '')
         context['selected_sort'] = self.request.GET.get('sort', '')
+        context['location_options'] = MANILA_LOCATION_FILTERS
+        context['selected_location'] = location_filter['value'] if location_filter else ''
+        context['selected_location_label'] = location_filter['label'] if location_filter else ''
+        context['selected_location_lat'] = location_filter['lat'] if location_filter else ''
+        context['selected_location_lng'] = location_filter['lng'] if location_filter else ''
         
         # Add dorm data for map (same as public version)
         dorms_data = []
@@ -773,6 +889,7 @@ class DormListView(LoginRequiredMixin, ListView):
 
 # 🚀 Dorm Details
 
+@method_decorator(ratelimit(key='user', rate='5/d', method='POST', block=True), name='post')
 class DormDetailView(LoginRequiredMixin, DetailView):
     model = Dorm
     template_name = "dormitory/dorm_detail.html"
@@ -1006,6 +1123,11 @@ class RoommateListView(LoginRequiredMixin, ListView):
     context_object_name = "roommates"
     ordering = ["-date_posted"]
 
+    def get_queryset(self):
+        return RoommatePost.objects.filter(
+            Q(is_public=True) | Q(user=self.request.user)
+        ).distinct().order_by("-date_posted")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Add user's own post to context
@@ -1043,6 +1165,11 @@ class RoommateDetailView(LoginRequiredMixin, DetailView):
     template_name = "dormitory/roommate_detail.html"
     context_object_name = "roommate"
 
+    def get_queryset(self):
+        return RoommatePost.objects.filter(
+            Q(is_public=True) | Q(user=self.request.user)
+        ).distinct()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Add user's own post to context for Connect button
@@ -1056,6 +1183,22 @@ class RoommateDetailView(LoginRequiredMixin, DetailView):
             context['compatibility_score'] = round(float(score), 1)
 
         return context
+
+
+@method_decorator(login_required, name='dispatch')
+class ToggleRoommateVisibilityView(View):
+    def post(self, request, pk):
+        roommate = get_object_or_404(RoommatePost, pk=pk, user=request.user)
+        roommate.is_public = not roommate.is_public
+        roommate.save(update_fields=['is_public'])
+
+        if roommate.is_public:
+            messages.success(request, 'Your roommate profile is now visible to other users.')
+        else:
+            messages.info(request, 'Your roommate profile is now hidden from other users.')
+
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('dormitory:roommate_list')
+        return redirect(next_url)
 
 class RoommateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = RoommatePost
@@ -1238,9 +1381,16 @@ class ReservationCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dorm'] = self.dorm
+        terms = LandlordTerms.objects.filter(landlord=self.dorm.landlord).first()
+        context['landlord_terms'] = terms.content if terms and terms.content else None
         return context
 
     def form_valid(self, form):
+        agreed = self.request.POST.get('terms') == 'on'
+        if not agreed:
+            messages.error(self.request, "You must agree to the Terms and Conditions.")
+            return self.form_invalid(form)
+
         # Double-check before create to avoid race-condition bypasses.
         if Reservation.objects.filter(
             tenant=self.request.user,
@@ -1286,6 +1436,45 @@ class ReservationCreateView(CreateView):
         base_url = reverse('dormitory:tenant_reservations')
         return f"{base_url}?selected_reservation={self.object.pk}"
 
+
+class LandlordTermsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = LandlordTerms
+    form_class = LandlordTermsForm
+    template_name = 'dormitory/landlord_terms_form.html'
+    success_url = reverse_lazy('user_profile:profile')
+
+    def test_func(self):
+        return self.request.user.user_type == 'landlord'
+
+    def get_object(self, queryset=None):
+        obj, _ = LandlordTerms.objects.get_or_create(landlord=self.request.user)
+        return obj
+
+    def form_valid(self, form):
+        messages.success(self.request, "Terms and Conditions updated successfully!")
+        return super().form_valid(form)
+
+
+@login_required
+@require_POST
+def ajax_save_landlord_terms(request):
+    if request.user.user_type != 'landlord':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    content = request.POST.get('content', '').strip()
+    terms, _ = LandlordTerms.objects.get_or_create(landlord=request.user)
+    terms.content = content
+    terms.save(update_fields=['content', 'updated_at'])
+    return JsonResponse({'status': 'success'})
+
+
+@login_required
+def get_landlord_terms_data(request):
+    if request.user.user_type != 'landlord':
+        return JsonResponse({'content': ''})
+    terms = LandlordTerms.objects.filter(landlord=request.user).first()
+    return JsonResponse({'content': terms.content if terms else ''})
+
+
 @login_required
 @require_POST
 def update_reservation_status(request, reservation_id):
@@ -1319,6 +1508,7 @@ def update_reservation_status(request, reservation_id):
     return JsonResponse({'status': 'success', 'new_status': new_status})
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(ratelimit(key='user', rate='20/m', method='POST', block=True), name='post')
 class ChatView(ListView):
     model = Message
     template_name = "dormitory/chat.html"
@@ -1333,6 +1523,9 @@ class ChatView(ListView):
 
     def post(self, request, *args, **kwargs):
         sender = request.user
+        if (request.POST.get('honeypot') or '').strip():
+            return redirect('dormitory:chat')
+
         receiver_id = request.POST.get('receiver_id')
         content = request.POST.get('content')
 
@@ -1491,7 +1684,7 @@ class UpdateReservationStatusView(View):
                         sender=request.user,
                         receiver=reservation.tenant,
                         content=(
-                            f"Your reservation has been confirmed! Landlord proposed a visit on {visit_date} "
+                            f"Reservation Update: Your reservation has been confirmed! Landlord proposed a visit on {visit_date} "
                             f"during {visit_display_time}. Please confirm or request reschedule. {visit_notes}"
                         ),
                         dorm=reservation.dorm,
@@ -1499,7 +1692,7 @@ class UpdateReservationStatusView(View):
                     )
                     notify_user(
                         user=reservation.tenant,
-                        message=f"Visit proposal received for {reservation.dorm.name} on {visit_date}",
+                        message=f"Reservation Update: Visit proposal received for {reservation.dorm.name} on {visit_date}",
                         related_object_id=reservation.id
                     )
                     success_message = f"Reservation confirmed. Visit proposal sent to tenant for confirmation ({visit_date}, {visit_display_time})."
@@ -1526,13 +1719,13 @@ class UpdateReservationStatusView(View):
                     Message.objects.create(
                         sender=request.user,
                         receiver=reservation.tenant,
-                        content=f"Your reservation has been confirmed! Move-in date is set for {move_in_date}. {move_in_notes}",
+                        content=f"Reservation Update: Your reservation has been confirmed! Move-in date is set for {move_in_date}. {move_in_notes}",
                         dorm=reservation.dorm,
                         reservation=reservation
                     )
                     notify_user(
                         user=reservation.tenant,
-                        message=f"Move-in date set for {reservation.dorm.name} on {move_in_date}",
+                        message=f"Reservation Update: Move-in date set for {reservation.dorm.name} on {move_in_date}",
                         related_object_id=reservation.id
                     )
                     success_message = f"Reservation confirmed with move-in date: {move_in_date}."
@@ -1545,13 +1738,13 @@ class UpdateReservationStatusView(View):
                 Message.objects.create(
                     sender=request.user,
                     receiver=reservation.tenant,
-                    content="Your reservation has been confirmed! Please upload payment proof within 48 hours to secure your slot.",
+                    content="Reservation Update: Your reservation has been confirmed! Please upload payment proof within 48 hours to secure your slot.",
                     dorm=reservation.dorm,
                     reservation=reservation
                 )
                 notify_user(
                     user=reservation.tenant,
-                    message=f"Your reservation for {reservation.dorm.name} was confirmed. Please upload payment.",
+                    message=f"Reservation Update: Your reservation for {reservation.dorm.name} was confirmed. Please upload payment.",
                     related_object_id=reservation.id
                 )
                 
@@ -1678,13 +1871,13 @@ class UpdateReservationStatusView(View):
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.tenant,
-                content=f"Your reservation has been declined. Reason: {decline_reason}",
+                    content=f"Reservation Update: Your reservation has been declined. Reason: {decline_reason}",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
             notify_user(
                 user=reservation.tenant,
-                message=f"Reservation for {reservation.dorm.name} was declined. Reason: {decline_reason}",
+                    message=f"Reservation Update: Reservation for {reservation.dorm.name} was declined. Reason: {decline_reason}",
                 related_object_id=reservation.id
             )
             
@@ -1979,6 +2172,124 @@ class UpdateReservationStatusView(View):
             else:
                 messages.error(request, "Only occupied reservations can be marked as moved out.")
         
+        elif action == 'request_move_out':
+            if request.user.user_type != 'tenant':
+                messages.error(request, "Only tenants can request move-out.")
+                return redirect('dormitory:landlord_reservations')
+            
+            if reservation.status not in ['occupied', 'confirmed']:
+                messages.error(request, "You can only request move-out from an active reservation.")
+                return redirect('dormitory:tenant_reservations')
+            
+            if reservation.move_out_requested:
+                messages.warning(request, "You have already requested move-out. Waiting for landlord response.")
+                return redirect('dormitory:tenant_reservations')
+            
+            # Get move-out reason from form
+            moveout_reason = request.POST.get('moveout_reason', '').strip()
+            
+            if not moveout_reason:
+                messages.error(request, "Please provide a reason for move-out.")
+                return redirect('dormitory:tenant_reservations')
+            
+            # Mark move-out as requested
+            reservation.move_out_requested = True
+            reservation.move_out_requested_date = timezone.now()
+            reservation.move_out_requested_reason = moveout_reason
+            reservation.move_out_approved = False
+            reservation.save()
+            
+            messages.success(request, "Your move-out request has been sent to the landlord. They will review it soon.")
+            
+            # Create system message for landlord
+            Message.objects.create(
+                sender=request.user,
+                receiver=reservation.dorm.landlord,
+                content=f"Tenant requested early move-out from {reservation.dorm.name}.\n\nReason: {moveout_reason}",
+                dorm=reservation.dorm,
+                reservation=reservation
+            )
+            notify_user(
+                user=reservation.dorm.landlord,
+                message=f"{reservation.tenant.get_full_name() or reservation.tenant.username} requested early move-out from {reservation.dorm.name}.",
+                related_object_id=reservation.id
+            )
+        
+        elif action == 'approve_move_out':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can approve move-out requests.")
+                return redirect('dormitory:tenant_reservations')
+            
+            if not reservation.move_out_requested:
+                messages.error(request, "No move-out request to approve.")
+                return redirect('dormitory:landlord_reservations')
+            
+            # Approve the move-out
+            reservation.move_out_approved = True
+            reservation.move_out_approved_date = timezone.now()
+            reservation.status = 'completed'
+            reservation.save()
+            
+            # Make dorm available again - restore the bed/unit
+            if reservation.dorm.accommodation_type == 'whole_unit':
+                reservation.dorm.available_beds = reservation.dorm.max_occupants
+            else:
+                if reservation.dorm.available_beds < reservation.dorm.total_beds:
+                    reservation.dorm.available_beds += 1
+            reservation.dorm.save()
+            
+            # Set room as available if assigned
+            if reservation.room is not None:
+                reservation.room.is_available = True
+                reservation.room.save()
+            
+            messages.success(request, f"Move-out request approved. {reservation.dorm.name} is now available.")
+            
+            # Notify tenant
+            Message.objects.create(
+                sender=request.user,
+                receiver=reservation.tenant,
+                content=f"Your move-out request has been approved. Please vacate {reservation.dorm.name} as arranged.",
+                dorm=reservation.dorm,
+                reservation=reservation
+            )
+            notify_user(
+                user=reservation.tenant,
+                message=f"Your move-out request for {reservation.dorm.name} has been approved.",
+                related_object_id=reservation.id
+            )
+        
+        elif action == 'reject_move_out':
+            if request.user.user_type != 'landlord':
+                messages.error(request, "Only landlords can reject move-out requests.")
+                return redirect('dormitory:tenant_reservations')
+            
+            if not reservation.move_out_requested:
+                messages.error(request, "No move-out request to reject.")
+                return redirect('dormitory:landlord_reservations')
+            
+            # Reject the move-out request
+            rejection_reason = request.POST.get('rejection_reason', 'Request denied').strip()
+            reservation.move_out_requested = False
+            reservation.move_out_requested_reason = ''
+            reservation.save()
+            
+            messages.success(request, "Move-out request rejected.")
+            
+            # Notify tenant
+            Message.objects.create(
+                sender=request.user,
+                receiver=reservation.tenant,
+                content=f"Your move-out request has been declined. Reason: {rejection_reason}\n\nPlease contact the landlord to discuss.",
+                dorm=reservation.dorm,
+                reservation=reservation
+            )
+            notify_user(
+                user=reservation.tenant,
+                message=f"Your move-out request for {reservation.dorm.name} was declined.",
+                related_object_id=reservation.id
+            )
+        
         elif action == 'complete':
             if request.user.user_type != 'landlord':
                 messages.error(request, "Only landlords can complete transactions.")
@@ -2045,7 +2356,7 @@ If you have any questions, please contact your landlord.""",
                 )
                 notify_user(
                     user=reservation.tenant,
-                    message=f"ACTION REQUIRED: Please vacate your room at {reservation.dorm.name} - Your stay has ended",
+                    message=f"Reservation Update: Please vacate your room at {reservation.dorm.name} - Your stay has ended",
                     related_object_id=reservation.id
                 )
             else:
@@ -2094,7 +2405,7 @@ If you have any questions, please contact your landlord.""",
                 )
                 notify_user(
                     user=reservation.tenant,
-                    message=f"ACTION REQUIRED: Please vacate {reservation.dorm.name} - Your stay has ended",
+                    message=f"Reservation Update: Please vacate {reservation.dorm.name} - Your stay has ended",
                     related_object_id=reservation.id
                 )
             else:
@@ -2501,6 +2812,7 @@ class RoommateMatchesView(LoginRequiredMixin, ListView):
         return context
 
 @method_decorator([csrf_exempt, login_required], name='dispatch')
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class InitiateRoommateMatchView(LoginRequiredMixin, View):
     def post(self, request, target_id):
         try:
@@ -2572,9 +2884,13 @@ class UpdateRoommateMatchStatusView(LoginRequiredMixin, View):
         return JsonResponse({'status': 'success', 'new_status': new_status})
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(ratelimit(key='user', rate='20/m', method='POST', block=True), name='dispatch')
 class SendRoommateChatMessageView(View):
     def post(self, request, match_id):
         if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Invalid request'}, status=400)
+
+        if (request.POST.get('honeypot') or '').strip():
             return JsonResponse({'error': 'Invalid request'}, status=400)
             
         match = get_object_or_404(RoommateMatch, id=match_id)

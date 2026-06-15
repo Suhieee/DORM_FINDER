@@ -50,6 +50,7 @@
         <div class="pref-form-shell p-8">
             <form method="post" id="preferencesForm" class="space-y-8">
                 {% csrf_token %}
+                {{ form.honeypot }}
                 <input type="hidden" name="step" value="{{ step }}">
                 
                 {% if step == '1' %}

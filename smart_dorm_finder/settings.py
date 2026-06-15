@@ -177,7 +177,7 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    print(f"✅ Using SQLite database for local development: {DATABASES['default']['NAME']}")
+    print(f"[OK] Using SQLite database for local development: {DATABASES['default']['NAME']}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

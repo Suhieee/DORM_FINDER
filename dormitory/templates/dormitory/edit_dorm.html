@@ -31,6 +31,7 @@
 
     <form method="POST" enctype="multipart/form-data" class="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 sm:p-7 border border-blue-100 grid grid-cols-12 gap-4 sm:gap-5 lg:gap-6">
         {% csrf_token %}
+            {{ form.honeypot }}
 
 
         
@@ -177,6 +178,11 @@
                         <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
                     </div>
                 {% endfor %}
+            </div>
+            <div class="mt-4 rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-4">
+                <label for="other_amenities" class="block text-sm font-medium text-gray-700">Other amenities</label>
+                <textarea name="other_amenities" id="other_amenities" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="If your amenity is not in the list, describe it here">{{ form.other_amenities.value|default:'' }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Example: Study table, laundry service, rooftop lounge</p>
             </div>
         </div>
 

@@ -4,163 +4,248 @@
 {% block title %}Payment Details - {{ reservation.dorm.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Payment Details</h1>
-        <p class="mt-2 text-gray-600">Review and select your payment method for {{ reservation.dorm.name }}</p>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Payment Breakdown Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Breakdown</h2>
-            
-            <div class="space-y-3">
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Monthly Rent</span>
-                    <span class="font-medium">₱{{ payment_breakdown.base_price|floatformat:2 }}</span>
-                </div>
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Deposit ({{ payment_breakdown.deposit_months }} months)</span>
-                    <span class="font-medium">₱{{ payment_breakdown.deposit|floatformat:2 }}</span>
-                </div>
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Advance ({{ payment_breakdown.advance_months }} months)</span>
-                    <span class="font-medium">₱{{ payment_breakdown.advance|floatformat:2 }}</span>
-                </div>
-                
-                <div class="flex justify-between pt-2 border-t">
-                    <span class="text-gray-600">Subtotal</span>
-                    <span class="font-medium">₱{{ payment_breakdown.subtotal|floatformat:2 }}</span>
-                </div>
-
-                {% if payment_breakdown.discount_amount > 0 %}
-                <div class="flex justify-between text-emerald-700">
-                    <span>PWD discount ({{ payment_breakdown.discount_percent|floatformat:0 }}%)</span>
-                    <span class="font-medium">-₱{{ payment_breakdown.discount_amount|floatformat:2 }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600">After discount</span>
-                    <span class="font-medium">₱{{ payment_breakdown.discounted_subtotal|floatformat:2 }}</span>
-                </div>
-                {% endif %}
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Processing Fee ({{ payment_breakdown.processing_fee_percent }}%)</span>
-                    <span class="font-medium">₱{{ payment_breakdown.processing_fee|floatformat:2 }}</span>
-                </div>
-                
-                <div class="flex justify-between pt-3 border-t-2 border-gray-300">
-                    <span class="text-lg font-bold text-gray-900">Total Amount</span>
-                    <span class="text-2xl font-bold text-blue-600">₱{{ payment_breakdown.total|floatformat:2 }}</span>
-                </div>
+<div class="min-h-screen bg-gradient-to-b from-slate-50 to-sky-50/30 py-8 px-4">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 rounded-full mb-3">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span class="text-xs font-semibold uppercase tracking-wider text-blue-700">Payment</span>
             </div>
-            
-            {% if accepts_partial and partial_payment_amount %}
-            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p class="text-sm text-blue-800">
-                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                    </svg>
-                    Partial payment available: Pay ₱{{ partial_payment_amount|floatformat:2 }} now
-                </p>
-            </div>
-            {% endif %}
+            <h1 class="text-3xl font-bold text-gray-900">Complete Your Payment</h1>
+            <p class="mt-2 text-gray-600">Review the breakdown and choose your payment method for <strong>{{ reservation.dorm.name }}</strong></p>
         </div>
 
-        <!-- Payment Method Selection -->
-        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Payment Method</h2>
-            
-            <form method="post" enctype="multipart/form-data" class="space-y-4" id="paymentMethodForm">
-                {% csrf_token %}
-                
-                <!-- PayMongo Checkout (GCash only) - RECOMMENDED -->
-                <label class="block p-4 border-2 border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gradient-to-r from-blue-50 to-white">
-                    <input type="radio" name="payment_method" value="gcash" class="mr-3 payment-method-radio" {% if selected_payment_method == 'gcash' %}checked{% endif %}>
-                    <div class="inline-block">
-                        <div class="font-medium text-gray-900 flex items-center">
-                            <span class="mr-2">PayMongo Checkout</span>
-                            <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">RECOMMENDED</span>
-                        </div>
-                        <div class="text-sm text-gray-600">Pay via GCash</div>
-                        <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
-                                <img src="{% static 'images/gcash.png' %}" alt="GCash" class="w-4 h-4 rounded-sm" loading="lazy">
-                                GCash
-                            </span>
-                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">✓ Instant</span>
-                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">✓ Secure</span>
-                            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">✓ Email Receipt</span>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- Left Column: Payment Breakdown (spans 3 cols) -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Payment Breakdown Card -->
+                <div class="bg-white rounded-2xl shadow-lg border border-sky-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/>
+                            </svg>
+                            <h2 class="text-lg font-bold text-black">Payment Breakdown</h2>
                         </div>
                     </div>
-                </label>
-                
-                {% if accepts_manual %}
-                <label class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                    <input type="radio" name="payment_method" value="manual" class="mr-3 payment-method-radio" {% if selected_payment_method == 'manual' %}checked{% endif %}>
-                    <div class="inline-block">
-                        <div class="font-medium text-gray-900">Manual Payment Upload</div>
-                        <div class="text-sm text-gray-600">Transfer to landlord and upload payment proof</div>
-                        <div class="mt-2">
-                            <span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">Manual Verification</span>
-                        </div>
-                    </div>
-                </label>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">Monthly Rent</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.base_price|floatformat:2 }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">Deposit ({{ payment_breakdown.deposit_months }} month{{ payment_breakdown.deposit_months|pluralize }})</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.deposit|floatformat:2 }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">Advance ({{ payment_breakdown.advance_months }} month{{ payment_breakdown.advance_months|pluralize }})</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.advance|floatformat:2 }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.subtotal|floatformat:2 }}</span>
+                            </div>
 
-                <div id="manualUploadSection" class="hidden p-4 rounded-lg border border-yellow-200 bg-yellow-50">
-                    <label for="manualPaymentProof" class="block text-sm font-semibold text-gray-800 mb-2">Upload Payment Proof (Image)</label>
-                    <input id="manualPaymentProof" type="file" name="payment_proof" accept="image/*"
-                           class="w-full text-sm text-gray-600
-                                  file:mr-4 file:py-2 file:px-4
-                                  file:rounded-full file:border-0
-                                  file:text-sm file:font-semibold
-                                  file:bg-yellow-100 file:text-yellow-900
-                                  hover:file:bg-yellow-200">
-                    <p class="mt-2 text-xs text-yellow-900">After submitting, your proof is sent to the landlord for verification.</p>
+                            {% if payment_breakdown.discount_amount > 0 %}
+                            <div class="flex justify-between items-center py-2 border-b border-green-100 bg-green-50/50 px-3 rounded-lg">
+                                <span class="text-emerald-700 font-medium">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    PWD Discount ({{ payment_breakdown.discount_percent|floatformat:0 }}%)
+                                </span>
+                                <span class="font-semibold text-emerald-700">-₱{{ payment_breakdown.discount_amount|floatformat:2 }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">After Discount</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.discounted_subtotal|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-gray-600">Processing Fee ({{ payment_breakdown.processing_fee_percent }}%)</span>
+                                <span class="font-semibold text-gray-900">₱{{ payment_breakdown.processing_fee|floatformat:2 }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-4">
+                                <span class="text-xl font-bold text-gray-900">Total Amount</span>
+                                <span class="text-3xl font-extrabold text-blue-600">₱{{ payment_breakdown.total|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                        
+                        {% if accepts_partial and partial_payment_amount %}
+                        <div class="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-blue-800">Partial Payment Available</p>
+                                    <p class="text-sm text-blue-700">Pay just <strong>₱{{ partial_payment_amount|floatformat:2 }}</strong> now to secure your reservation.</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Landlord QR Code Section -->
+                {% if reservation.dorm.payment_qr %}
+                <div class="bg-white rounded-2xl shadow-lg border border-sky-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                            </svg>
+                            <h2 class="text-lg font-bold text-white">Payment QR Code</h2>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Scan this QR code to pay directly via GCash or your preferred payment app.</p>
+                        <div class="flex justify-center p-6 bg-gray-50 rounded-xl border border-gray-200">
+                            <img src="{{ reservation.dorm.payment_qr.url }}" alt="Payment QR Code" class="max-w-xs rounded-lg shadow-lg">
+                        </div>
+                        <p class="text-xs text-gray-500 text-center mt-4">
+                            Landlord: <strong>{{ reservation.dorm.landlord.get_full_name|default:reservation.dorm.landlord.username }}</strong>
+                        </p>
+                    </div>
                 </div>
                 {% endif %}
-                
-                <div class="pt-4">
-                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                        Proceed to Payment
-                    </button>
+            </div>
+
+            <!-- Right Column: Payment Method (spans 2 cols) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-lg border border-sky-100 overflow-hidden sticky top-8">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            <h2 class="text-lg font-bold text-blue-500">Select Payment Method</h2>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <form method="post" enctype="multipart/form-data" class="space-y-4" id="paymentMethodForm">
+                            {% csrf_token %}
+                            
+                            <!-- PayMongo Checkout -->
+                            <label class="block p-5 border-2 border-blue-300 rounded-xl cursor-pointer hover:border-blue-500 transition-all bg-gradient-to-r from-blue-50 to-white hover:shadow-md">
+                                <div class="flex items-start gap-3">
+                                    <input type="radio" name="payment_method" value="gcash" class="mt-1 payment-method-radio" {% if selected_payment_method == 'gcash' %}checked{% endif %}>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-gray-900">PayMongo Checkout</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">Pay securely via GCash</p>
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                                                GCash
+                                            </span>
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Instant</span>
+                                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Secure</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            {% if accepts_manual %}
+                            <label class="block p-5 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all hover:shadow-md">
+                                <div class="flex items-start gap-3">
+                                    <input type="radio" name="payment_method" value="manual" class="mt-1 payment-method-radio" {% if selected_payment_method == 'manual' %}checked{% endif %}>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Manual Payment</div>
+                                        <p class="text-sm text-gray-600 mt-1">Transfer to landlord and upload proof of payment</p>
+                                        <div class="mt-2">
+                                              <span class="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Recommended</span>
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">Manual Verification</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <div id="manualUploadSection" class="hidden p-5 rounded-xl border border-yellow-200 bg-yellow-50">
+                                <label for="manualPaymentProof" class="block text-sm font-semibold text-gray-800 mb-2">Upload Payment Proof</label>
+                                <input id="manualPaymentProof" type="file" name="payment_proof" accept="image/*"
+                                       class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-900 hover:file:bg-yellow-200">
+                                <p class="mt-2 text-xs text-yellow-800">Your proof will be sent to the landlord for manual verification.</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="pt-2">
+                                <button type="submit" class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-xl font-bold text-base hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl">
+                                    Proceed to Payment
+                                </button>
+                            </div>
+                            
+                            <div class="text-center">
+                                <a href="{% url 'dormitory:tenant_reservations' %}" class="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                    </svg>
+                                    Cancel and go back
+                                </a>
+                            </div>
+                        </form>
+                        
+                        <!-- Security Notice -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-900">Secure Payment</h3>
+                                    <p class="text-xs text-gray-600 mt-1">Your payment information is encrypted and secure. We never store your payment details.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="text-center">
-                    <a href="{% url 'dormitory:tenant_reservations' %}" class="text-sm text-gray-600 hover:text-gray-900">
-                        ← Cancel and go back
-                    </a>
-                </div>
-            </form>
-            
-            <!-- Security Notice -->
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">🔒 Secure Payment</h3>
-                <p class="text-xs text-gray-600">
-                    Your payment information is encrypted and secure. We never store your credit card details.
-                </p>
             </div>
         </div>
-    </div>
-    
-    <!-- Dorm Summary -->
-    <div class="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Reservation Summary</h2>
-        <div class="flex items-start space-x-4">
-            {% if reservation.dorm.images.first %}
-            <img src="{{ reservation.dorm.images.first.image.url }}" alt="{{ reservation.dorm.name }}" class="w-24 h-24 object-cover rounded-lg">
-            {% endif %}
-            <div class="flex-1">
-                <h3 class="font-medium text-gray-900">{{ reservation.dorm.name }}</h3>
-                <p class="text-sm text-gray-600">{{ reservation.dorm.address }}</p>
-                <p class="text-sm text-gray-600 mt-1">Landlord: {{ reservation.dorm.landlord.get_full_name|default:reservation.dorm.landlord.username }}</p>
-                {% if reservation.move_in_date %}
-                <p class="text-sm text-gray-600 mt-1">Move-in Date: {{ reservation.move_in_date }}</p>
-                {% endif %}
+        
+        <!-- Dorm Summary -->
+        <div class="mt-8 bg-white rounded-2xl shadow-lg border border-sky-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <h2 class="text-lg font-bold text-gray-900">Reservation Summary</h2>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start gap-5">
+                    {% if reservation.dorm.images.first %}
+                    <img src="{{ reservation.dorm.images.first.image.url }}" alt="{{ reservation.dorm.name }}" class="w-20 h-20 object-cover rounded-xl shadow-sm">
+                    {% else %}
+                    <div class="w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Dorm</p>
+                                <p class="font-semibold text-gray-900">{{ reservation.dorm.name }}</p>
+                                <p class="text-sm text-gray-600">{{ reservation.dorm.address|truncatechars:40 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Landlord</p>
+                                <p class="font-semibold text-gray-900">{{ reservation.dorm.landlord.get_full_name|default:reservation.dorm.landlord.username }}</p>
+                            </div>
+                            {% if reservation.move_in_date %}
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Move-In Date</p>
+                                <p class="font-semibold text-gray-900">{{ reservation.move_in_date|date:"Y F j" }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -212,17 +212,22 @@
                 <!-- Location -->
                 <div class="relative">
                     <button type="button" onclick="togglePill('locationPanel')"
-                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.lat %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
+                            class="pill-btn flex items-center gap-1.5 px-5 py-2.5 border-2 {% if request.GET.lat or request.GET.location %}border-blue-500 text-blue-600 bg-blue-50{% else %}border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600{% endif %} font-semibold rounded-full transition-colors shadow-sm text-sm">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
                         Location <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div id="locationPanel" class="pill-panel hidden absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 w-80">
-                        <p class="text-sm font-semibold text-gray-700 mb-1">Click on map to filter by location</p>
-                        <p class="text-xs text-gray-400 mb-3">All dorms within 5km radius will be shown</p>
-                        <div id="filterMap" class="w-full h-56 rounded-lg mb-2 z-30"></div>
-                        <p id="filterLocationDisplay" class="text-xs text-gray-500 mb-3">{% if request.GET.lat %}&#128205; {{ request.GET.lat }}, {{ request.GET.lng }}{% else %}No location selected{% endif %}</p>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Choose a Manila area or barangay</p>
+                        <p class="text-xs text-gray-400 mb-3">Results within 5km of the selected location will appear</p>
+                        <select id="localLocation" onchange="applyLocationFilter()" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                            <option value="">All Manila locations</option>
+                            {% for location in location_options %}
+                            <option value="{{ location.value }}" data-lat="{{ location.lat }}" data-lng="{{ location.lng }}" {% if selected_location == location.value %}selected{% endif %}>{{ location.label }}</option>
+                            {% endfor %}
+                        </select>
+                        <p id="filterLocationDisplay" class="text-xs text-gray-500 my-3">{% if selected_location_label %}&#128205; {{ selected_location_label }}{% else %}No location selected{% endif %}</p>
                         <div class="flex gap-2">
-                            <button type="button" onclick="document.getElementById('filterForm').submit()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
+                            <button type="button" onclick="applyLocationFilter()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Apply</button>
                             <button type="button" onclick="clearLocationAndSubmit()" class="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg text-sm transition-colors">Clear</button>
                         </div>
                     </div>
@@ -320,8 +325,32 @@ function togglePill(panelId) {
         }
     }
 }
+function applyLocationFilter() {
+    const locationSelect = document.getElementById('localLocation');
+    const selectedOption = locationSelect ? locationSelect.options[locationSelect.selectedIndex] : null;
+    const display = document.getElementById('filterLocationDisplay');
+
+    if (!locationSelect || !locationSelect.value) {
+        clearLocationFilter();
+        if (display) display.textContent = 'No location selected';
+        document.getElementById('filterForm').submit();
+        return;
+    }
+
+    document.getElementById('filterLocation').value = locationSelect.value;
+    document.getElementById('filterLat').value = selectedOption && selectedOption.dataset.lat ? selectedOption.dataset.lat : '';
+    document.getElementById('filterLng').value = selectedOption && selectedOption.dataset.lng ? selectedOption.dataset.lng : '';
+
+    if (display) {
+        display.textContent = '📍 ' + (selectedOption ? selectedOption.textContent.trim() : 'Selected location');
+    }
+
+    document.getElementById('filterForm').submit();
+}
 function clearLocationAndSubmit() {
     clearLocationFilter();
+    const locationSelect = document.getElementById('localLocation');
+    if (locationSelect) locationSelect.value = '';
     const disp = document.getElementById('filterLocationDisplay');
     if (disp) disp.textContent = 'No location selected';
     document.getElementById('filterForm').submit();
@@ -850,6 +879,11 @@ function clearPaymentTerms() {
                     <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
                         +{{ dorm.amenities.count|add:"-3" }} more
                     </span>
+                    {% endif %}
+                    {% if dorm.other_amenities %}
+                    <p class="w-full mt-2 text-xs text-gray-600">
+                        <span class="font-medium text-gray-700">Other:</span> {{ dorm.other_amenities|truncatechars:60 }}
+                    </p>
                     {% endif %}
                 </div>
 
@@ -1473,14 +1507,14 @@ function initializeFilterMap() {
     // Initialize filter map
     filterMap = L.map('filterMap', {
         center: [14.5995, 120.9842],
-        zoom: 11,
+        zoom: 13,
         maxBounds: [
-            [14.0, 120.0], // Southwest bounds (south of Manila)
-            [15.5, 122.0]  // Northeast bounds (north of Manila)
+            [14.50, 120.92], // Southwest bounds around Manila
+            [14.68, 121.05]  // Northeast bounds around Manila
         ],
         maxBoundsViscosity: 1.0, // Prevent dragging outside bounds
-        minZoom: 9, // Prevent zooming out too far
-        maxZoom: 18
+        minZoom: 12, // Prevent zooming out too far
+        maxZoom: 17
     });
     
     // Add a tile layer (OpenStreetMap)
@@ -1612,6 +1646,8 @@ function clearLocationFilter() {
     document.getElementById('filterLat').value = '';
     document.getElementById('filterLng').value = '';
     document.getElementById('filterLocation').value = '';
+    const locationSelect = document.getElementById('localLocation');
+    if (locationSelect) locationSelect.value = '';
     
     if (filterMarker) {
         filterMap.removeLayer(filterMarker);

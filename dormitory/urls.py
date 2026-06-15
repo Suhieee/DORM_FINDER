@@ -3,12 +3,13 @@ from .views import (
     AddDormView, DormListView, DormDetailView,
     MyDormsView, EditDormView, DeleteDormView,
     RoommateListView, RoommateCreateView, RoommateDetailView,
-    RoommateUpdateView, RoommateDeleteView, ReviewListView, 
+    RoommateUpdateView, RoommateDeleteView, ToggleRoommateVisibilityView, ReviewListView, 
     ReviewCreateView, ReviewUpdateView, ReviewDeleteView,
     ReservationCreateView, LandlordReservationsView, tenantReservationsView,
     MessagesView, SendMessageView, CheckNewMessagesView, UpdateReservationStatusView,
     ManageRoomsView, PublicDormListView, PublicDormDetailView, 
-    PublicRoommateListView, PublicRoommateDetailView, HomePageView
+    PublicRoommateListView, PublicRoommateDetailView, HomePageView,
+    LandlordTermsUpdateView, ajax_save_landlord_terms, get_landlord_terms_data
 )
 from .payment_views import (
     payment_booking_intent, payment_gateway_checkout, payment_webhook,
@@ -44,6 +45,7 @@ urlpatterns = [
     path("roommate-finder/<int:pk>/", RoommateDetailView.as_view(), name="roommate_detail"),
     path("roommate/edit/<int:pk>/", RoommateUpdateView.as_view(), name="roommate_edit"),
     path("roommate/delete/<int:pk>/", RoommateDeleteView.as_view(), name="roommate_delete"),
+    path("roommate/toggle-visibility/<int:pk>/", ToggleRoommateVisibilityView.as_view(), name="toggle_roommate_visibility"),
 
     path("dormitory/<int:dorm_id>/reviews/", ReviewListView.as_view(), name="review_list"),
     path("dormitory/<int:dorm_id>/reviews/add/", ReviewCreateView.as_view(), name="add_review"),
@@ -103,6 +105,11 @@ urlpatterns = [
     
     # Cron Job Endpoint for Production (Railway)
     path('cron/cancel-expired/', views.cron_cancel_expired, name='cron_cancel_expired'),
+
+    # Landlord Terms and Conditions
+    path('terms/update/', LandlordTermsUpdateView.as_view(), name='landlord_terms_update'),
+    path('terms/ajax-save/', ajax_save_landlord_terms, name='ajax_save_landlord_terms'),
+    path('terms/data/', get_landlord_terms_data, name='landlord_terms_data'),
 
     # Search autocomplete suggestions
     path('api/search-suggestions/', views.search_suggestions, name='search_suggestions'),

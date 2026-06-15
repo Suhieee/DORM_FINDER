@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Dorm, Amenity, RoommatePost, RoommateAmenity, School, Review, 
     Room, RoomImage, Reservation, PaymentConfiguration,
-    ChatbotConversation, ChatbotMessage, ChatbotFAQ
+    ChatbotConversation, ChatbotMessage, ChatbotFAQ, LandlordTerms
 )
 from .models_transaction import TransactionLog, PaymentEventLog
 
@@ -170,4 +170,16 @@ class ChatbotFAQAdmin(admin.ModelAdmin):
     def question_preview(self, obj):
         return obj.question[:80] + '...' if len(obj.question) > 80 else obj.question
     question_preview.short_description = 'Question'
+
+
+@admin.register(LandlordTerms)
+class LandlordTermsAdmin(admin.ModelAdmin):
+    list_display = ('landlord', 'has_content', 'updated_at')
+    search_fields = ('landlord__username', 'landlord__email')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def has_content(self, obj):
+        return bool(obj.content and obj.content.strip())
+    has_content.short_description = 'Has Content?'
+    has_content.boolean = True
 

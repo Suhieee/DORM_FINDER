@@ -1,9 +1,27 @@
 from django import forms
-from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation, Room, RoomImage
+from .models import Dorm, DormImage ,  Amenity ,  RoommatePost, RoommateAmenity , Review ,  Reservation, Room, RoomImage, LandlordTerms
 from datetime import timedelta
 from django.utils import timezone
 
-class DormForm(forms.ModelForm):
+
+class AntiSpamFormMixin:
+    honeypot = forms.CharField(required=False, widget=forms.HiddenInput(), label='')
+
+    def clean_honeypot(self):
+        value = (self.cleaned_data.get('honeypot') or '').strip()
+        if value:
+            raise forms.ValidationError('Invalid submission detected.')
+        return value
+
+class DormForm(AntiSpamFormMixin, forms.ModelForm):
+    price = forms.DecimalField(
+        required=True,
+        min_value=1,
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'step': '0.01', 'min': '1'}),
+        help_text='Enter the price per month in PHP',
+    )
     amenities = forms.ModelMultipleChoiceField(
         queryset=Amenity.objects.all(),
         widget=forms.CheckboxSelectMultiple,
@@ -44,14 +62,15 @@ class DormForm(forms.ModelForm):
         model = Dorm
         fields = [
             'name', 'address', 'latitude', 'longitude', 'price', 'description',
-            'permit', 'payment_qr', 'available', 'amenities', 'accommodation_type',
+            'permit', 'payment_qr', 'available', 'amenities', 'other_amenities', 'accommodation_type',
             'total_beds', 'available_beds', 'max_occupants', 'key_features',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
+            'other_amenities': forms.Textarea(attrs={'rows': 3, 'placeholder': 'e.g. Study table, CCTV, Laundry area'}),
             'address': forms.Textarea(attrs={'rows': 3}),
-            'price': forms.NumberInput(attrs={'step': '0.01'}),
+            'price': forms.NumberInput(attrs={'step': '0.01', 'min': '1'}),
             'permit': forms.FileInput(attrs={'accept': 'image/*'}),
             'payment_qr': forms.FileInput(attrs={'accept': 'image/*'}),
             'accommodation_type': forms.Select(attrs={'class': 'form-control'}),
@@ -85,12 +104,12 @@ class DormForm(forms.ModelForm):
             except Exception:
                 pass
 
-class DormImageForm(forms.ModelForm):
+class DormImageForm(AntiSpamFormMixin, forms.ModelForm):
     class Meta:
         model = DormImage
         fields = ['image']
 
-class RoommatePostForm(forms.ModelForm):
+class RoommatePostForm(AntiSpamFormMixin, forms.ModelForm):
     amenities = forms.ModelMultipleChoiceField(
         queryset=RoommateAmenity.objects.all(),
         widget=forms.CheckboxSelectMultiple,
@@ -211,7 +230,7 @@ class RoommatePostForm(forms.ModelForm):
 
         return cleaned_data
 
-class ReviewForm(forms.ModelForm):
+class ReviewForm(AntiSpamFormMixin, forms.ModelForm):
     rating = forms.IntegerField(
         required=False,
         widget=forms.Select(choices=Review.RATING_CHOICES)
@@ -242,7 +261,7 @@ class ReviewForm(forms.ModelForm):
         return cleaned_data
     
 
-class ReservationForm(forms.ModelForm):
+class ReservationForm(AntiSpamFormMixin, forms.ModelForm):
     room = forms.ModelChoiceField(queryset=Room.objects.none(), required=False, label="Select Room")
 
     class Meta:
@@ -260,7 +279,7 @@ class ReservationForm(forms.ModelForm):
                 self.fields['room'].queryset = dorm.rooms.filter(is_available=True)
                 self.fields['room'].required = True
 
-class RoomForm(forms.ModelForm):
+class RoomForm(AntiSpamFormMixin, forms.ModelForm):
     class Meta:
         model = Room
         fields = ['name', 'price', 'is_available', 'description', 'room_type', 'capacity', 'size', 'floor_number']
@@ -298,7 +317,19 @@ class RoomForm(forms.ModelForm):
             }),
         }
 
-class RoomImageForm(forms.ModelForm):
+class RoomImageForm(AntiSpamFormMixin, forms.ModelForm):
     class Meta:
         model = RoomImage
         fields = ['image']
+
+class LandlordTermsForm(AntiSpamFormMixin, forms.ModelForm):
+    class Meta:
+        model = LandlordTerms
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 15,
+                'class': 'w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Write your terms and conditions for tenants here...'
+            })
+        }

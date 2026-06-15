@@ -72,6 +72,7 @@
 
                     <form method="post" enctype="multipart/form-data" class="space-y-6">
                         {% csrf_token %}
+                        {{ form.honeypot }}
 
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                             <label for="government_id" class="block text-sm font-semibold text-slate-900">

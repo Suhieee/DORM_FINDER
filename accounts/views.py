@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from .forms import (
     CustomUserCreationForm, AdminCreationForm, UserReportForm, BanUserForm, 
     ResolveReportForm, IdentityVerificationForm, VerificationReviewForm,
-    TenantRegistrationForm, LandlordRegistrationForm
+    TenantRegistrationForm, LandlordRegistrationForm, ResendVerificationForm
 )
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib import messages
@@ -41,6 +41,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q, DecimalField
 import logging
 from django_ratelimit.decorators import ratelimit
+from .forms import VerifiedAuthenticationForm
 
 
 class RegisterChoiceView(TemplateView):
@@ -48,6 +49,7 @@ class RegisterChoiceView(TemplateView):
     template_name = "accounts/register_choice.html"
 
 
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True), name='dispatch')
 class TenantRegisterView(CreateView):
     """Registration view specifically for tenants"""
     form_class = TenantRegistrationForm
@@ -55,7 +57,8 @@ class TenantRegisterView(CreateView):
 
     def form_valid(self, form):
         """Log in user after successful registration and redirect to preferences setup"""
-        user = form.save()
+        user = form.save(commit=False)
+        user.save()
         # Create user profile
         token = secrets.token_urlsafe(32)
         now = timezone.now()
@@ -80,9 +83,8 @@ class TenantRegisterView(CreateView):
             logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
             messages.warning(self.request, 'Registration successful, but email verification could not be sent.')
 
-        login(self.request, user)
-        messages.success(self.request, f"Welcome, {user.username}! Let's set up your preferences to find the perfect dorm.")
-        return redirect('user_profile:setup_preferences')
+        messages.success(self.request, f"Registration successful, {user.username}. Please check your email to verify your account before logging in.")
+        return redirect('accounts:login')
 
     def _send_verification_email(self, user, token):
         """Helper method to send verification email"""
@@ -120,6 +122,7 @@ class TenantRegisterView(CreateView):
         return super().form_invalid(form)
 
 
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True), name='dispatch')
 class LandlordRegisterView(CreateView):
     """Registration view specifically for landlords"""
     form_class = LandlordRegistrationForm
@@ -127,7 +130,8 @@ class LandlordRegisterView(CreateView):
 
     def form_valid(self, form):
         """Log in user after successful registration and redirect to verification"""
-        user = form.save()
+        user = form.save(commit=False)
+        user.save()
         # Create user profile
         token = secrets.token_urlsafe(32)
         now = timezone.now()
@@ -152,9 +156,8 @@ class LandlordRegisterView(CreateView):
             logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
             messages.warning(self.request, 'Registration successful, but email verification could not be sent.')
 
-        login(self.request, user)
-        messages.success(self.request, f"Welcome, {user.username}! To list properties, you must verify your identity first.")
-        return redirect('accounts:submit_verification')
+        messages.success(self.request, f"Registration successful, {user.username}. Please verify your email before logging in.")
+        return redirect('accounts:login')
 
     def _send_verification_email(self, user, token):
         """Helper method to send verification email"""
@@ -192,6 +195,7 @@ class LandlordRegisterView(CreateView):
         return super().form_invalid(form)
 
 
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True), name='dispatch')
 class RegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = "accounts/register.html"
@@ -275,27 +279,8 @@ class RegisterView(CreateView):
             logger.error(f'Failed to send verification email to {user.email}: {str(e)}', exc_info=True)
             messages.warning(self.request, 'Registration successful, but email verification could not be sent. Please use resend verification.')
 
-        login(self.request, user)
-        messages.success(self.request, f"Registration successful! Welcome, {user.username}. Please check your email to verify your account.")
-        return redirect(self.get_success_url())
-
-    def get_success_url(self):
-        """Redirect to next parameter if provided, otherwise based on user type."""
-        next_url = self.request.GET.get('next')
-        if next_url and next_url.startswith('/'):
-            return next_url
-        
-        user = self.request.user
-        # Redirect based on user type
-        if user.user_type == 'tenant':
-            # Redirect tenant to preference setup
-            return reverse_lazy("user_profile:setup_preferences")
-        elif user.user_type == 'landlord':
-            # Redirect landlord to verification page
-            return reverse_lazy("accounts:submit_verification")
-        else:
-            # Admin or other types go to dashboard
-            return reverse_lazy("accounts:dashboard")
+        messages.success(self.request, f"Registration successful, {user.username}. Please check your email to verify your account before logging in.")
+        return redirect('accounts:login')
 
     def form_invalid(self, form):
         """Handle errors if registration fails."""
@@ -306,7 +291,7 @@ class RegisterView(CreateView):
 # Keep this non-blocking so request.limited can trigger modal rendering in post().
 @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=False), name='post')
 class LoginView(FormView):
-    form_class = AuthenticationForm
+    form_class = VerifiedAuthenticationForm
     template_name = "accounts/login.html"
     success_url = reverse_lazy("accounts:dashboard")
     rate_limit_seconds = 60
@@ -1345,6 +1330,11 @@ class VerifyEmailView(View):
             profile.verification_token = None
             profile.verification_token_created_at = None
             profile.save()
+
+            if not profile.user.is_active:
+                profile.user.is_active = True
+                profile.user.save(update_fields=['is_active'])
+
             messages.success(request, 'Your email has been verified!')
             return redirect('accounts:login')
         except UserProfile.DoesNotExist:
@@ -1424,11 +1414,16 @@ def send_verification_email(request, user):
         logger.error(f'❌ Error sending verification email to {user.email}: {str(e)}', exc_info=True)
         return False, f'An error occurred while sending the verification email: {str(e)}'
 
+@method_decorator(ratelimit(key='user', rate='5/h', method='POST', block=True), name='dispatch')
 class ResendVerificationEmailLoggedInView(LoginRequiredMixin, View):
     """Simple view for logged-in users to resend verification email."""
     
     def post(self, request):
         """Resend verification email for logged-in user."""
+        if (request.POST.get('honeypot') or '').strip():
+            messages.warning(request, 'Invalid submission detected.')
+            return redirect(request.GET.get('next', 'user_profile:profile'))
+
         success, message = send_verification_email(request, request.user)
         
         if success:
@@ -1444,10 +1439,11 @@ class ResendVerificationEmailLoggedInView(LoginRequiredMixin, View):
         """Handle GET request by redirecting to POST."""
         return self.post(request)
 
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True), name='dispatch')
 class ResendVerificationEmailView(FormView):
     """View to resend verification email to users (for logged-out users)."""
     template_name = 'accounts/resend_verification.html'
-    form_class = AuthenticationForm
+    form_class = ResendVerificationForm
     
     def dispatch(self, request, *args, **kwargs):
         # If user is already logged in, redirect to the logged-in version
@@ -1462,6 +1458,10 @@ class ResendVerificationEmailView(FormView):
     
     def form_valid(self, form):
         """Resend verification email if user is not verified."""
+        if (self.request.POST.get('honeypot') or '').strip():
+            messages.warning(self.request, 'Invalid submission detected.')
+            return redirect('accounts:login')
+
         user = form.get_user()
         success, message = send_verification_email(self.request, user)
         
@@ -1540,6 +1540,7 @@ class ViewUserProfileView(LoginRequiredMixin, TemplateView):
         })
         return context
 
+@method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True), name='dispatch')
 class ReportUserView(LoginRequiredMixin, CreateView):
     model = UserReport
     form_class = UserReportForm
@@ -1916,6 +1917,7 @@ class TransactionLogView(LoginRequiredMixin, ListView):
 
 # ============== IDENTITY VERIFICATION VIEWS ==============
 
+@method_decorator(ratelimit(key='user', rate='3/d', method='POST', block=True), name='dispatch')
 @method_decorator(login_required, name='dispatch')
 class SubmitVerificationView(View):
     """View for landlords to submit identity verification documents"""

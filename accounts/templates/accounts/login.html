@@ -31,6 +31,16 @@
                     </div>
                 {% endif %}
 
+                {% if form.non_field_errors %}
+                    <div class="mb-6 space-y-2">
+                        {% for error in form.non_field_errors %}
+                            <div class="message-alert p-4 text-white rounded-md shadow-lg bg-red-600" role="alert">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 <h2 class="text-3xl md:text-4xl font-bold text-center mb-2 text-gray-900">Sign In</h2>
                 <p class="text-center text-sm text-gray-500 mb-7">Welcome back. Access your Smart Dorm account.</p>
 

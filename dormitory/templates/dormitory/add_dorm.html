@@ -86,7 +86,7 @@
     <!-- Price -->
     <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
         <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-        <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+        <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
         <p class="mt-1 text-xs text-gray-500">Example: 6500</p>
     </div>
 
@@ -177,6 +177,11 @@
                 <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
             </div>
             {% endfor %}
+        </div>
+        <div class="mt-4 rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-4">
+            <label for="other_amenities" class="block text-sm font-medium text-gray-700">Other amenities</label>
+            <textarea name="other_amenities" id="other_amenities" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="If your amenity is not in the list, describe it here">{{ form.other_amenities.value|default:'' }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Example: Study table, laundry service, rooftop lounge</p>
         </div>
     </div>
 
@@ -357,10 +362,17 @@ document.addEventListener("DOMContentLoaded", function() {
          SEARCH CONTROL
     ===================== */
     const searchControl = L.Control.geocoder({
+        geocoder: L.Control.Geocoder.nominatim({
+            geocodingQueryParams: {
+                viewbox: '120.90,14.47,121.07,14.70',
+                bounded: 1,
+                countrycodes: 'ph'
+            }
+        }),
         defaultMarkGeocode: false,
         collapsed: false,
         position: "topright",
-        placeholder: "Search address...",
+        placeholder: "Search Manila address only...",
         errorMessage: "Address not found."
     }).addTo(map);
 
@@ -468,6 +480,11 @@ document.addEventListener("DOMContentLoaded", function() {
     ===================== */
     searchControl.on("markgeocode", function(e) {
         const center = e.geocode.center;
+
+        if (!manilaBounds.contains(center)) {
+            alert("Please search and place dorms within Manila only.");
+            return;
+        }
 
         marker.setLatLng(center);
         map.setView(center, 16);

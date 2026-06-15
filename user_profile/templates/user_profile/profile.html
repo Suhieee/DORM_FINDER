@@ -91,6 +91,16 @@
                 <span class="text-xs text-blue-700 font-semibold mb-1">LISTED DORMS</span>
                 <span class="text-xl sm:text-2xl font-bold">{{ listed_dorms|length }}</span>
             </div>
+            <div class="bg-gray-50 rounded-xl p-4 sm:p-6 flex flex-col items-center">
+                <span class="text-xs text-blue-700 font-semibold mb-1">TERMS &amp; CONDITIONS</span>
+                <button type="button" onclick="openLandlordTermsModal()"
+                        class="mt-2 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    Edit Terms &amp; Conditions
+                </button>
+            </div>
             {% endif %}
             <div class="bg-gray-50 rounded-xl p-4 sm:p-6 flex flex-col items-center">
                 <span class="text-xs text-blue-700 font-semibold mb-1">EMAIL</span>
@@ -515,6 +525,99 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 999px;
 }
 </style>
+<!-- Landlord Terms & Conditions Edit Modal -->
+<div id="landlordTermsModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeLandlordTermsModal()"></div>
+        <div class="inline-block bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all my-8 sm:max-w-2xl sm:w-full">
+            <div class="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-black">Edit Terms &amp; Conditions</h3>
+                    <button type="button" onclick="closeLandlordTermsModal()" class="text-white/80 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-blue-700 text-sm mt-1">These will be shown to tenants when they reserve your dorm.</p>
+            </div>
+            <div class="px-6 py-4">
+                <form id="landlord-terms-form">
+                    {% csrf_token %}
+                    <textarea id="terms-content" rows="15"
+                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Write your terms and conditions for tenants here..."></textarea>
+                </form>
+                <div id="terms-save-feedback" class="hidden mt-2 text-sm font-semibold"></div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex justify-end gap-2">
+                <button type="button" onclick="closeLandlordTermsModal()"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button type="button" onclick="saveLandlordTerms()"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
+                    Save Terms
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openLandlordTermsModal() {
+    const modal = document.getElementById('landlordTermsModal');
+    const textarea = document.getElementById('terms-content');
+    fetch('/dormitory/terms/data/')
+        .then(r => r.json())
+        .then(data => {
+            textarea.value = data.content || '';
+        })
+        .catch(() => { textarea.value = ''; });
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('terms-save-feedback').classList.add('hidden');
+}
+
+function closeLandlordTermsModal() {
+    document.getElementById('landlordTermsModal').classList.add('hidden');
+    document.body.style.overflow = '';
+    document.getElementById('terms-save-feedback').classList.add('hidden');
+}
+
+function saveLandlordTerms() {
+    const content = document.getElementById('terms-content').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch('/dormitory/terms/ajax-save/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'content=' + encodeURIComponent(content)
+    })
+    .then(r => r.json())
+    .then(data => {
+        const feedback = document.getElementById('terms-save-feedback');
+        if (data.status === 'success') {
+            feedback.textContent = 'Terms and Conditions saved successfully!';
+            feedback.classList.remove('hidden', 'text-red-600');
+            feedback.classList.add('text-green-600');
+            setTimeout(closeLandlordTermsModal, 1500);
+        } else {
+            feedback.textContent = data.message || 'Failed to save. Please try again.';
+            feedback.classList.remove('hidden', 'text-green-600');
+            feedback.classList.add('text-red-600');
+        }
+    })
+    .catch(() => {
+        const feedback = document.getElementById('terms-save-feedback');
+        feedback.textContent = 'Network error. Please try again.';
+        feedback.classList.remove('hidden', 'text-green-600');
+        feedback.classList.add('text-red-600');
+    });
+}
+</script>
 {% endblock %}
 
 {% endblock %}

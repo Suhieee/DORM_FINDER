@@ -1190,6 +1190,50 @@
                     </div>
                 </div>
                 {% endif %}
+                
+                <!-- Move-Out Request Section -->
+                {% if selected_reservation.move_out_requested %}
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="font-semibold mb-4 flex items-center text-orange-900">
+                        <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Tenant Move-Out Request
+                    </h4>
+                    
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div class="text-sm space-y-2">
+                            <div>
+                                <span class="text-gray-600">Requested Date:</span>
+                                <p class="font-semibold">{{ selected_reservation.move_out_requested_date|date:"F j, Y - g:i A" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Reason:</span>
+                                <p class="text-sm whitespace-pre-wrap bg-white rounded p-2 mt-1">{{ selected_reservation.move_out_requested_reason }}</p>
+                            </div>
+                            {% if selected_reservation.move_out_approved %}
+                            <div class="pt-2 border-t">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Approved on {{ selected_reservation.move_out_approved_date|date:"F j, Y" }}</span>
+                            </div>
+                            {% else %}
+                            <div class="pt-4 flex gap-2">
+                                <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}" class="flex-1">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve_move_out">
+                                    <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">
+                                        Approve Move-Out
+                                    </button>
+                                </form>
+                                <button type="button" onclick="openRejectMoveOutModal()" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm">
+                                    Reject Request
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -1286,6 +1330,30 @@
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg">
                     Confirm Reservation
                 </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reject Move-Out Modal -->
+<div id="rejectMoveOutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-4 text-red-700">Reject Move-Out Request</h3>
+        <form method="post" action="{% url 'dormitory:update_reservation_status' selected_reservation.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject_move_out">
+            <div class="mb-4 p-3 rounded bg-red-50 border border-red-200 text-xs text-red-800">
+                <p class="font-semibold">Reason for rejection:</p>
+                <p>The tenant will be notified with your reason.</p>
+            </div>
+            <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                Reason <span class="text-red-500">*</span>
+            </label>
+            <textarea name="rejection_reason" id="rejection_reason" rows="4" placeholder="Example: Lease agreement requires 30 days notice..." required
+                    class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeRejectMoveOutModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Reject Request</button>
             </div>
         </form>
     </div>
@@ -1941,6 +2009,16 @@
             customReason.required = false;
             customReason.value = '';
         }
+    }
+
+    // Move-Out Rejection Modal Functions
+    function openRejectMoveOutModal() {
+        document.getElementById('rejectMoveOutModal').classList.remove('hidden');
+    }
+
+    function closeRejectMoveOutModal() {
+        document.getElementById('rejectMoveOutModal').classList.add('hidden');
+        document.getElementById('rejection_reason').value = '';
     }
 
     // Handle payment rejection

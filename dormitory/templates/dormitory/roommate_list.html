@@ -36,7 +36,14 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                     <span class="roommate-hero-chip">{{ roommates|length|default:0 }} active listing{{ roommates|length|pluralize }}</span>
                     {% if user_post %}
-                    <span class="roommate-hero-chip">Your listing is active</span>
+                    <span class="roommate-hero-chip">Your listing is {% if user_post.is_public %}visible{% else %}hidden{% endif %}</span>
+                    <form method="post" action="{% url 'dormitory:toggle_roommate_visibility' user_post.pk %}" class="inline-block">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="roommate-hero-chip border-0 {% if user_post.is_public %}bg-slate-900/20 hover:bg-slate-900/30{% else %}bg-emerald-500/20 hover:bg-emerald-500/30{% endif %}">
+                            {% if user_post.is_public %}Hide My Profile{% else %}Make My Profile Visible{% endif %}
+                        </button>
+                    </form>
                     {% else %}
                     <span class="roommate-hero-chip">Create a listing to unlock better match scoring</span>
                     {% endif %}
@@ -184,6 +191,9 @@
                     </div>
 
                     <div class="flex flex-col items-end gap-1 shrink-0">
+                        {% if not roommate.is_public %}
+                            <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold leading-none bg-slate-100 text-slate-700">Hidden</span>
+                        {% endif %}
                         {% if roommate.user.userprofile.is_verified %}
                             <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold leading-none bg-green-100 text-green-800">
                                 Verified

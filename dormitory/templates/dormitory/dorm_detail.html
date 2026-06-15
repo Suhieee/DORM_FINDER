@@ -581,7 +581,14 @@
                         </div>
                         {% endfor %}
                     </div>
-                    {% else %}
+                    {% endif %}
+                    {% if object.other_amenities %}
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">Other amenities</h4>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ object.other_amenities }}</p>
+                    </div>
+                    {% endif %}
+                    {% if not amenity_cards and not object.other_amenities %}
                     <div class="text-center py-12">
                         <div class="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
                             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -705,6 +712,7 @@
                         </h4>
                         <form method="post" action="{% url 'dormitory:add_review' dorm.id %}">
                             {% csrf_token %}
+                            <input type="hidden" name="honeypot" value="">
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                                 <div class="flex space-x-1">

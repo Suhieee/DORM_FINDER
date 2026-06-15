@@ -51,6 +51,11 @@ class Dorm(models.Model):
     approval_status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     rejection_reason = models.TextField(null=True, blank=True)
     amenities = models.ManyToManyField("Amenity", blank=True, related_name='dorms')
+    other_amenities = models.TextField(
+        blank=True,
+        default='',
+        help_text="List any amenities that are not available in the standard amenity list"
+    )
     nearby_schools = models.ManyToManyField('School', blank=True, related_name='nearby_dorms')
     reservations_count = models.PositiveIntegerField(default=0)
     recent_views = models.PositiveIntegerField(default=0)  # Field to track recent views
@@ -249,6 +254,10 @@ class RoommatePost(models.Model):
         max_length=255,
         help_text="Where do you want to stay? (e.g., España, Manila near UST)",
         db_index=True
+    )
+    is_public = models.BooleanField(
+        default=True,
+        help_text="Controls whether this roommate profile is visible to other users"
     )
     amenities = models.ManyToManyField(
         "RoommateAmenity",
@@ -554,6 +563,31 @@ class Reservation(models.Model):
     checklist_inventory_checked = models.BooleanField(default=False)
     checklist_rules_acknowledged = models.BooleanField(default=False)
     checklist_completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Move-out request fields
+    move_out_requested = models.BooleanField(
+        default=False,
+        help_text="Whether tenant has requested early move-out"
+    )
+    move_out_requested_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the tenant requested move-out"
+    )
+    move_out_requested_reason = models.TextField(
+        blank=True,
+        default='',
+        help_text="Reason for move-out request"
+    )
+    move_out_approved = models.BooleanField(
+        default=False,
+        help_text="Whether landlord approved the move-out request"
+    )
+    move_out_approved_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When landlord approved move-out"
+    )
 
     class Meta:
         db_table = 'dormitory_reservation'
@@ -598,6 +632,27 @@ class Reservation(models.Model):
             return False
         
         return timezone.now() > self.payment_deadline
+
+class LandlordTerms(models.Model):
+    landlord = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'user_type': 'landlord'},
+        related_name='terms_and_conditions'
+    )
+    content = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Landlord Terms and Conditions"
+
+    def __str__(self):
+        return f"Terms & Conditions for {self.landlord.username}"
+
+    def has_content(self):
+        return bool(self.content and self.content.strip())
+
 
 class PaymentConfiguration(models.Model):
     """Configuration for payment terms per dorm"""
