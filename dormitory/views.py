@@ -6,7 +6,7 @@ from django.urls import reverse_lazy, reverse
 from .models import (
     Dorm, DormImage, Amenity, RoommatePost, Review, School,
     Reservation, Dorm, Message, ReservationMessage, RoommateMatch, RoommateChat, Room, RoomImage, RoommateChatReaction,
-    RoommateAmenity, PaymentConfiguration, DormAmenityImage, LandlordTerms
+    RoommateAmenity, PaymentConfiguration, DormAmenityImage, LandlordTerms, EarlyOutRequest
 )
 from .forms import DormForm ,  RoommatePostForm , ReviewForm , ReservationForm, LandlordTermsForm
 from django.db.models import Avg , Q
@@ -23,6 +23,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings
 import os
+from .payment_views import _validate_payment_proof_image, _extract_manual_payment_reference_from_image
 from django.views.generic import View
 from django.utils import timezone
 from django.http import JsonResponse
@@ -1523,9 +1524,6 @@ class ChatView(ListView):
 
     def post(self, request, *args, **kwargs):
         sender = request.user
-        if (request.POST.get('honeypot') or '').strip():
-            return redirect('dormitory:chat')
-
         receiver_id = request.POST.get('receiver_id')
         content = request.POST.get('content')
 
@@ -1619,6 +1617,8 @@ class LandlordReservationsView(ListView):
                     'chat_messages'
                 ).get(id=selected_reservation_id)
                 context['selected_reservation'] = selected_reservation
+                # Get the latest early-out request if any
+                context['early_out_request'] = selected_reservation.early_out_requests.order_by('-created_at').first()
                 # Mark messages as read
                 Message.objects.filter(
                     reservation=selected_reservation,
@@ -1628,6 +1628,8 @@ class LandlordReservationsView(ListView):
             except Reservation.DoesNotExist:
                 messages.error(self.request, "Selected reservation not found.")
         
+        context['REASON_CHOICES'] = EarlyOutRequest.REASON_CHOICES
+        context['DECLINE_REASON_CHOICES'] = EarlyOutRequest.DECLINE_REASON_CHOICES
         return context
 
 @method_decorator(login_required, name='dispatch')
@@ -2185,27 +2187,62 @@ class UpdateReservationStatusView(View):
                 messages.warning(request, "You have already requested move-out. Waiting for landlord response.")
                 return redirect('dormitory:tenant_reservations')
             
-            # Get move-out reason from form
-            moveout_reason = request.POST.get('moveout_reason', '').strip()
+            # Get fields from form
+            reason = request.POST.get('reason', '').strip()
+            reason_other_text = request.POST.get('reason_other_text', '').strip()
+            requested_moveout_date_str = request.POST.get('requested_moveout_date', '').strip()
+            additional_notes = request.POST.get('additional_notes', '').strip()
             
-            if not moveout_reason:
-                messages.error(request, "Please provide a reason for move-out.")
+            if not reason:
+                messages.error(request, "Please select a reason for move-out.")
                 return redirect('dormitory:tenant_reservations')
             
-            # Mark move-out as requested
+            # Validate reason choice
+            valid_reasons = [r[0] for r in EarlyOutRequest.REASON_CHOICES]
+            if reason not in valid_reasons:
+                messages.error(request, "Invalid reason selected.")
+                return redirect('dormitory:tenant_reservations')
+            
+            # Validate requested move-out date
+            from datetime import date
+            if not requested_moveout_date_str:
+                messages.error(request, "Please provide a desired move-out date.")
+                return redirect('dormitory:tenant_reservations')
+            try:
+                parsed_date = date.fromisoformat(requested_moveout_date_str)
+                if parsed_date <= date.today():
+                    messages.error(request, "Move-out date must be in the future.")
+                    return redirect('dormitory:tenant_reservations')
+            except ValueError:
+                messages.error(request, "Invalid date format for move-out date.")
+                return redirect('dormitory:tenant_reservations')
+            
+            # Create EarlyOutRequest record
+            EarlyOutRequest.objects.create(
+                tenant=request.user,
+                reservation=reservation,
+                reason=reason,
+                reason_other_text=reason_other_text if reason == 'other' else '',
+                requested_moveout_date=parsed_date,
+                additional_notes=additional_notes,
+                status='pending'
+            )
+            
+            # Keep old fields updated for backward compat
             reservation.move_out_requested = True
             reservation.move_out_requested_date = timezone.now()
-            reservation.move_out_requested_reason = moveout_reason
+            reservation.move_out_requested_reason = dict(EarlyOutRequest.REASON_CHOICES).get(reason, reason) + (f" - {reason_other_text}" if reason == 'other' and reason_other_text else '')
             reservation.move_out_approved = False
             reservation.save()
             
             messages.success(request, "Your move-out request has been sent to the landlord. They will review it soon.")
             
             # Create system message for landlord
+            reason_display = dict(EarlyOutRequest.REASON_CHOICES).get(reason, reason)
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.dorm.landlord,
-                content=f"Tenant requested early move-out from {reservation.dorm.name}.\n\nReason: {moveout_reason}",
+                content=f"Tenant requested early move-out from {reservation.dorm.name}.\n\nReason: {reason_display}\nDesired move-out date: {parsed_date}\nNotes: {additional_notes or 'None'}",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
@@ -2224,38 +2261,41 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "No move-out request to approve.")
                 return redirect('dormitory:landlord_reservations')
             
-            # Approve the move-out
+            # Update EarlyOutRequest record
+            early_request = reservation.early_out_requests.filter(status='pending').first()
+            if not early_request:
+                messages.error(request, "Move-out request not found.")
+                return redirect('dormitory:landlord_reservations')
+            
+            early_request.status = 'approved'
+            early_request.reviewed_at = timezone.now()
+            early_request.save()
+            
+            # Approve the move-out — reservation stays 'occupied' until move-out date
             reservation.move_out_approved = True
             reservation.move_out_approved_date = timezone.now()
-            reservation.status = 'completed'
             reservation.save()
             
-            # Make dorm available again - restore the bed/unit
-            if reservation.dorm.accommodation_type == 'whole_unit':
-                reservation.dorm.available_beds = reservation.dorm.max_occupants
-            else:
-                if reservation.dorm.available_beds < reservation.dorm.total_beds:
-                    reservation.dorm.available_beds += 1
-            reservation.dorm.save()
+            # Dorm/room freeing is handled by auto-completion on the requested date
             
-            # Set room as available if assigned
-            if reservation.room is not None:
-                reservation.room.is_available = True
-                reservation.room.save()
-            
-            messages.success(request, f"Move-out request approved. {reservation.dorm.name} is now available.")
+            moveout_date_str = early_request.requested_moveout_date.strftime('%B %d, %Y')
+            messages.success(
+                request,
+                f"Move-out request approved. Tenant may stay until {moveout_date_str}. "
+                f"The reservation will auto-complete and {reservation.dorm.name} will become available on that date."
+            )
             
             # Notify tenant
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.tenant,
-                content=f"Your move-out request has been approved. Please vacate {reservation.dorm.name} as arranged.",
+                content=f"Your move-out request has been approved for {moveout_date_str}. You may stay at {reservation.dorm.name} until that date.",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
             notify_user(
                 user=reservation.tenant,
-                message=f"Your move-out request for {reservation.dorm.name} has been approved.",
+                message=f"Your move-out request for {reservation.dorm.name} has been approved. Effective {moveout_date_str}.",
                 related_object_id=reservation.id
             )
         
@@ -2268,8 +2308,35 @@ class UpdateReservationStatusView(View):
                 messages.error(request, "No move-out request to reject.")
                 return redirect('dormitory:landlord_reservations')
             
+            # Get decline reason from form
+            landlord_decline_reason = request.POST.get('landlord_decline_reason', '').strip()
+            landlord_decline_other_text = request.POST.get('landlord_decline_other_text', '').strip()
+            
+            if not landlord_decline_reason:
+                messages.error(request, "Please select a reason for declining the move-out request.")
+                return redirect('dormitory:landlord_reservations')
+            
+            # Validate decline reason choice
+            valid_reasons = [r[0] for r in EarlyOutRequest.DECLINE_REASON_CHOICES]
+            if landlord_decline_reason not in valid_reasons:
+                messages.error(request, "Invalid decline reason selected.")
+                return redirect('dormitory:landlord_reservations')
+            
+            # Build human-readable decline reason
+            decline_display = dict(EarlyOutRequest.DECLINE_REASON_CHOICES).get(landlord_decline_reason, landlord_decline_reason)
+            if landlord_decline_reason == 'other' and landlord_decline_other_text:
+                decline_display += f" - {landlord_decline_other_text}"
+            
+            # Update EarlyOutRequest record
+            early_request = reservation.early_out_requests.filter(status='pending').first()
+            if early_request:
+                early_request.status = 'declined'
+                early_request.landlord_decline_reason = landlord_decline_reason
+                early_request.landlord_decline_other_text = landlord_decline_other_text if landlord_decline_reason == 'other' else ''
+                early_request.reviewed_at = timezone.now()
+                early_request.save()
+            
             # Reject the move-out request
-            rejection_reason = request.POST.get('rejection_reason', 'Request denied').strip()
             reservation.move_out_requested = False
             reservation.move_out_requested_reason = ''
             reservation.save()
@@ -2280,7 +2347,7 @@ class UpdateReservationStatusView(View):
             Message.objects.create(
                 sender=request.user,
                 receiver=reservation.tenant,
-                content=f"Your move-out request has been declined. Reason: {rejection_reason}\n\nPlease contact the landlord to discuss.",
+                content=f"Your move-out request has been declined. Reason: {decline_display}\n\nPlease contact the landlord to discuss.",
                 dorm=reservation.dorm,
                 reservation=reservation
             )
@@ -2426,9 +2493,60 @@ If you have any questions, please contact your landlord.""",
             # For AJAX requests that didn't return earlier, return a generic success
             return JsonResponse({'status': 'success', 'message': 'Action completed successfully.'})
 
+def _process_approved_early_out_requests(limit=5):
+    """Auto-complete reservations whose approved move-out date has arrived.
+    Called on page load and by cron. Returns count processed."""
+    from datetime import date as d
+    today = d.today()
+    approved = EarlyOutRequest.objects.filter(
+        status='approved',
+        requested_moveout_date__lte=today
+    ).select_related('reservation', 'reservation__dorm', 'reservation__tenant')[:limit]
+    
+    processed = 0
+    for eor in approved:
+        reservation = eor.reservation
+        if reservation.status == 'completed':
+            continue
+        
+        reservation.move_out_approved = True
+        if not reservation.move_out_approved_date:
+            reservation.move_out_approved_date = timezone.now()
+        reservation.status = 'completed'
+        reservation.completed_at = timezone.now()
+        reservation.save()
+        
+        # Make dorm available
+        if reservation.dorm.accommodation_type == 'whole_unit':
+            reservation.dorm.available_beds = reservation.dorm.max_occupants
+        else:
+            if reservation.dorm.available_beds < reservation.dorm.total_beds:
+                reservation.dorm.available_beds += 1
+        reservation.dorm.save()
+        
+        if reservation.room is not None:
+            reservation.room.is_available = True
+            reservation.room.save()
+        
+        if not eor.reviewed_at:
+            eor.reviewed_at = timezone.now()
+        eor.save(update_fields=['reviewed_at'] if eor.pk else None)
+        
+        Message.objects.create(
+            sender=reservation.dorm.landlord,
+            receiver=reservation.tenant,
+            content=f"Your move-out from {reservation.dorm.name} has been processed. Thank you for your stay!",
+            dorm=reservation.dorm,
+            reservation=reservation
+        )
+        
+        processed += 1
+    
+    return processed
+
 # Update the context processor to include pending reservations
 def user_context(request):
-    """Context processor optimized to reduce database queries."""
+    """Context processor: badge counts for reservation nav + auto-process approved move-outs."""
     from django.core.cache import cache
     from django.db.models import Count, Q
     
@@ -2436,33 +2554,55 @@ def user_context(request):
     if not request.user.is_authenticated:
         return context
     
+    # Auto-process approved move-outs whose date has arrived (lightweight, page-load check)
+    try:
+        _process_approved_early_out_requests(limit=5)
+    except Exception:
+        pass  # never crash the page
+    
     # Cache reservation data for 30 seconds to reduce queries
     if request.user.user_type == 'tenant':
         cache_key = f'tenant_reservations_{request.user.id}'
         reservations = cache.get(cache_key)
         if reservations is None:
-            # Annotate each reservation with unread message count
             reservations = list(Reservation.objects.filter(
                 tenant=request.user,
-                status__in=['pending_payment', 'pending', 'confirmed']
+                status__in=['pending_payment', 'pending', 'confirmed', 'occupied']
             ).annotate(
                 unread_messages_count=Count(
                     'chat_messages',
                     filter=Q(chat_messages__is_read=False) & Q(chat_messages__receiver=request.user)
                 )
-            ).select_related('dorm').order_by('-created_at')[:5])  # Limit to 5
+            ).select_related('dorm').order_by('-created_at')[:10])
             cache.set(cache_key, reservations, 30)
         
-        # Only include reservations with unread messages for the badge
-        context['user_pending_reservations'] = [r for r in reservations if r.unread_messages_count > 0]
+        # Badge: reservations with unread messages OR a pending/approved early-out request
+        badge_list = [r for r in reservations if r.unread_messages_count > 0]
+        if EarlyOutRequest.objects.filter(
+            tenant=request.user,
+            status__in=['pending', 'approved']
+        ).exists():
+            badge_list.append(None)  # just to make length > 0
+        context['user_pending_reservations'] = badge_list
+        
     elif request.user.user_type == 'landlord':
         cache_key = f'landlord_pending_count_{request.user.id}'
         pending_count = cache.get(cache_key)
         if pending_count is None:
-            pending_count = Reservation.objects.filter(
+            pending_reservations = Reservation.objects.filter(
                 dorm__landlord=request.user,
                 status='pending'
             ).count()
+            pending_moveouts = EarlyOutRequest.objects.filter(
+                reservation__dorm__landlord=request.user,
+                status='pending'
+            ).count()
+            unread_msg_rooms = Message.objects.filter(
+                dorm__landlord=request.user,
+                receiver=request.user,
+                is_read=False
+            ).values('dorm').distinct().count()
+            pending_count = pending_reservations + pending_moveouts + unread_msg_rooms
             cache.set(cache_key, pending_count, 30)
         context['pending_count'] = pending_count
     return context
@@ -2506,9 +2646,15 @@ class tenantReservationsView(ListView):
             try:
                 selected_reservation = queryset.prefetch_related('messages').get(id=selected_reservation_id)
                 context['selected_reservation'] = selected_reservation
+                # Get the latest early-out request if any
+                context['early_out_request'] = selected_reservation.early_out_requests.order_by('-created_at').first()
             except Reservation.DoesNotExist:
                 messages.error(self.request, "Selected reservation not found.")
         
+        context['REASON_CHOICES'] = EarlyOutRequest.REASON_CHOICES
+        context['DECLINE_REASON_CHOICES'] = EarlyOutRequest.DECLINE_REASON_CHOICES
+        from datetime import date, timedelta
+        context['today_iso'] = (date.today() + timedelta(days=1)).isoformat()
         return context
 
     def post(self, request, *args, **kwargs):
@@ -2526,41 +2672,55 @@ class tenantReservationsView(ListView):
             if 'payment_proof' in request.FILES:
                 # Handle payment proof upload
                 payment_proof = request.FILES['payment_proof']
-                reservation.payment_proof = payment_proof
-                reservation.payment_submitted_at = timezone.now()
-                reservation.payment_method = 'manual'
-                reservation.payment_status = 'processing'
-                reservation.status = 'pending_payment'
 
-                # Use configured total amount (deposit + advance + fees) if available.
-                try:
-                    payment_config = reservation.dorm.payment_config
-                    tenant_profile, _ = UserProfile.objects.get_or_create(user=reservation.tenant)
-                    payment_config._tenant_for_discount = tenant_profile
-                    payment_breakdown = payment_config.calculate_total_amount()
-                    reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
-                except Exception:
-                    reservation.payment_amount = reservation.dorm.price
-                # Keep status as pending_payment until landlord verifies
-                reservation.save()
+                is_valid, validation_msg = _validate_payment_proof_image(payment_proof)
+                if not is_valid:
+                    messages.error(request, validation_msg)
+                else:
+                    extracted_reference, raw_ocr_text = _extract_manual_payment_reference_from_image(payment_proof)
 
-                # Create a message about the payment submission
-                Message.objects.create(
-                    sender=request.user,
-                    receiver=reservation.dorm.landlord,
-                    content="Payment proof has been submitted and is awaiting verification.",
-                    dorm=reservation.dorm,
-                    reservation=reservation
-                )
-                
-                # Notify landlord
-                notify_user(
-                    user=reservation.dorm.landlord,
-                    message=f"Payment proof submitted for {reservation.dorm.name}. Please verify.",
-                    related_object_id=reservation.id
-                )
+                    reservation.payment_proof = payment_proof
+                    reservation.manual_reference_number = extracted_reference
+                    reservation.manual_ocr_raw_text = raw_ocr_text
+                    reservation.payment_submitted_at = timezone.now()
+                    reservation.payment_method = 'manual'
+                    reservation.payment_status = 'processing'
+                    reservation.status = 'pending_payment'
 
-                messages.success(request, "Payment proof uploaded successfully! Waiting for landlord verification.")
+                    # Use configured total amount (deposit + advance + fees) if available.
+                    try:
+                        payment_config = reservation.dorm.payment_config
+                        tenant_profile, _ = UserProfile.objects.get_or_create(user=reservation.tenant)
+                        payment_config._tenant_for_discount = tenant_profile
+                        payment_breakdown = payment_config.calculate_total_amount()
+                        reservation.payment_amount = payment_breakdown.get('total', reservation.dorm.price)
+                    except Exception:
+                        reservation.payment_amount = reservation.dorm.price
+                    reservation.save()
+
+                    # Create a message about the payment submission
+                    landlord_notice = "Payment proof has been submitted and is awaiting verification."
+                    if extracted_reference:
+                        landlord_notice += f" Reference number detected: {extracted_reference}."
+                    else:
+                        landlord_notice += " No reference number could be automatically extracted."
+
+                    Message.objects.create(
+                        sender=request.user,
+                        receiver=reservation.dorm.landlord,
+                        content=landlord_notice,
+                        dorm=reservation.dorm,
+                        reservation=reservation
+                    )
+                    
+                    # Notify landlord
+                    notify_user(
+                        user=reservation.dorm.landlord,
+                        message=f"Payment proof submitted for {reservation.dorm.name}. Please verify.",
+                        related_object_id=reservation.id
+                    )
+
+                    messages.success(request, "Payment proof uploaded successfully! Waiting for landlord verification.")
             elif 'cancellation_reason' in request.POST:
                 # If cancelling, set the cancellation reason
                 cancellation_reason = request.POST.get('cancellation_reason')
@@ -2890,9 +3050,6 @@ class SendRoommateChatMessageView(View):
         if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'error': 'Invalid request'}, status=400)
 
-        if (request.POST.get('honeypot') or '').strip():
-            return JsonResponse({'error': 'Invalid request'}, status=400)
-            
         match = get_object_or_404(RoommateMatch, id=match_id)
         
         # Verify user is involved in the match
@@ -3224,6 +3381,14 @@ def cron_cancel_expired(request):
         output = StringIO()
         call_command('cancel_expired_payments', stdout=output)
         output_text = output.getvalue()
+        
+        # Also process approved early move-outs
+        try:
+            moveout_output = StringIO()
+            call_command('process_approved_moveouts', stdout=moveout_output)
+            output_text += '\n' + moveout_output.getvalue()
+        except Exception as e:
+            output_text += f'\nError processing move-outs: {e}'
         
         return JsonResponse({
             'success': True,

@@ -34,15 +34,39 @@ from user_profile.models import UserProfile
 logger = logging.getLogger(__name__)
 
 
+def _validate_payment_proof_image(uploaded_file):
+    """Validate the uploaded file is a valid image."""
+    if not uploaded_file:
+        return False, "No file uploaded."
+    
+    valid_mime_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    content_type = getattr(uploaded_file, 'content_type', '')
+    ext = os.path.splitext(getattr(uploaded_file, 'name', ''))[1].lower()
+    valid_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+    
+    if content_type and content_type not in valid_mime_types:
+        return False, "Invalid file type. Please upload a JPEG, PNG, or WebP image."
+    if ext and ext not in valid_extensions:
+        return False, f"Invalid file extension '{ext}'. Please upload a valid image file."
+    
+    try:
+        from PIL import Image
+        file_bytes = uploaded_file.read()
+        if hasattr(uploaded_file, 'seek'):
+            uploaded_file.seek(0)
+        from io import BytesIO
+        Image.open(BytesIO(file_bytes)).verify()
+        return True, ""
+    except Exception:
+        return False, "The uploaded file is not a valid image or is corrupted."
+
 def _extract_manual_payment_reference_from_image(uploaded_file):
     """
-    Use OCR API to extract a likely payment reference number from uploaded proof.
+    Validate the uploaded image and use OCR API to extract a GCash payment reference.
     Returns: (reference_number|None, raw_text|str)
     """
     api_key = os.environ.get('OCR_SPACE_API_KEY', '').strip()
     endpoint = os.environ.get('OCR_SPACE_ENDPOINT', 'https://api.ocr.space/parse/image').strip()
-    if not api_key:
-        return None, ''
 
     if not uploaded_file:
         return None, ''
@@ -57,6 +81,9 @@ def _extract_manual_payment_reference_from_image(uploaded_file):
 
         file_bytes = uploaded_file.read()
         if not file_bytes:
+            return None, ''
+
+        if not api_key:
             return None, ''
 
         files = {
@@ -85,8 +112,8 @@ def _extract_manual_payment_reference_from_image(uploaded_file):
 
         normalized = raw_text.replace('\n', ' ')
         patterns = [
-            r'(?i)(?:reference|ref|ref\.|rrn|transaction\s*(?:id|no|#)?|trx\s*(?:id|no|#)?)\s*[:#\-]?\s*([A-Z0-9\-]{6,40})',
-            r'(?i)\b([A-Z0-9]{10,30})\b',
+            r'(?i)(?:reference|ref|ref\.|rrn|transaction\s*(?:id|no|#)?|trx\s*(?:id|no|#)?)\s*[:#\-]?\s*([A-Z0-9\-]{6,50})',
+            r'(?i)\b([A-Z0-9]{10,40})\b',
         ]
 
         for pattern in patterns:
@@ -94,7 +121,7 @@ def _extract_manual_payment_reference_from_image(uploaded_file):
                 candidate = (match.group(1) or '').strip().upper()
                 has_digit = any(ch.isdigit() for ch in candidate)
                 has_alpha = any(ch.isalpha() for ch in candidate)
-                if 6 <= len(candidate) <= 40 and has_digit and has_alpha:
+                if 6 <= len(candidate) <= 50 and has_digit and has_alpha:
                     return candidate, raw_text
 
         return None, raw_text
@@ -283,22 +310,15 @@ def payment_booking_intent(request, reservation_id):
     payment_breakdown = payment_config.calculate_total_amount()
     partial_payment_amount = payment_config.get_partial_payment_amount()
     
-    selected_payment_method = 'gcash'
-
-    # Handle payment method selection
+    # Handle manual payment proof upload
     if request.method == 'POST':
-        payment_method = request.POST.get('payment_method')
-        selected_payment_method = payment_method or 'gcash'
-        
-        if payment_method == 'gcash':
-            # Proceed with PayMongo Checkout (supports GCash, PayMaya, Cards)
-            return redirect('dormitory:paymongo_checkout', reservation_id=reservation.id)
-        
-        elif payment_method == 'manual':
-            # Manual flow requires proof upload on this page.
-            payment_proof = request.FILES.get('payment_proof')
-            if not payment_proof:
-                messages.error(request, "Please upload a payment proof image for manual payment.")
+        payment_proof = request.FILES.get('payment_proof')
+        if not payment_proof:
+            messages.error(request, "Please upload a payment proof image.")
+        else:
+            is_valid, validation_msg = _validate_payment_proof_image(payment_proof)
+            if not is_valid:
+                messages.error(request, validation_msg)
             else:
                 extracted_reference, raw_ocr_text = _extract_manual_payment_reference_from_image(payment_proof)
 
@@ -314,7 +334,9 @@ def payment_booking_intent(request, reservation_id):
 
                 landlord_notice = "Payment proof has been submitted and is awaiting verification."
                 if extracted_reference:
-                    landlord_notice += f" OCR Ref: {extracted_reference}."
+                    landlord_notice += f" Reference number detected: {extracted_reference}."
+                else:
+                    landlord_notice += " No reference number could be automatically extracted."
 
                 Message.objects.create(
                     sender=request.user,
@@ -334,41 +356,13 @@ def payment_booking_intent(request, reservation_id):
                 base_url = reverse('dormitory:tenant_reservations')
                 return redirect(f"{base_url}?selected_reservation={reservation.id}")
 
-            context = {
-                'reservation': reservation,
-                'payment_config': payment_config,
-                'payment_breakdown': payment_breakdown,
-                'partial_payment_amount': partial_payment_amount,
-                'accepts_gateway': payment_config.accepts_gateway,
-                'accepts_manual': payment_config.accepts_manual,
-                'accepts_cash': payment_config.accepts_cash,
-                'accepts_partial': payment_config.accepts_partial_payment,
-                'selected_payment_method': selected_payment_method,
-            }
-            return render(request, 'dormitory/payment_booking_intent.html', context)
-
-        # Backward-compatible manual selection without proof upload.
-        elif payment_method == 'manual_defer':
-            reservation.payment_method = 'manual'
-            reservation.status = 'pending_payment'
-            reservation.save()
-            messages.info(request, "Please upload your payment proof.")
-            base_url = reverse('dormitory:tenant_reservations')
-            return redirect(f"{base_url}?selected_reservation={reservation.id}")
-
-        messages.error(request, "Please choose a valid payment method.")
-        return redirect('dormitory:payment_booking_intent', reservation_id=reservation.id)
-    
     context = {
         'reservation': reservation,
         'payment_config': payment_config,
         'payment_breakdown': payment_breakdown,
         'partial_payment_amount': partial_payment_amount,
-        'accepts_gateway': payment_config.accepts_gateway,
         'accepts_manual': payment_config.accepts_manual,
-        'accepts_cash': payment_config.accepts_cash,
         'accepts_partial': payment_config.accepts_partial_payment,
-        'selected_payment_method': selected_payment_method,
     }
     
     return render(request, 'dormitory/payment_booking_intent.html', context)

@@ -86,8 +86,8 @@
     <!-- Price -->
     <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
         <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-        <input type="number" name="price" id="price" value="{{ form.price.value|default:'' }}" step="0.01" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
-        <p class="mt-1 text-xs text-gray-500">Example: 6500</p>
+        <input type="number" name="price" id="price" value="{{ form.price.value|default:3500 }}" step="500" min="3500" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" oninput="if(this.value<3500)this.value=3500" required>
+        <p class="mt-1 text-xs text-gray-500">Minimum ₱3,500 · Increments of ₱500</p>
     </div>
 
     <!-- Key Features -->
@@ -377,21 +377,36 @@ document.addEventListener("DOMContentLoaded", function() {
     }).addTo(map);
 
     /* =====================
-      GEOCODING FUNCTIONS
+      MANILA-ONLY FILTER
+    ===================== */
+    const nonManilaAreas = ['Cavite', 'Batangas', 'Laguna', 'Rizal', 'Bulacan', 'Pampanga', 'Nueva Ecija', 'Bataan', 'Zambales', 'Tarlac', 'Pangasinan', 'Quezon', 'Mindoro', 'Marinduque', 'Occidental Mindoro', 'Oriental Mindoro', 'Palawan', 'Romblon'];
+
+    function isManilaAddress(address) {
+        return !nonManilaAreas.some(function(area) {
+            return address.toLowerCase().includes(area.toLowerCase());
+        });
+    }
+
+    /* =====================
+       GEOCODING FUNCTIONS
     ===================== */
     async function getCoordinates(address) {
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&viewbox=120.90,14.47,121.07,14.70&bounded=1&countrycodes=ph`;
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.length === 0) return null;
 
-            return {
+            const result = {
                 lat: parseFloat(data[0].lat),
                 lng: parseFloat(data[0].lon),
                 name: data[0].display_name
             };
+
+            if (!manilaBounds.contains([result.lat, result.lng]) || !isManilaAddress(result.name)) return null;
+
+            return result;
         } catch (error) {
             console.error("Geocoding error:", error);
             return null;
@@ -435,7 +450,10 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!query) return;
 
         const result = await getCoordinates(query);
-        if (!result) return;
+        if (!result || !isManilaAddress(result.name)) {
+            alert("No address found within Manila. Please search within Manila only.");
+            return;
+        }
 
         const { lat, lng, name } = result;
 
@@ -480,9 +498,11 @@ document.addEventListener("DOMContentLoaded", function() {
     ===================== */
     searchControl.on("markgeocode", function(e) {
         const center = e.geocode.center;
+        const address = e.geocode.name;
 
-        if (!manilaBounds.contains(center)) {
-            alert("Please search and place dorms within Manila only.");
+        if (!manilaBounds.contains(center) || !isManilaAddress(address)) {
+            alert("Please search within Manila only.");
+            if (searchControl._input) searchControl._input.value = "";
             return;
         }
 
@@ -491,7 +511,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         latitudeInput.value = center.lat.toFixed(6);
         longitudeInput.value = center.lng.toFixed(6);
-        addressInput.value = e.geocode.name;
+        addressInput.value = address;
     });
 
     /* =====================
@@ -500,6 +520,19 @@ document.addEventListener("DOMContentLoaded", function() {
     if (latitudeInput.value && longitudeInput.value) {
         updateAddress(defaultLat, defaultLng);
     }
+
+    /* =====================
+      FORM SUBMIT VALIDATION
+    ===================== */
+    const dormForm = document.querySelector('form');
+    dormForm.addEventListener('submit', function(e) {
+        const lat = parseFloat(latitudeInput.value);
+        const lng = parseFloat(longitudeInput.value);
+        if (!lat || !lng || !manilaBounds.contains([lat, lng])) {
+            e.preventDefault();
+            alert("Please set the dorm location within Manila only.");
+        }
+    });
 });
 
 

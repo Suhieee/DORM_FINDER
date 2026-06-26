@@ -1420,10 +1420,6 @@ class ResendVerificationEmailLoggedInView(LoginRequiredMixin, View):
     
     def post(self, request):
         """Resend verification email for logged-in user."""
-        if (request.POST.get('honeypot') or '').strip():
-            messages.warning(request, 'Invalid submission detected.')
-            return redirect(request.GET.get('next', 'user_profile:profile'))
-
         success, message = send_verification_email(request, request.user)
         
         if success:
@@ -1458,10 +1454,6 @@ class ResendVerificationEmailView(FormView):
     
     def form_valid(self, form):
         """Resend verification email if user is not verified."""
-        if (self.request.POST.get('honeypot') or '').strip():
-            messages.warning(self.request, 'Invalid submission detected.')
-            return redirect('accounts:login')
-
         user = form.get_user()
         success, message = send_verification_email(self.request, user)
         

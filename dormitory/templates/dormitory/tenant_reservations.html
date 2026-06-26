@@ -654,7 +654,7 @@
                             
                             <!-- Move-out request button for occupied/confirmed tenants -->
                             {% if selected_reservation.status == 'occupied' or selected_reservation.status == 'confirmed' %}
-                            {% if not selected_reservation.move_out_requested %}
+                            {% if not early_out_request or early_out_request.status == 'declined' %}
                             <button type="button" onclick="openMoveOutModal()"
                                     class="inline-flex items-center gap-1.5 bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-orange-700 transition-all shadow-sm hover:shadow-md">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -677,7 +677,8 @@
                 </div>
 
                 <!-- Move-Out Status Section -->
-                {% if selected_reservation.move_out_requested %}
+                {% with eor=early_out_request %}
+                {% if eor %}
                 <div class="border-t pt-4 mt-4">
                     <h4 class="font-semibold mb-4 flex items-center text-orange-900">
                         <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -689,19 +690,43 @@
                     <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
                         <div class="text-sm space-y-3">
                             <div>
-                                <span class="text-gray-600">Requested Date:</span>
-                                <p class="font-semibold text-lg">{{ selected_reservation.move_out_requested_date|date:"F j, Y - g:i A" }}</p>
+                                <span class="text-gray-600">Reason:</span>
+                                <p class="font-semibold">{{ eor.get_reason_display }}{% if eor.reason == 'other' and eor.reason_other_text %} — {{ eor.reason_other_text }}{% endif %}</p>
                             </div>
                             <div>
-                                <span class="text-gray-600">Your Reason:</span>
-                                <p class="text-sm whitespace-pre-wrap bg-white rounded p-2 mt-1 border border-gray-200">{{ selected_reservation.move_out_requested_reason }}</p>
+                                <span class="text-gray-600">Desired Move-Out Date:</span>
+                                <p class="font-semibold">{{ eor.requested_moveout_date|date:"F j, Y" }}</p>
                             </div>
-                            {% if selected_reservation.move_out_approved %}
+                            {% if eor.additional_notes %}
+                            <div>
+                                <span class="text-gray-600">Additional Notes:</span>
+                                <p class="text-sm whitespace-pre-wrap bg-white rounded p-2 mt-1 border border-gray-200">{{ eor.additional_notes }}</p>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <span class="text-gray-600">Submitted:</span>
+                                <p class="font-semibold">{{ eor.created_at|date:"F j, Y - g:i A" }}</p>
+                            </div>
+                            {% if eor.status == 'approved' %}
                             <div class="pt-2 border-t border-orange-300">
                                 <span class="text-gray-600">Status:</span>
-                                <span class="ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                    ✓ Approved on {{ selected_reservation.move_out_approved_date|date:"F j, Y" }}
+                                <span class="ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                    ✓ Approved{% if eor.reviewed_at %} on {{ eor.reviewed_at|date:"F j, Y" }}{% endif %}
                                 </span>
+                                <p class="text-xs text-blue-600 mt-1">You may stay until <strong>{{ eor.requested_moveout_date|date:"F j, Y" }}</strong>.</p>
+                            </div>
+                            {% elif eor.status == 'declined' %}
+                            <div class="pt-2 border-t border-orange-300">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                    ✗ Declined{% if eor.reviewed_at %} on {{ eor.reviewed_at|date:"F j, Y" }}{% endif %}
+                                </span>
+                                {% if eor.landlord_decline_reason %}
+                                <div class="mt-2">
+                                    <span class="text-gray-600">Landlord's Response:</span>
+                                    <p class="text-sm whitespace-pre-wrap bg-white rounded p-2 mt-1 border border-gray-200">{{ eor.get_landlord_decline_reason_display }}{% if eor.landlord_decline_reason == 'other' and eor.landlord_decline_other_text %} — {{ eor.landlord_decline_other_text }}{% endif %}</p>
+                                </div>
+                                {% endif %}
                             </div>
                             {% else %}
                             <div class="pt-2 border-t border-orange-300">
@@ -715,6 +740,7 @@
                     </div>
                 </div>
                 {% endif %}
+                {% endwith %}
 
                 <!-- Payment Section - Only show for pending_payment status -->
                 {% if selected_reservation.status == 'pending_payment' and not selected_reservation.has_paid_reservation and not selected_reservation.payment_proof %}
@@ -1108,13 +1134,41 @@
                         <p class="text-sm text-orange-700 mt-1">Your landlord will review this request. Early move-out may be subject to penalties or refund adjustments depending on your agreement.</p>
                     </div>
                     <div>
-                        <label for="moveout_reason" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label for="reason" class="block text-sm font-semibold text-gray-700 mb-2">
                             Reason for Move-Out <span class="text-red-500">*</span>
                         </label>
-                        <textarea name="moveout_reason" id="moveout_reason" rows="4"
+                        <select name="reason" id="reason" required
                                 class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                placeholder="Please explain why you need to move out early..."
-                                required></textarea>
+                                onchange="toggleReasonOther(this)">
+                            <option value="">Select a reason...</option>
+                            {% for value, label in REASON_CHOICES %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="reasonOtherDiv" class="hidden">
+                        <label for="reason_other_text" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Please specify <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="reason_other_text" id="reason_other_text"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                               placeholder="Enter your specific reason...">
+                    </div>
+                    <div>
+                        <label for="requested_moveout_date" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Desired Move-Out Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" name="requested_moveout_date" id="requested_moveout_date" required
+                               min="{{ today_iso }}"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label for="additional_notes" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Additional Notes <span class="text-gray-400">(optional)</span>
+                        </label>
+                        <textarea name="additional_notes" id="additional_notes" rows="3"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                placeholder="Any additional information for your landlord..."></textarea>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
@@ -1713,7 +1767,21 @@
 
     function closeMoveOutModal() {
         document.getElementById('moveOutModal').classList.add('hidden');
-        document.getElementById('moveout_reason').value = '';
+        document.getElementById('reason').value = '';
+        document.getElementById('reason_other_text').value = '';
+        document.getElementById('requested_moveout_date').value = '';
+        document.getElementById('additional_notes').value = '';
+        document.getElementById('reasonOtherDiv').classList.add('hidden');
+    }
+
+    function toggleReasonOther(select) {
+        const otherDiv = document.getElementById('reasonOtherDiv');
+        if (select.value === 'other') {
+            otherDiv.classList.remove('hidden');
+        } else {
+            otherDiv.classList.add('hidden');
+            document.getElementById('reason_other_text').value = '';
+        }
     }
 
     // Close modal when clicking outside

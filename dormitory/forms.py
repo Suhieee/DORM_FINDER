@@ -4,23 +4,15 @@ from datetime import timedelta
 from django.utils import timezone
 
 
-class AntiSpamFormMixin:
-    honeypot = forms.CharField(required=False, widget=forms.HiddenInput(), label='')
-
-    def clean_honeypot(self):
-        value = (self.cleaned_data.get('honeypot') or '').strip()
-        if value:
-            raise forms.ValidationError('Invalid submission detected.')
-        return value
-
-class DormForm(AntiSpamFormMixin, forms.ModelForm):
+class DormForm(forms.ModelForm):
     price = forms.DecimalField(
         required=True,
-        min_value=1,
+        min_value=3500,
         max_digits=10,
         decimal_places=2,
-        widget=forms.NumberInput(attrs={'step': '0.01', 'min': '1'}),
-        help_text='Enter the price per month in PHP',
+        initial=3500,
+        widget=forms.NumberInput(attrs={'step': '500', 'min': '3500'}),
+        help_text='Minimum price is ₱3,500. Price increments by ₱500.',
     )
     amenities = forms.ModelMultipleChoiceField(
         queryset=Amenity.objects.all(),
@@ -70,7 +62,7 @@ class DormForm(AntiSpamFormMixin, forms.ModelForm):
             'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
             'other_amenities': forms.Textarea(attrs={'rows': 3, 'placeholder': 'e.g. Study table, CCTV, Laundry area'}),
             'address': forms.Textarea(attrs={'rows': 3}),
-            'price': forms.NumberInput(attrs={'step': '0.01', 'min': '1'}),
+            'price': forms.NumberInput(attrs={'step': '500', 'min': '3500'}),
             'permit': forms.FileInput(attrs={'accept': 'image/*'}),
             'payment_qr': forms.FileInput(attrs={'accept': 'image/*'}),
             'accommodation_type': forms.Select(attrs={'class': 'form-control'}),
@@ -81,7 +73,7 @@ class DormForm(AntiSpamFormMixin, forms.ModelForm):
         help_texts = {
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
-            'price': 'Enter the price per month in PHP',
+            'price': 'Minimum price is ₱3,500. Price increments by ₱500.',
             'total_beds': 'Total number of beds in the unit',
             'available_beds': 'Number of beds currently available for rent',
             'max_occupants': 'Maximum number of people allowed in the unit',
@@ -104,12 +96,12 @@ class DormForm(AntiSpamFormMixin, forms.ModelForm):
             except Exception:
                 pass
 
-class DormImageForm(AntiSpamFormMixin, forms.ModelForm):
+class DormImageForm(forms.ModelForm):
     class Meta:
         model = DormImage
         fields = ['image']
 
-class RoommatePostForm(AntiSpamFormMixin, forms.ModelForm):
+class RoommatePostForm(forms.ModelForm):
     amenities = forms.ModelMultipleChoiceField(
         queryset=RoommateAmenity.objects.all(),
         widget=forms.CheckboxSelectMultiple,
@@ -230,7 +222,7 @@ class RoommatePostForm(AntiSpamFormMixin, forms.ModelForm):
 
         return cleaned_data
 
-class ReviewForm(AntiSpamFormMixin, forms.ModelForm):
+class ReviewForm(forms.ModelForm):
     rating = forms.IntegerField(
         required=False,
         widget=forms.Select(choices=Review.RATING_CHOICES)
@@ -261,7 +253,7 @@ class ReviewForm(AntiSpamFormMixin, forms.ModelForm):
         return cleaned_data
     
 
-class ReservationForm(AntiSpamFormMixin, forms.ModelForm):
+class ReservationForm(forms.ModelForm):
     room = forms.ModelChoiceField(queryset=Room.objects.none(), required=False, label="Select Room")
 
     class Meta:
@@ -279,7 +271,7 @@ class ReservationForm(AntiSpamFormMixin, forms.ModelForm):
                 self.fields['room'].queryset = dorm.rooms.filter(is_available=True)
                 self.fields['room'].required = True
 
-class RoomForm(AntiSpamFormMixin, forms.ModelForm):
+class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
         fields = ['name', 'price', 'is_available', 'description', 'room_type', 'capacity', 'size', 'floor_number']
@@ -317,12 +309,12 @@ class RoomForm(AntiSpamFormMixin, forms.ModelForm):
             }),
         }
 
-class RoomImageForm(AntiSpamFormMixin, forms.ModelForm):
+class RoomImageForm(forms.ModelForm):
     class Meta:
         model = RoomImage
         fields = ['image']
 
-class LandlordTermsForm(AntiSpamFormMixin, forms.ModelForm):
+class LandlordTermsForm(forms.ModelForm):
     class Meta:
         model = LandlordTerms
         fields = ['content']

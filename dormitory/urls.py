@@ -12,10 +12,8 @@ from .views import (
     LandlordTermsUpdateView, ajax_save_landlord_terms, get_landlord_terms_data
 )
 from .payment_views import (
-    payment_booking_intent, payment_gateway_checkout, payment_webhook,
-    payment_success, payment_failure, cancel_reservation_with_refund,
-    paymongo_gcash_checkout, paymongo_success, paymongo_failure, paymongo_webhook,
-    paymongo_checkout, checkout_success, payment_observability_dashboard
+    payment_booking_intent, payment_success, payment_failure, cancel_reservation_with_refund,
+    payment_observability_dashboard
 )
 from . import views
 from . import chatbot_views
@@ -79,23 +77,11 @@ urlpatterns = [
     # Move-in checklist
     path('reservation/<int:reservation_id>/update-checklist/', views.update_checklist, name='update_checklist'),
     
-    # Payment Gateway URLs
+    # Payment URLs (QR-based manual payment only)
     path('payment/booking-intent/<int:reservation_id>/', payment_booking_intent, name='payment_booking_intent'),
-    path('payment/checkout/<int:reservation_id>/', payment_gateway_checkout, name='payment_gateway_checkout'),
-    path('payment/webhook/', payment_webhook, name='payment_webhook'),
     path('payment/success/<int:reservation_id>/', payment_success, name='payment_success'),
     path('payment/failure/<int:reservation_id>/', payment_failure, name='payment_failure'),
     path('payment/cancel-with-refund/<int:reservation_id>/', cancel_reservation_with_refund, name='cancel_reservation_with_refund'),
-    
-    # PayMongo GCash Payment URLs (Sources API - Legacy)
-    path('payment/gcash/checkout/<int:reservation_id>/', paymongo_gcash_checkout, name='paymongo_gcash_checkout'),
-    path('payment/gcash/success/<int:reservation_id>/', paymongo_success, name='paymongo_success'),
-    path('payment/gcash/failure/<int:reservation_id>/', paymongo_failure, name='paymongo_failure'),
-    path('payment/gcash/webhook/', paymongo_webhook, name='paymongo_webhook'),
-    
-    # PayMongo Checkout Sessions URLs (RECOMMENDED - Full UI)
-    path('payment/checkout-session/<int:reservation_id>/', paymongo_checkout, name='paymongo_checkout'),
-    path('payment/checkout-success/<int:reservation_id>/', checkout_success, name='checkout_success'),
     path('payment/observability/', payment_observability_dashboard, name='payment_observability_dashboard'),
     
     # Chatbot AI Assistant URLs

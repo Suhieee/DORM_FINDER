@@ -17,7 +17,6 @@
 <hr>
 <form method="post">
     {% csrf_token %}
-    <input type="hidden" name="honeypot" value="">
     <label for="receiver_id">Send To (User ID):</label>
     <input type="number" name="receiver_id" id="receiver_id" required>
     <br>

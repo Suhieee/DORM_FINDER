@@ -12,7 +12,6 @@
         </a>
         <form method="post" class="space-y-6">
             {% csrf_token %}
-            {{ form.honeypot }}
             <div>
                 <label for="{{ form.reason.id_for_label }}" class="block text-sm font-semibold text-blue-600 mb-1">What are you reporting about?</label>
                 {{ form.reason }}

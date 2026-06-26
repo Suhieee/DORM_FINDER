@@ -3,16 +3,7 @@ from .models import UserProfile, TenantPreferences
 from accounts.models import CustomUser  # Import your custom user model
 
 
-class AntiSpamFormMixin:
-    honeypot = forms.CharField(required=False, widget=forms.HiddenInput(), label='')
-
-    def clean_honeypot(self):
-        value = (self.cleaned_data.get('honeypot') or '').strip()
-        if value:
-            raise forms.ValidationError('Invalid submission detected.')
-        return value
-
-class UserProfileForm(AntiSpamFormMixin, forms.ModelForm):
+class UserProfileForm(forms.ModelForm):
     first_name = forms.CharField(max_length=50, required=True, label="First Name")
     last_name = forms.CharField(max_length=50, required=True, label="Last Name")
     username = forms.CharField(max_length=50, required=True, label="Username")
@@ -48,7 +39,7 @@ class UserProfileForm(AntiSpamFormMixin, forms.ModelForm):
         return user_profile
 
 
-class PWDVerificationForm(AntiSpamFormMixin, forms.Form):
+class PWDVerificationForm(forms.Form):
     pwd_document = forms.ImageField(
         required=True,
         help_text='Upload a clear image of your PWD ID, birth certificate, valid government ID, disability certificate, or equivalent proof.',
@@ -83,7 +74,7 @@ class PWDVerificationForm(AntiSpamFormMixin, forms.Form):
     )
 
 
-class TenantPreferencesForm(AntiSpamFormMixin, forms.ModelForm):
+class TenantPreferencesForm(forms.ModelForm):
     """Form for tenant preferences - smart matching system"""
     
     class Meta:
@@ -182,7 +173,7 @@ class TenantPreferencesForm(AntiSpamFormMixin, forms.ModelForm):
         return cleaned_data
 
 
-class RoommatePreferencesForm(AntiSpamFormMixin, forms.ModelForm):
+class RoommatePreferencesForm(forms.ModelForm):
     """Form for roommate preferences - second step of smart matching"""
     preferred_roommate_personalities = forms.MultipleChoiceField(
         choices=[

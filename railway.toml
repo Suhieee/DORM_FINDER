@@ -10,3 +10,8 @@ restartPolicyMaxRetries = 10
 [[crons]]
 schedule = "*/30 * * * *"
 command = "python manage.py check_payment_deadlines"
+
+# Cron job to auto-complete approved early move-outs (once daily at midnight)
+[[crons]]
+schedule = "0 0 * * *"
+command = "python manage.py process_approved_moveouts"

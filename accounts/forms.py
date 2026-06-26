@@ -8,17 +8,9 @@ from datetime import timedelta
 import os
 
 
-class AntiSpamFormMixin:
-    honeypot = forms.CharField(required=False, widget=forms.HiddenInput(), label='')
-
-    def clean_honeypot(self):
-        value = (self.cleaned_data.get('honeypot') or '').strip()
-        if value:
-            raise forms.ValidationError('Invalid submission detected.')
-        return value
 
 
-class ResendVerificationForm(AntiSpamFormMixin, AuthenticationForm):
+class ResendVerificationForm(AuthenticationForm):
     pass
 
 
@@ -40,7 +32,7 @@ class VerifiedAuthenticationForm(AuthenticationForm):
             )
 
 
-class TenantRegistrationForm(AntiSpamFormMixin, UserCreationForm):
+class TenantRegistrationForm(UserCreationForm):
     """Separate registration form for tenants"""
     first_name = forms.CharField(
         max_length=30, 
@@ -115,7 +107,7 @@ class TenantRegistrationForm(AntiSpamFormMixin, UserCreationForm):
         return user
 
 
-class LandlordRegistrationForm(AntiSpamFormMixin, UserCreationForm):
+class LandlordRegistrationForm(UserCreationForm):
     """Separate registration form for landlords"""
     first_name = forms.CharField(
         max_length=30, 
@@ -190,7 +182,7 @@ class LandlordRegistrationForm(AntiSpamFormMixin, UserCreationForm):
         return user
 
 
-class CustomUserCreationForm(AntiSpamFormMixin, UserCreationForm):
+class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(
         max_length=30, 
         required=True, 
@@ -258,7 +250,7 @@ class CustomUserCreationForm(AntiSpamFormMixin, UserCreationForm):
         return email
 
 
-class AdminCreationForm(AntiSpamFormMixin, UserCreationForm):
+class AdminCreationForm(UserCreationForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
@@ -289,7 +281,7 @@ class AdminCreationForm(AntiSpamFormMixin, UserCreationForm):
         return user
 
 
-class UserReportForm(AntiSpamFormMixin, forms.ModelForm):
+class UserReportForm(forms.ModelForm):
     class Meta:
         model = UserReport
         fields = ['reason', 'description', 'evidence', 'evidence_image']
@@ -384,7 +376,7 @@ class ResolveReportForm(forms.Form):
     )
 
 
-class IdentityVerificationForm(AntiSpamFormMixin, forms.Form):
+class IdentityVerificationForm(forms.Form):
     """Form for landlords to submit identity verification documents"""
     MAX_FILE_SIZE_MB = 5
     ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -431,7 +423,7 @@ class IdentityVerificationForm(AntiSpamFormMixin, forms.Form):
         return self._validate_upload(self.cleaned_data.get('selfie_with_id'), 'Selfie with ID')
 
 
-class VerificationReviewForm(AntiSpamFormMixin, forms.Form):
+class VerificationReviewForm(forms.Form):
     """Form for admins to review identity verification requests"""
     ACTION_CHOICES = [
         ('approve', 'Approve Verification'),

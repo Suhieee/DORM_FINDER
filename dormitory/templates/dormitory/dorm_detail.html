@@ -712,7 +712,6 @@
                         </h4>
                         <form method="post" action="{% url 'dormitory:add_review' dorm.id %}">
                             {% csrf_token %}
-                            <input type="hidden" name="honeypot" value="">
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                                 <div class="flex space-x-1">

@@ -633,6 +633,50 @@ class Reservation(models.Model):
         
         return timezone.now() > self.payment_deadline
 
+class EarlyOutRequest(models.Model):
+    REASON_CHOICES = (
+        ('financial', 'Financial problems'),
+        ('found_dorm', 'Found another dorm'),
+        ('transfer_school', 'Transferring school'),
+        ('family_emergency', 'Family emergency'),
+        ('personal', 'Personal reasons'),
+        ('other', 'Other (please specify)'),
+    )
+
+    DECLINE_REASON_CHOICES = (
+        ('minimum_stay', 'Minimum stay requirement not met (6 months required)'),
+        ('active_lease', 'Active lease agreement still in effect'),
+        ('unpaid_balance', 'Unpaid balance exists on your account'),
+        ('security_deposit', 'Early termination — security deposit will be forfeited'),
+        ('notice_period', 'Required 30-day notice period not met'),
+        ('incomplete_requirements', 'Incomplete clearance requirements'),
+        ('other', 'Other (please specify)'),
+    )
+
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('declined', 'Declined'),
+    )
+
+    tenant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='early_out_requests')
+    reservation = models.ForeignKey('Reservation', on_delete=models.CASCADE, related_name='early_out_requests')
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    reason_other_text = models.TextField(blank=True, default='')
+    requested_moveout_date = models.DateField()
+    additional_notes = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    landlord_decline_reason = models.CharField(max_length=30, choices=DECLINE_REASON_CHOICES, blank=True, default='')
+    landlord_decline_other_text = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"EarlyOutRequest #{self.id} - {self.tenant.username} - {self.get_status_display()}"
+
 class LandlordTerms(models.Model):
     landlord = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -708,7 +752,7 @@ class PaymentConfiguration(models.Model):
         base_price = self.dorm.price
         deposit = base_price * self.deposit_months
         advance = base_price * self.advance_months
-        subtotal = deposit + advance
+        subtotal = base_price + deposit + advance
         discount_percent = Decimal('0')
 
         tenant_profile = getattr(self, '_tenant_for_discount', None)

@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Dorm, Amenity, RoommatePost, RoommateAmenity, School, Review, 
     Room, RoomImage, Reservation, PaymentConfiguration,
-    ChatbotConversation, ChatbotMessage, ChatbotFAQ, LandlordTerms
+    ChatbotConversation, ChatbotMessage, ChatbotFAQ, LandlordTerms,
+    EarlyOutRequest
 )
 from .models_transaction import TransactionLog, PaymentEventLog
 
@@ -115,6 +116,20 @@ class PaymentConfigurationAdmin(admin.ModelAdmin):
         }),
     )
 
+
+@admin.register(EarlyOutRequest)
+class EarlyOutRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tenant', 'reservation', 'status', 'reason', 'requested_moveout_date', 'created_at')
+    list_filter = ('status', 'reason', 'created_at')
+    search_fields = ('tenant__username', 'tenant__email', 'reservation__dorm__name')
+    readonly_fields = ('created_at', 'reviewed_at')
+    date_hierarchy = 'created_at'
+    fieldsets = (
+        ('Request Info', {'fields': ('tenant', 'reservation', 'status')}),
+        ('Tenant Details', {'fields': ('reason', 'reason_other_text', 'requested_moveout_date', 'additional_notes')}),
+        ('Landlord Response', {'fields': ('landlord_decline_reason', 'landlord_decline_other_text', 'reviewed_at')}),
+        ('Timestamps', {'fields': ('created_at',), 'classes': ('collapse',)}),
+    )
 
 @admin.register(ChatbotConversation)
 class ChatbotConversationAdmin(admin.ModelAdmin):
