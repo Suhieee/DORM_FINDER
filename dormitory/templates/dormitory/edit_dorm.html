@@ -70,13 +70,14 @@
             </select>
         </div>
 
-        <!-- Price -->
-        <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
-            <label for="id_price" class="block text-sm font-medium text-gray-700">Price (₱)</label>
-            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" step="500" min="3500"
-                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                   placeholder="Enter price" oninput="if(this.value<3500)this.value=3500" required>
-        </div>
+    <!-- Price -->
+    <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
+        <label for="id_price" class="block text-sm font-medium text-gray-700">Price (₱)</label>
+        <input type="number" name="price" id="id_price" value="{{ form.price.value }}" min="2000"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+               placeholder="Enter price" required>
+        <p id="priceHint" class="mt-1 text-xs text-gray-500">Minimum price for Whole Unit is ₱5,000</p>
+    </div>
 
         <!-- Key Features -->
         <div class="col-span-12 xl:col-span-4 section-card section-card-accent">
@@ -171,7 +172,7 @@
                     <div class="flex items-center">
                         <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}"
                                {% if amenity in dorm.amenities.all %}checked{% endif %}
-                               class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                               class="h-5 w-5 text-blue-600 border-2 border-blue-400 rounded focus:ring-blue-500">
                         <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
                     </div>
                 {% endfor %}
@@ -392,6 +393,32 @@ document.addEventListener("DOMContentLoaded", function() {
 
     accommodationType.addEventListener('change', toggleBedspaceOptions);
     toggleBedspaceOptions(); // Run on page load
+
+    // Dynamic Minimum Price Based on Accommodation Type
+    const MIN_PRICES = {
+        'whole_unit': 5000,
+        'room_sharing': 3500,
+        'bedspace': 2000,
+    };
+    const LABELS = {
+        'whole_unit': 'Whole Unit',
+        'room_sharing': 'Room Sharing',
+        'bedspace': 'Bed Space',
+    };
+    const priceInput = document.getElementById('id_price');
+    const priceHint = document.getElementById('priceHint');
+
+    function updatePriceMin() {
+        const type = accommodationType.value;
+        const minP = MIN_PRICES[type] || 2000;
+        priceInput.min = minP;
+        priceInput.value = minP;
+        priceInput.placeholder = '\u20B1' + minP.toLocaleString() + ' minimum';
+        priceHint.textContent = 'Minimum price for ' + (LABELS[type] || type) + ' is \u20B1' + minP.toLocaleString();
+        updatePaymentPreview();
+    }
+    accommodationType.addEventListener('change', updatePriceMin);
+    updatePriceMin();
 
     // Add this JavaScript to ensure map stays within Manila bounds
     map.on('drag', function() {

@@ -4,15 +4,21 @@ from datetime import timedelta
 from django.utils import timezone
 
 
+ACCOMMODATION_MIN_PRICES = {
+    'whole_unit': 5000,
+    'room_sharing': 3500,
+    'bedspace': 2000,
+}
+
 class DormForm(forms.ModelForm):
     price = forms.DecimalField(
         required=True,
-        min_value=3500,
+        min_value=2000,
         max_digits=10,
         decimal_places=2,
-        initial=3500,
-        widget=forms.NumberInput(attrs={'step': '500', 'min': '3500'}),
-        help_text='Minimum price is ₱3,500. Price increments by ₱500.',
+        initial=5000,
+        widget=forms.NumberInput(attrs={'min': '2000'}),
+        help_text='Minimum price varies by accommodation type (Whole Unit: ₱5,000, Room Sharing: ₱3,500, Bed Space: ₱2,000).',
     )
     amenities = forms.ModelMultipleChoiceField(
         queryset=Amenity.objects.all(),
@@ -62,7 +68,6 @@ class DormForm(forms.ModelForm):
             'key_features': forms.Textarea(attrs={'rows': 3, 'placeholder': 'One feature per line'}),
             'other_amenities': forms.Textarea(attrs={'rows': 3, 'placeholder': 'e.g. Study table, CCTV, Laundry area'}),
             'address': forms.Textarea(attrs={'rows': 3}),
-            'price': forms.NumberInput(attrs={'step': '500', 'min': '3500'}),
             'permit': forms.FileInput(attrs={'accept': 'image/*'}),
             'payment_qr': forms.FileInput(attrs={'accept': 'image/*'}),
             'accommodation_type': forms.Select(attrs={'class': 'form-control'}),
@@ -73,7 +78,6 @@ class DormForm(forms.ModelForm):
         help_texts = {
             'payment_qr': 'Upload your GCash/Maya QR code for accepting payments',
             'permit': 'Upload your business permit or registration',
-            'price': 'Minimum price is ₱3,500. Price increments by ₱500.',
             'total_beds': 'Total number of beds in the unit',
             'available_beds': 'Number of beds currently available for rent',
             'max_occupants': 'Maximum number of people allowed in the unit',
@@ -95,6 +99,16 @@ class DormForm(forms.ModelForm):
                 self.fields['deposit_months'].initial = config.deposit_months
             except Exception:
                 pass
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        acc_type = self.cleaned_data.get('accommodation_type')
+        if price is not None and acc_type:
+            min_p = ACCOMMODATION_MIN_PRICES.get(acc_type, 2000)
+            if price < min_p:
+                acc_label = dict(Dorm.ACCOMMODATION_TYPE_CHOICES).get(acc_type, acc_type)
+                raise forms.ValidationError(f'Minimum price for {acc_label} is ₱{min_p:,}.')
+        return price
 
 class DormImageForm(forms.ModelForm):
     class Meta:

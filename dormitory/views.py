@@ -572,6 +572,11 @@ class AddDormView(LoginRequiredMixin, CreateView):
     template_name = "dormitory/add_dorm.html"
     success_url = reverse_lazy("accounts:dashboard")
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.user_type != "landlord":
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         """Set the landlord before saving, handle multiple images, and save location data."""
         if self.request.user.user_type != "landlord":

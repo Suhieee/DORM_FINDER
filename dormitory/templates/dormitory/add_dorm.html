@@ -86,8 +86,8 @@
     <!-- Price -->
     <div class="col-span-12 md:col-span-6 xl:col-span-4 section-card">
         <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-        <input type="number" name="price" id="price" value="{{ form.price.value|default:3500 }}" step="500" min="3500" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" oninput="if(this.value<3500)this.value=3500" required>
-        <p class="mt-1 text-xs text-gray-500">Minimum ₱3,500 · Increments of ₱500</p>
+        <input type="number" name="price" id="price" value="{{ form.price.value|default:5000 }}" min="2000" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter price" required>
+        <p id="priceHint" class="mt-1 text-xs text-gray-500">Minimum price for Whole Unit is ₱5,000</p>
     </div>
 
     <!-- Key Features -->
@@ -172,7 +172,7 @@
             {% for amenity in amenities %}
             <div class="flex items-center p-2 rounded-lg bg-white border border-blue-100">
                 <input type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity-{{ amenity.id }}" 
-                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                       class="h-5 w-5 text-blue-600 border-2 border-blue-400 rounded focus:ring-blue-500"
                        {% if amenity.id in form.amenities.value %}checked{% endif %}>
                 <label for="amenity-{{ amenity.id }}" class="ml-2 text-sm text-gray-700">{{ amenity.name }}</label>
             </div>
@@ -551,6 +551,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     accommodationType.addEventListener("change", toggleOptions);
     toggleOptions(); // Load state on open
+});
+
+// Dynamic Minimum Price Based on Accommodation Type
+document.addEventListener("DOMContentLoaded", function() {
+    const MIN_PRICES = {
+        'whole_unit': 5000,
+        'room_sharing': 3500,
+        'bedspace': 2000,
+    };
+    const LABELS = {
+        'whole_unit': 'Whole Unit',
+        'room_sharing': 'Room Sharing',
+        'bedspace': 'Bed Space',
+    };
+
+    const accType = document.getElementById('accommodation_type');
+    const priceInput = document.getElementById('price');
+    const priceHint = document.getElementById('priceHint');
+
+    function updatePriceMin() {
+        const type = accType.value;
+        const minP = MIN_PRICES[type] || 2000;
+        priceInput.min = minP;
+        priceInput.value = minP;
+        priceInput.placeholder = 'Minimum \u20B1' + minP.toLocaleString();
+        priceHint.textContent = 'Minimum price for ' + (LABELS[type] || type) + ' is \u20B1' + minP.toLocaleString();
+        updatePaymentPreview();
+    }
+
+    accType.addEventListener('change', updatePriceMin);
+    updatePriceMin(); // Set initial state
 });
 
 // Payment Terms Live Preview

@@ -200,6 +200,11 @@ class RegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = "accounts/register.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         """Log in user after successful registration, create profile, and redirect."""
         # Get user_type from POST data and set it on the user instance
